@@ -1,0 +1,11 @@
+[10-06-2022 18:44:39] Plugin Loaded!
+[10-06-2022 18:44:39] Plugin disabling.
+[10-06-2022 18:45:42] Plugin Loaded!
+[10-06-2022 18:45:42] OhJaden completed requirement %statistic_hours_played% for Ã‚Â§9Ã‚Â§lStarter.
+[10-06-2022 18:45:42] Plugin disabling.
+[10-06-2022 18:57:26] Plugin Loaded!
+[10-06-2022 18:57:26] OhJaden completed requirement %statistic_hours_played% for Â§9Â§lStarter.
+[10-06-2022 18:57:26] Plugin disabling.
+[10-06-2022 19:07:24] Plugin Loaded!
+[10-06-2022 19:07:24] OhJaden completed requirement %statistic_hours_played% for §9§lStarter.
+[10-06-2022 19:07:24] Plugin disabling.

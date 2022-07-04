@@ -1,0 +1,2 @@
+[04-07-2022 00:04:04] Plugin Loaded!
+[04-07-2022 00:04:04] Plugin disabling.

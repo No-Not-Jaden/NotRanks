@@ -1,0 +1,14 @@
+[28-05-2022 10:28:27] Plugin Loaded!
+[28-05-2022 10:28:27] OhJaden completed requirement %statistic_hours_played% for ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§9ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§lStarter.
+[28-05-2022 10:28:27] Plugin disabling.
+[28-05-2022 10:46:00] Plugin Loaded!
+[28-05-2022 10:46:00] OhJaden completed requirement %statistic_hours_played% for Ãƒâ€šÃ‚Â§9Ãƒâ€šÃ‚Â§lStarter.
+[28-05-2022 10:46:00] Plugin disabling.
+[28-05-2022 10:49:25] Plugin Loaded!
+[28-05-2022 10:49:25] OhJaden completed requirement %statistic_hours_played% for Ã‚Â§9Ã‚Â§lStarter.
+[28-05-2022 10:49:25] Plugin disabling.
+[28-05-2022 13:06:26] Plugin Loaded!
+[28-05-2022 13:06:26] OhJaden completed requirement %statistic_hours_played% for Â§9Â§lStarter.
+[28-05-2022 13:06:26] Plugin disabling.
+[28-05-2022 13:14:37] Plugin Loaded!
+[28-05-2022 13:14:37] Plugin disabling.

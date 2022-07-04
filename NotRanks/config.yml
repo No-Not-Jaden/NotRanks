@@ -1,0 +1,42 @@
+# auto-download statistic, vault, and votingplugin placeholders & reloads the plugin - shouldn't really matter if this is on or off after it is downloaded once or if you don't use it
+papi-auto-download: true
+
+# What head will the ranks change to when they are completed
+completed-hdb: 6269
+1:
+  name: '&9&lStarter'
+  # only will work if HeadDataBase installed, otherwise use the item feature
+  hdb: 193
+  # this item will be used if HDB isnt installed or is set to -1
+  item: EMERALD_BLOCK
+  # {cost} to get $x/$total
+  # {playtime} to get xh/totalh
+  # {votes} to get x/total
+  # {req1} to get the first requirement x/total ({req2} {req3} etc)
+  # lore will change from red to green after completion if there is ^^ included
+  lore:
+    - '&e<△> &c&lREQUIREMENTS &e<△>'
+    - '&7￫ &fPrice: {cost}'
+    - '&7￫ &fPlaytime: {playtime}'
+    - '&7￫ &fMob Kills: {req1}'
+    - '&7￫ &fStone Broken: {req2}'
+    - '&e<△> &c&lREWARDS &e<△>'
+    - '&7￫ &fabsolutely nothing'
+  requirements:
+    # papi placeholder vv     vv required amount - Make sure you download the placeholder before you use it
+    - '%statistic_mob_kills% 100'
+    #- '%mcmmo_power_level% 5'
+    - '%statistic_mine_block:STONE% 500'
+    # auto takes away (only use if you have vault installed & a plugin that uses vault, You can use the commands feature for other money plugins)
+  cost: 5000
+  playtime: 1
+  # only use this if you have VotingPlugin installed
+  votes: 0
+  # only use if you have LuckPerms installed
+  permissions:
+  # ex: - 'essentials.back'
+  #  - 'worldedit.*'
+  commands:
+    # use {player} to replace it with the players name
+    # does not need a '/' in front of the command
+    - 'broadcast &e&lCongrats to &a{player} &e&lfor ranking up to &9&lStarter'

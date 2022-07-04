@@ -1,0 +1,8 @@
+[03-07-2022 23:33:18] Plugin Loaded!
+[03-07-2022 23:33:18] Plugin disabling.
+[03-07-2022 23:39:50] Plugin Loaded!
+[03-07-2022 23:39:50] OhJaden completed requirement %vault_eco_balance% for §9§lStarter. (5000)
+[03-07-2022 23:39:50] OhJaden completed requirement %statistic_mine_block:STONE% for §9§lStarter. (500)
+[03-07-2022 23:39:50] OhJaden completed requirement %statistic_mob_kills% for §9§lStarter. (100)
+[03-07-2022 23:39:50] OhJaden ranked up to §9§lStarter.
+[03-07-2022 23:39:50] Plugin disabling.
