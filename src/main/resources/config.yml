@@ -1,0 +1,48 @@
+# this is used with the cost feature
+currency:
+  # accepts a spigot material or a placeholder - ex: '%vault_eco_balance%'
+  unit: 'DIAMOND'
+  # if using a placeholder, add the remove command here - ex: 'eco take {player} {amount}'
+  remove-currency-commands:
+    - 'msg {player} {amount} diamonds have been taken'
+  # what you want before/after the currency ex: $ or €
+  prefix: ''
+  suffix: '&b♦'
+  # how many decimals will be shown
+  decimals: 0
+# What head will the ranks change to when they are completed
+completed-hdb: 6269
+1:
+  name: '&9&lStarter'
+  # only will work if HeadDataBase installed, otherwise use the item feature
+  hdb: 193
+  # this item will be used if HDB isnt installed or is set to -1
+  item: EMERALD_BLOCK
+  # {cost} to get x/total - with prefix & suffix around each number
+  # {req1} to get the first requirement x/total ({req2} {req3} etc)
+  # lore will change from red to green after completion if there is ^^ included
+  lore:
+    - '&e<△> &c&lREQUIREMENTS &e<△>'
+    - '&7￫ &fPrice: {cost}'
+    - '&7￫ &fHours Played: {req3}'
+    - '&7￫ &fMob Kills: {req1}'
+    - '&7￫ &fStone Broken: {req2}'
+    - '&e<△> &c&lREWARDS &e<△>'
+    - '&7￫ &fabsolutely nothing'
+  requirements:
+    #                        vv operator - can be "<=" ">=" "!=" "=" ">" "<" ||| true/false & text can only use "!=" & "="
+    # papi placeholder vv    vv  vv required amount - Make sure you download the placeholder before you use it
+    - '%statistic_mob_kills% >= 100'
+    #- '%mcmmo_power_level% >= 5'
+    - '%statistic_mine_block:STONE% >= 500'
+    # playtime
+    - '%statistic_hours_played% >= 1'
+  # auto checks and takes away with options defined in currency
+  cost: 3
+  commands:
+    # use {player} to replace it with the players name
+    # does not need a '/' in front of the command
+    - 'broadcast &e&lCongrats to &a{player} &e&lfor ranking up to &9&lStarter'
+    #- 'lp user {player} promote playerranks'
+
+

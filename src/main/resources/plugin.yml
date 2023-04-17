@@ -1,0 +1,28 @@
+name: NotRanks
+version: ${project.version}
+main: me.jadenp.notranks.NotRanks
+softdepend: [HeadDatabase]
+api-version: 1.13
+depend:
+  - PlaceholderAPI
+authors: [ Not_Jaden ]
+description: Simpler way to organize ranks
+commands:
+  ranks:
+    usage: /ranks
+    aliases:
+      - rank
+    description: opens up the rank gui
+  rankup:
+    usage: /rankup
+    description: ranks you up to the next level
+  rankinfo:
+    usage: /rankinfo
+    description: shows a chat message on your current rank
+permissions:
+  notranks.default:
+    default: true
+    description: default
+  notranks.admin:
+    default: op
+    description: admin commands
