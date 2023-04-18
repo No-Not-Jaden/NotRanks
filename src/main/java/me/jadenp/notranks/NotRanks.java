@@ -1,6 +1,7 @@
 package me.jadenp.notranks;
 
 
+import me.clip.placeholderapi.PlaceholderAPI;
 import org.bukkit.Bukkit;
 import net.md_5.bungee.api.ChatColor;
 
@@ -13,8 +14,10 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -34,6 +37,8 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.List;
 
+import static me.jadenp.notranks.ConfigOptions.*;
+
 import static org.bukkit.util.NumberConversions.ceil;
 /**
  * Auto tab complete the rank names -
@@ -51,22 +56,20 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
     File today = new File(logsFolder + File.separator + format.format(now) + ".txt");
     public ArrayList<String> logs = new ArrayList<>();
     public HashMap<String, Integer> playerRank = new HashMap<>();
-    public ArrayList<Rank> ranks = new ArrayList<>();
-    public ArrayList<String> speakings = new ArrayList<>();
-    public boolean HDBEnabled;
 
-    public String currency;
-    public boolean usingPlaceholderCurrency;
-    public List<String> removeCommands;
-    public String currencyPrefix;
-    public String currencySuffix;
-    public int decimals;
+    public ArrayList<String> speakings = new ArrayList<>();
+
+    public static NotRanks instance;
+
+    public static NotRanks getInstance() {
+        return instance;
+    }
 
     @Override
     public void onEnable() {
         // Plugin startup logic
-        Plugin plugin = this;
-        Bukkit.getLogger().info(ChatColor.BLUE + "Running NotRanks version " + plugin.getDescription().getVersion() + ".");
+        instance = this;
+        Bukkit.getLogger().info(ChatColor.BLUE + "Running NotRanks version " + getDescription().getVersion() + ".");
         Objects.requireNonNull(getCommand("ranks")).setExecutor(this);
         Objects.requireNonNull(getCommand("rankup")).setExecutor(this);
         Bukkit.getServer().getPluginManager().registerEvents(this, this);
@@ -101,7 +104,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                 e.printStackTrace();
             }
         }
-        HDBEnabled = plugin.getServer().getPluginManager().getPlugin("HeadDatabase") != null;
+
 
         if (!language.exists()){
             saveResource("language.yml", false);
@@ -116,7 +119,6 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
         }
         loadConfig();
 
-
         // auto save every 5 minutes
         new BukkitRunnable() {
             @Override
@@ -127,7 +129,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                     e.printStackTrace();
                 }
             }
-        }.runTaskTimer(plugin, 6000L, 6000L);
+        }.runTaskTimer(this, 6000L, 6000L);
 
         // check if they completed a rank requirement
         new BukkitRunnable(){
@@ -215,7 +217,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
     public void loadConfig() {
         // filling the hashmap with the playerdata info
         log();
-        this.reloadConfig();
+        ConfigOptions.loadConfig();
 
         speakings.clear();
         YamlConfiguration langConf = YamlConfiguration.loadConfiguration(language);
@@ -247,28 +249,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
         prefix = decodeHex(speakings.get(9));
 
 
-        // loading rank info from the config
-        ranks.clear();
-        for (int i = 1; this.getConfig().getString(i + ".name") != null; i++) {
-            //Bukkit.getLogger().info(i + "");
-            ranks.add(new Rank(this.getConfig().getString(i + ".name"), this.getConfig().getStringList(i + ".lore"),  this.getConfig().getStringList(i + ".requirements"), this.getConfig().getInt(i + ".cost"), (List<String>) this.getConfig().getList(i + ".commands"), this.getConfig().getInt(i + ".hdb"),  this.getConfig().getInt("completed-hdb"), this.getConfig().getString(i +".item"), this));
-        }
 
-        currency = this.getConfig().getString("currency.unit");
-        usingPlaceholderCurrency = Objects.requireNonNull(this.getConfig().getString("currency.unit")).contains("%");
-        removeCommands = this.getConfig().getStringList("currency.remove-currency-commands");
-        currencyPrefix = this.getConfig().getString("currency.prefix");
-        currencySuffix = this.getConfig().getString("currency.suffix");
-        decimals = this.getConfig().getInt("currency.decimals");
-
-        if (!usingPlaceholderCurrency){
-            try {
-                Material.valueOf(currency);
-            } catch (IllegalArgumentException ignored){
-                Bukkit.getLogger().warning("[NotRanks] Material for currency is not valid! defaulting to DIAMOND.");
-                currency = "DIAMOND";
-            }
-        }
     }
 
     public void openGUI(Player p, int page) {
@@ -347,6 +328,8 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
             }
         }
     }
+
+
 
 
     @Override
@@ -566,6 +549,26 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                 ((Player) event.getWhoClicked()).updateInventory();
 
             }
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onPlayerChat(AsyncPlayerChatEvent event){
+        if (!addPrefix)
+            return;
+        String parsedPrefix = prefixFormat;
+        int rank = getRank(event.getPlayer()) - 1;
+        String rankName = rank != -1 ? ranks.get(rank).getName() : noRank;
+        parsedPrefix = parsedPrefix.replaceAll("\\{prefix}", rankName);
+        parsedPrefix = parsedPrefix.replaceAll("\\{name}", "%s");
+        if (overwritePrefix)
+            parsedPrefix+= "%s";
+        parsedPrefix = PlaceholderAPI.setPlaceholders(event.getPlayer(), parsedPrefix);
+        parsedPrefix = decodeHex(parsedPrefix);
+        if (overwritePrefix){
+            event.setFormat(parsedPrefix);
+        } else {
+            event.setFormat(parsedPrefix + event.getFormat());
         }
     }
 

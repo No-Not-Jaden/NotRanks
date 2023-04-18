@@ -14,6 +14,7 @@ import org.bukkit.plugin.Plugin;
 import java.awt.*;
 import java.util.*;
 import java.util.List;
+import static me.jadenp.notranks.ConfigOptions.*;
 
 
 
@@ -27,11 +28,9 @@ public class Rank {
     private final Map<String,List<Boolean>> completed = new HashMap<>();
     private final Map<String,List<Boolean>> firstTimeCompletion = new HashMap<>();
     private final int finishedHead;
-    private final boolean hdbEnabled;
-    private final NotRanks notRanks;
     private Material material;
 
-    public Rank(String name, List<String> lore, List<String> requirements, double cost, List<String> commands, int hdbNum, int finishedHead, String item, NotRanks notRanks){
+    public Rank(String name, List<String> lore, List<String> requirements, double cost, List<String> commands, int hdbNum, int finishedHead, String item){
         this.name = decodeHex(name);
         this.lore = lore;
         this.requirements = requirements;
@@ -39,9 +38,7 @@ public class Rank {
         this.commands = commands;
         this.hdbNum = hdbNum;
         this.finishedHead = finishedHead;
-        hdbEnabled = notRanks.HDBEnabled;
         material = Material.getMaterial(item);
-        this.notRanks = notRanks;
         /*Bukkit.getLogger().warning(name);
         if (requirements == null){
             Bukkit.getLogger().warning("mt");
@@ -136,13 +133,13 @@ public class Rank {
     }
 
     public void doRemoveCommands(Player player, double amount){
-        String strAmount = ((double) Math.round(amount * Math.pow(10, notRanks.decimals)) / Math.pow(10, notRanks.decimals)) + "";
-        if (notRanks.decimals == 0){
+        String strAmount = ((double) Math.round(amount * Math.pow(10, decimals)) / Math.pow(10, decimals)) + "";
+        if (decimals == 0){
             if (strAmount.contains("."))
                 strAmount = strAmount.substring(0, strAmount.indexOf("."));
         }
-        if (notRanks.removeCommands != null)
-        for (String str : notRanks.removeCommands){
+        if (removeCommands != null)
+        for (String str : removeCommands){
             while (str.contains("{player}")){
                 str = str.replace("{player}", player.getName());
             }
@@ -244,14 +241,14 @@ public class Rank {
         }
 
         // checking cost
-        String requirement = notRanks.currency + " >= " + cost;
+        String requirement = currency + " >= " + cost;
         progress.add(isRequirementCompleted(requirement, p));
 
-        /*if (notRanks.usingPlaceholderCurrency){
-            String requirement = notRanks.currency + " >= " + cost;
+        /*if (usingPlaceholderCurrency){
+            String requirement = currency + " >= " + cost;
             progress.add(isRequirementCompleted(requirement, p));
         } else {
-            if (checkItemAmount(p, Material.valueOf(notRanks.currency)) >= cost){
+            if (checkItemAmount(p, Material.valueOf(currency)) >= cost){
                 progress.add(true);
             } else {
                 progress.add(false);
@@ -267,7 +264,7 @@ public class Rank {
                     completedYet.set(i, true);
                     // completed requirement
                     if (!sentMessage) {
-                        p.sendMessage(decodeHex(notRanks.speakings.get(7)));
+                        p.sendMessage(decodeHex(NotRanks.getInstance().speakings.get(7)));
                         sentMessage = true;
                     }
                 }
@@ -295,34 +292,34 @@ public class Rank {
                 if (str.contains("{cost}")){
                     double amount = 0;
                     boolean error = false;
-                    if (notRanks.usingPlaceholderCurrency) {
+                    if (usingPlaceholderCurrency) {
                         try {
-                            amount = Double.parseDouble(PlaceholderAPI.setPlaceholders(p, notRanks.currency));
+                            amount = Double.parseDouble(PlaceholderAPI.setPlaceholders(p, currency));
                         } catch (NumberFormatException ignored) {
                             error = true;
                         }
                     } else {
-                        amount = checkItemAmount(p, Material.valueOf(notRanks.currency));
+                        amount = checkItemAmount(p, Material.valueOf(currency));
                     }
-                    String strCost = ((double) Math.round(cost * Math.pow(10, notRanks.decimals)) / Math.pow(10, notRanks.decimals)) + "";
-                    if (notRanks.decimals == 0){
+                    String strCost = ((double) Math.round(cost * Math.pow(10, decimals)) / Math.pow(10, decimals)) + "";
+                    if (decimals == 0){
                         if (strCost.contains("."))
                             strCost = strCost.substring(0, strCost.indexOf("."));
                     }
-                    String strAmount = ((double) Math.round(amount * Math.pow(10, notRanks.decimals)) / Math.pow(10, notRanks.decimals)) + "";
-                    if (notRanks.decimals == 0){
+                    String strAmount = ((double) Math.round(amount * Math.pow(10, decimals)) / Math.pow(10, decimals)) + "";
+                    if (decimals == 0){
                         if (strAmount.contains("."))
                             strAmount = strAmount.substring(0, strAmount.indexOf("."));
                     }
                     if (error){
                         // use smthn else to replace amount
-                        str = ChatColor.RED + ChatColor.translateAlternateColorCodes('&', substringBefore(str, "{cost}") + notRanks.currencyPrefix) + ChatColor.YELLOW + notRanks.currency + ChatColor.translateAlternateColorCodes('&', notRanks.currencySuffix) + ChatColor.DARK_GRAY + " / " + ChatColor.translateAlternateColorCodes('&', notRanks.currencyPrefix) + ChatColor.RED  + cost + ChatColor.translateAlternateColorCodes('&',notRanks.currencySuffix + substringAfter(str,"{cost}"));
+                        str = ChatColor.RED + ChatColor.translateAlternateColorCodes('&', substringBefore(str, "{cost}") + currencyPrefix) + ChatColor.YELLOW + currency + ChatColor.translateAlternateColorCodes('&', currencySuffix) + ChatColor.DARK_GRAY + " / " + ChatColor.translateAlternateColorCodes('&', currencyPrefix) + ChatColor.RED  + cost + ChatColor.translateAlternateColorCodes('&',currencySuffix + substringAfter(str,"{cost}"));
                     } else {
                         if (amount < cost && !completed){
-                            str = ChatColor.RED + ChatColor.translateAlternateColorCodes('&', substringBefore(str, "{cost}") + notRanks.currencyPrefix) + ChatColor.YELLOW + strAmount + ChatColor.translateAlternateColorCodes('&', notRanks.currencySuffix) + ChatColor.DARK_GRAY + " / " + ChatColor.translateAlternateColorCodes('&', notRanks.currencyPrefix) + ChatColor.RED  + strCost + ChatColor.translateAlternateColorCodes('&',notRanks.currencySuffix + substringAfter(str,"{cost}"));
+                            str = ChatColor.RED + ChatColor.translateAlternateColorCodes('&', substringBefore(str, "{cost}") + currencyPrefix) + ChatColor.YELLOW + strAmount + ChatColor.translateAlternateColorCodes('&', currencySuffix) + ChatColor.DARK_GRAY + " / " + ChatColor.translateAlternateColorCodes('&', currencyPrefix) + ChatColor.RED  + strCost + ChatColor.translateAlternateColorCodes('&',currencySuffix + substringAfter(str,"{cost}"));
                         } else {
                             // STILL GOTTA DO THIS
-                            str = ChatColor.GREEN + "" + ChatColor.STRIKETHROUGH + ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&',substringBefore(str, "{cost}") + notRanks.currencyPrefix)) + strCost + ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&', notRanks.currencySuffix)) + ChatColor.DARK_GRAY + "" + ChatColor.STRIKETHROUGH + " / " + ChatColor.GREEN + ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&', notRanks.currencyPrefix)) + "" + ChatColor.STRIKETHROUGH + "" + strCost + ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&',notRanks.currencySuffix + substringAfter(str, "{cost}")));
+                            str = ChatColor.GREEN + "" + ChatColor.STRIKETHROUGH + ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&',substringBefore(str, "{cost}") + currencyPrefix)) + strCost + ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&', currencySuffix)) + ChatColor.DARK_GRAY + "" + ChatColor.STRIKETHROUGH + " / " + ChatColor.GREEN + ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&', currencyPrefix)) + "" + ChatColor.STRIKETHROUGH + "" + strCost + ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&',currencySuffix + substringAfter(str, "{cost}")));
                         }
                     }
                 } else if (str.contains("{req") && str.contains("}")) {
@@ -355,7 +352,7 @@ public class Rank {
 
     public ItemStack getItem(Player p, boolean enchanted){
         ItemStack item;
-        if (hdbEnabled && hdbNum != -1) {
+        if (HDBEnabled && hdbNum != -1) {
             HeadDatabaseAPI hdb = new HeadDatabaseAPI();
             if (enchanted) {
                 try {
@@ -412,8 +409,8 @@ public class Rank {
     }
 
     public void rankup(Player p){
-        if (!notRanks.usingPlaceholderCurrency){
-            removeItem(p, Material.valueOf(notRanks.currency), (int) cost);
+        if (!usingPlaceholderCurrency){
+            removeItem(p, Material.valueOf(currency), (int) cost);
         }
             doRemoveCommands(p, cost);
             if (commands != null)

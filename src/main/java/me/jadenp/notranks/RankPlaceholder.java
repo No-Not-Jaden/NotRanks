@@ -57,7 +57,7 @@ public class RankPlaceholder extends PlaceholderExpansion {
         if (identifier.equalsIgnoreCase("rank_number")) {
             return plugin.getRank(player) + "";
         } else if (identifier.equalsIgnoreCase("rank")){
-            return ChatColor.translateAlternateColorCodes('&', plugin.ranks.get(plugin.getRank(player)).getName());
+            return ChatColor.translateAlternateColorCodes('&', ConfigOptions.ranks.get(plugin.getRank(player)).getName());
         } else {
             int req1 = Integer.parseInt(identifier.substring(identifier.lastIndexOf("_") + 1));
             if (identifier.substring(0, identifier.lastIndexOf("_")).equalsIgnoreCase("requirement_progress")){
@@ -67,7 +67,7 @@ public class RankPlaceholder extends PlaceholderExpansion {
                 } catch (NumberFormatException | IndexOutOfBoundsException ignored){
                     return "";
                 }
-                String requirement = plugin.ranks.get(plugin.getRank(player)).getRequirements().get(req);
+                String requirement = ConfigOptions.ranks.get(plugin.getRank(player)).getRequirements().get(req);
                 return PlaceholderAPI.setPlaceholders(player, requirement.substring(0, requirement.indexOf(" ")));
             } else if (identifier.substring(0, identifier.lastIndexOf("_")).equalsIgnoreCase("requirement")){
                 int req;
@@ -76,11 +76,11 @@ public class RankPlaceholder extends PlaceholderExpansion {
                 } catch (NumberFormatException | IndexOutOfBoundsException ignored){
                     return "";
                 }
-                String requirement = plugin.ranks.get(plugin.getRank(player)).getRequirements().get(req);
+                String requirement = ConfigOptions.ranks.get(plugin.getRank(player)).getRequirements().get(req);
                 String placeholder = requirement.substring(0, requirement.indexOf(" "));
                 String value = requirement.substring(requirement.indexOf(" ") + 1);
                 String parsed = PlaceholderAPI.setPlaceholders(player, placeholder);
-                if (plugin.ranks.get(plugin.getRank(player)).isRequirementCompleted(requirement, player)){
+                if (ConfigOptions.ranks.get(plugin.getRank(player)).isRequirementCompleted(requirement, player)){
                     return net.md_5.bungee.api.ChatColor.YELLOW + parsed + net.md_5.bungee.api.ChatColor.DARK_GRAY + " / " + net.md_5.bungee.api.ChatColor.RED + value;
                 } else {
                     return net.md_5.bungee.api.ChatColor.GREEN + value + net.md_5.bungee.api.ChatColor.DARK_GRAY + "" + net.md_5.bungee.api.ChatColor.STRIKETHROUGH + " / " + net.md_5.bungee.api.ChatColor.GREEN + value;
