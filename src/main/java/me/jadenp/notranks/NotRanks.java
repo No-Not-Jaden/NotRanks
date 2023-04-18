@@ -1,7 +1,6 @@
 package me.jadenp.notranks;
 
 
-import me.clip.placeholderapi.PlaceholderAPI;
 import org.bukkit.Bukkit;
 import net.md_5.bungee.api.ChatColor;
 
@@ -22,13 +21,11 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.awt.*;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -38,17 +35,18 @@ import java.util.*;
 import java.util.List;
 
 import static me.jadenp.notranks.ConfigOptions.*;
+import static me.jadenp.notranks.LanguageOptions.*;
 
 import static org.bukkit.util.NumberConversions.ceil;
+
 /**
- * Auto tab complete the rank names -
- * go through help command -
+ * check to see if rankup msg works
  */
 public final class NotRanks extends JavaPlugin implements CommandExecutor, Listener {
 
     private String prefix;
     public File playerdata = new File(this.getDataFolder() + File.separator + "playerdata.yml");
-    public File language = new File(this.getDataFolder() + File.separator + "language.yml");
+
     public File logsFolder = new File(this.getDataFolder() + File.separator + "logs");
     Date now = new Date();
     SimpleDateFormat format = new SimpleDateFormat("dd-MM-yyyy");
@@ -56,8 +54,6 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
     File today = new File(logsFolder + File.separator + format.format(now) + ".txt");
     public ArrayList<String> logs = new ArrayList<>();
     public HashMap<String, Integer> playerRank = new HashMap<>();
-
-    public ArrayList<String> speakings = new ArrayList<>();
 
     public static NotRanks instance;
 
@@ -106,9 +102,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
         }
 
 
-        if (!language.exists()){
-            saveResource("language.yml", false);
-        }
+
         YamlConfiguration configuration = YamlConfiguration.loadConfiguration(playerdata);
         for (int i = 1; configuration.getString(i + ".uuid") != null; i++) {
             if (playerRank.containsKey(configuration.getString(i + ".uuid"))) {
@@ -183,8 +177,8 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
         if (event.isCancelled()){
             // log here
         } else {
-            if (speakings.get(1).length() > 0) {
-                String text = decodeHex(speakings.get(1));
+            if (rankUp.length() > 0) {
+                String text = color(rankUp, p);
                 if (text.contains("{player}"))
                     text = text.replace("{player}", p.getName());
                 if (text.contains("{rank}"))
@@ -215,41 +209,9 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
     }
 
     public void loadConfig() {
-        // filling the hashmap with the playerdata info
         log();
         ConfigOptions.loadConfig();
-
-        speakings.clear();
-        YamlConfiguration langConf = YamlConfiguration.loadConfiguration(language);
-        // 0
-        speakings.add(langConf.getString("gui-name"));
-        // 1
-        speakings.add(langConf.getString("rankup"));
-        // 2
-        speakings.add(langConf.getString("rankup-deny"));
-        // 3
-        speakings.add(langConf.getString("unknown-command"));
-        // 4
-        speakings.add(langConf.getString("no-access"));
-        // 5
-        speakings.add(langConf.getString("open-gui"));
-        // 6
-        speakings.add(langConf.getString("not-on-rank"));
-        // 7
-        speakings.add(langConf.getString("complete-requirement"));
-        // 8
-        speakings.add(langConf.getString("complete-rank"));
-        // 9
-        speakings.add(langConf.getString("prefix"));
-        //10
-        speakings.add(langConf.getString("max-rank"));
-
-
-        // prefix from the config xxx
-        prefix = decodeHex(speakings.get(9));
-
-
-
+        LanguageOptions.loadConfig();
     }
 
     public void openGUI(Player p, int page) {
@@ -275,7 +237,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
         back.setItemMeta(meta);
         int size = (ceil((double) ranks.size() / 7) * 9);
         if (size <= 36) {
-            Inventory inv = Bukkit.createInventory(p, size + 18, decodeHex(speakings.get(0)));
+            Inventory inv = Bukkit.createInventory(p, size + 18, color(guiName, p));
             ItemStack[] contents = inv.getContents();
             for (int i = 0; i < 10; i++) {
                 contents[i] = fill;
@@ -299,7 +261,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
             inv.setContents(contents);
             p.openInventory(inv);
         } else {
-            Inventory inv = Bukkit.createInventory(p, 54, decodeHex(speakings.get(0)));
+            Inventory inv = Bukkit.createInventory(p, 54, color(guiName, p));
             ItemStack[] contents = inv.getContents();
             for (int i = 0; i < 10; i++) {
                 contents[i] = fill;
@@ -341,33 +303,33 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                         if (ranks.get(playerRank.get(((Player) sender).getUniqueId().toString())).checkRequirements(((Player) sender))) {
                             rankup(((Player) sender), ranks.get(playerRank.get(((Player) sender).getUniqueId().toString())));
                         } else {
-                            sender.sendMessage(prefix + decodeHex(speakings.get(2)));
+                            sender.sendMessage(prefix + color(rankUpDeny, (Player) sender));
                             ((Player) sender).playSound(((Player) sender).getLocation(), Sound.ENTITY_VILLAGER_NO, 1, 1);
                         }
                     } else {
-                        sender.sendMessage(prefix + decodeHex(speakings.get(10)));
+                        sender.sendMessage(prefix + color(maxRank, (Player) sender));
                     }
 
                 } else {
-                    sender.sendMessage(prefix + decodeHex(speakings.get(3)));
+                    sender.sendMessage(prefix + color(unknownCommand, (Player) sender));
                 }
             } else {
-                sender.sendMessage(prefix + decodeHex(speakings.get(4)));
+                sender.sendMessage(prefix + color(noAccess, (Player) sender));
             }
         } else if (command.getName().equalsIgnoreCase("ranks")) {
             if (args.length == 0) {
                 if (sender.hasPermission("notranks.default")) {
-                    sender.sendMessage(prefix + decodeHex(speakings.get(5)));
+                    sender.sendMessage(prefix + color(guiOpen, (Player) sender));
                     openGUI((Player) sender, 1);
                 } else {
-                    sender.sendMessage(prefix + decodeHex(speakings.get(4)));
+                    sender.sendMessage(prefix + color(noAccess, (Player) sender));
                 }
             } else if (args[0].equalsIgnoreCase("reload")) {
                 if (sender.hasPermission("notranks.admin")) {
                     loadConfig();
                     sender.sendMessage(prefix + ChatColor.GREEN + "Reloaded NotRanks version " + this.getDescription().getVersion() + ".");
                 } else {
-                    sender.sendMessage(prefix + decodeHex(speakings.get(4)));
+                    sender.sendMessage(prefix + color(noAccess, (Player) sender));
                 }
             } else if (args[0].equalsIgnoreCase("set")) {
                 if (sender.hasPermission("notranks.admin")) {
@@ -409,7 +371,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                         sender.sendMessage(prefix + ChatColor.GOLD + "" + ChatColor.BOLD + "Usage: " + ChatColor.YELLOW + "/ranks set (player) (#/rank)");
                     }
                 } else {
-                    sender.sendMessage(prefix + decodeHex(speakings.get(4)));
+                    sender.sendMessage(prefix + color(noAccess, (Player) sender));
                 }
             } else if (args[0].equalsIgnoreCase("help")) {
                 sender.sendMessage(prefix + ChatColor.YELLOW + "/ranks" + ChatColor.GOLD + "  Opens the rank gui");
@@ -421,7 +383,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                 }
                 sender.sendMessage(prefix + ChatColor.RED + "/ranks help" + ChatColor.DARK_RED + "  What you just typed in");
             } else {
-                sender.sendMessage(prefix + decodeHex(speakings.get(3)));
+                sender.sendMessage(prefix + color(unknownCommand, (Player) sender));
             }
         } else if (command.getName().equalsIgnoreCase("rankinfo")) {
             if (!(playerRank.get(((Player) sender).getUniqueId().toString()) > ranks.size() - 1)) {
@@ -441,10 +403,10 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                     }
                     sender.sendMessage(ChatColor.GRAY + "" + ChatColor.STRIKETHROUGH + str);
                 } else {
-                    sender.sendMessage(prefix + decodeHex(speakings.get(4)));
+                    sender.sendMessage(prefix + color(noAccess, (Player) sender));
                 }
             } else {
-                sender.sendMessage(prefix + decodeHex(speakings.get(10)));
+                sender.sendMessage(prefix + color(maxRank, (Player) sender));
             }
         }
         return true;
@@ -508,7 +470,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
             assert meta != null;
             meta.setDisplayName(ChatColor.DARK_GRAY + "Last Page");
             back.setItemMeta(meta);
-            if (event.getView().getTitle().equals(decodeHex(speakings.get(0)))) {
+            if (event.getView().getTitle().equals(color(guiName, (Player) event.getWhoClicked()))) {
                 event.setCancelled(true);
                 if (event.getCurrentItem() != null)
                     if (Objects.equals(event.getCurrentItem(), exit)) {
@@ -523,11 +485,11 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                                         rankup((Player) event.getWhoClicked(), ranks.get(i));
                                     } else {
                                         event.getWhoClicked().closeInventory();
-                                        event.getWhoClicked().sendMessage(prefix + decodeHex(speakings.get(2)));
+                                        event.getWhoClicked().sendMessage(prefix + color(rankUpDeny, (Player) event.getWhoClicked()));
                                         ((Player) event.getWhoClicked()).playSound(event.getWhoClicked().getLocation(), Sound.ENTITY_VILLAGER_NO, 1, 1);
                                     }
                                 } else {
-                                    event.getWhoClicked().sendMessage(prefix + decodeHex(speakings.get(6)));
+                                    event.getWhoClicked().sendMessage(prefix + color(notOnRank, (Player) event.getWhoClicked()));
                                     ((Player) event.getWhoClicked()).playSound(event.getWhoClicked().getLocation(), Sound.ENTITY_VILLAGER_NO, 1, 1);
                                 }
                             }
@@ -563,8 +525,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
         parsedPrefix = parsedPrefix.replaceAll("\\{name}", "%s");
         if (overwritePrefix)
             parsedPrefix+= "%s";
-        parsedPrefix = PlaceholderAPI.setPlaceholders(event.getPlayer(), parsedPrefix);
-        parsedPrefix = decodeHex(parsedPrefix);
+        parsedPrefix = color(parsedPrefix, event.getPlayer());
         if (overwritePrefix){
             event.setFormat(parsedPrefix);
         } else {
@@ -572,20 +533,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
         }
     }
 
-    public static String decodeHex(String text){
-        while (text.contains("[#")){
-            String hex = text.substring(text.indexOf('#'), text.indexOf(']'));
-            text = text.substring(0,text.indexOf('[')) + ChatColor.of(hex2Rgb(hex)) + text.substring(text.indexOf(']') + 1);
-        }
-        return ChatColor.translateAlternateColorCodes('&', text);
-    }
 
-    public static Color hex2Rgb(String colorStr) {
-        return new Color(
-                Integer.valueOf( colorStr.substring( 1, 3 ), 16 ),
-                Integer.valueOf( colorStr.substring( 3, 5 ), 16 ),
-                Integer.valueOf( colorStr.substring( 5, 7 ), 16 ) );
-    }
 
     public void log(){
         try{

@@ -15,6 +15,7 @@ import java.awt.*;
 import java.util.*;
 import java.util.List;
 import static me.jadenp.notranks.ConfigOptions.*;
+import static me.jadenp.notranks.LanguageOptions.*;
 
 
 
@@ -264,8 +265,12 @@ public class Rank {
                     completedYet.set(i, true);
                     // completed requirement
                     if (!sentMessage) {
-                        p.sendMessage(decodeHex(NotRanks.getInstance().speakings.get(7)));
+                        p.sendMessage(prefix + color(completeRequirement, p));
                         sentMessage = true;
+                    }
+                    // check if all other requirements have been completed
+                    if (!completedYet.contains(false)){
+                        p.sendMessage(prefix + color(completeRank, p));
                     }
                 }
             }
