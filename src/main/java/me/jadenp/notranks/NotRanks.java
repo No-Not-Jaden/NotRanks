@@ -1,6 +1,7 @@
 package me.jadenp.notranks;
 
 
+import me.clip.placeholderapi.PlaceholderAPI;
 import org.bukkit.Bukkit;
 import net.md_5.bungee.api.ChatColor;
 
@@ -44,7 +45,6 @@ import static org.bukkit.util.NumberConversions.ceil;
  */
 public final class NotRanks extends JavaPlugin implements CommandExecutor, Listener {
 
-    private String prefix;
     public File playerdata = new File(this.getDataFolder() + File.separator + "playerdata.yml");
 
     public File logsFolder = new File(this.getDataFolder() + File.separator + "logs");
@@ -111,7 +111,11 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                 playerRank.put(configuration.getString(i + ".uuid"), configuration.getInt(i + ".rank"));
             }
         }
-        loadConfig();
+        try {
+            loadConfig();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         // auto save every 5 minutes
         new BukkitRunnable() {
@@ -178,7 +182,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
             // log here
         } else {
             if (rankUp.length() > 0) {
-                String text = color(rankUp, p);
+                String text = parse(rankUp, p);
                 if (text.contains("{player}"))
                     text = text.replace("{player}", p.getName());
                 if (text.contains("{rank}"))
@@ -208,7 +212,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
         configuration.save(playerdata);
     }
 
-    public void loadConfig() {
+    public void loadConfig() throws IOException {
         log();
         ConfigOptions.loadConfig();
         LanguageOptions.loadConfig();
@@ -237,7 +241,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
         back.setItemMeta(meta);
         int size = (ceil((double) ranks.size() / 7) * 9);
         if (size <= 36) {
-            Inventory inv = Bukkit.createInventory(p, size + 18, color(guiName, p));
+            Inventory inv = Bukkit.createInventory(p, size + 18, parse(guiName, p));
             ItemStack[] contents = inv.getContents();
             for (int i = 0; i < 10; i++) {
                 contents[i] = fill;
@@ -261,7 +265,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
             inv.setContents(contents);
             p.openInventory(inv);
         } else {
-            Inventory inv = Bukkit.createInventory(p, 54, color(guiName, p));
+            Inventory inv = Bukkit.createInventory(p, 54, parse(guiName, p));
             ItemStack[] contents = inv.getContents();
             for (int i = 0; i < 10; i++) {
                 contents[i] = fill;
@@ -303,33 +307,37 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                         if (ranks.get(playerRank.get(((Player) sender).getUniqueId().toString())).checkRequirements(((Player) sender))) {
                             rankup(((Player) sender), ranks.get(playerRank.get(((Player) sender).getUniqueId().toString())));
                         } else {
-                            sender.sendMessage(prefix + color(rankUpDeny, (Player) sender));
+                            sender.sendMessage(prefix + parse(rankUpDeny, (Player) sender));
                             ((Player) sender).playSound(((Player) sender).getLocation(), Sound.ENTITY_VILLAGER_NO, 1, 1);
                         }
                     } else {
-                        sender.sendMessage(prefix + color(maxRank, (Player) sender));
+                        sender.sendMessage(prefix + parse(maxRank, (Player) sender));
                     }
 
                 } else {
-                    sender.sendMessage(prefix + color(unknownCommand, (Player) sender));
+                    sender.sendMessage(prefix + parse(unknownCommand, (Player) sender));
                 }
             } else {
-                sender.sendMessage(prefix + color(noAccess, (Player) sender));
+                sender.sendMessage(prefix + parse(noAccess, (Player) sender));
             }
         } else if (command.getName().equalsIgnoreCase("ranks")) {
             if (args.length == 0) {
                 if (sender.hasPermission("notranks.default")) {
-                    sender.sendMessage(prefix + color(guiOpen, (Player) sender));
+                    sender.sendMessage(prefix + parse(guiOpen, (Player) sender));
                     openGUI((Player) sender, 1);
                 } else {
-                    sender.sendMessage(prefix + color(noAccess, (Player) sender));
+                    sender.sendMessage(prefix + parse(noAccess, (Player) sender));
                 }
             } else if (args[0].equalsIgnoreCase("reload")) {
                 if (sender.hasPermission("notranks.admin")) {
-                    loadConfig();
+                    try {
+                        this.loadConfig();
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
                     sender.sendMessage(prefix + ChatColor.GREEN + "Reloaded NotRanks version " + this.getDescription().getVersion() + ".");
                 } else {
-                    sender.sendMessage(prefix + color(noAccess, (Player) sender));
+                    sender.sendMessage(prefix + parse(noAccess, (Player) sender));
                 }
             } else if (args[0].equalsIgnoreCase("set")) {
                 if (sender.hasPermission("notranks.admin")) {
@@ -371,7 +379,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                         sender.sendMessage(prefix + ChatColor.GOLD + "" + ChatColor.BOLD + "Usage: " + ChatColor.YELLOW + "/ranks set (player) (#/rank)");
                     }
                 } else {
-                    sender.sendMessage(prefix + color(noAccess, (Player) sender));
+                    sender.sendMessage(prefix + parse(noAccess, (Player) sender));
                 }
             } else if (args[0].equalsIgnoreCase("help")) {
                 sender.sendMessage(prefix + ChatColor.YELLOW + "/ranks" + ChatColor.GOLD + "  Opens the rank gui");
@@ -383,7 +391,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                 }
                 sender.sendMessage(prefix + ChatColor.RED + "/ranks help" + ChatColor.DARK_RED + "  What you just typed in");
             } else {
-                sender.sendMessage(prefix + color(unknownCommand, (Player) sender));
+                sender.sendMessage(prefix + parse(unknownCommand, (Player) sender));
             }
         } else if (command.getName().equalsIgnoreCase("rankinfo")) {
             if (!(playerRank.get(((Player) sender).getUniqueId().toString()) > ranks.size() - 1)) {
@@ -403,10 +411,10 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                     }
                     sender.sendMessage(ChatColor.GRAY + "" + ChatColor.STRIKETHROUGH + str);
                 } else {
-                    sender.sendMessage(prefix + color(noAccess, (Player) sender));
+                    sender.sendMessage(prefix + parse(noAccess, (Player) sender));
                 }
             } else {
-                sender.sendMessage(prefix + color(maxRank, (Player) sender));
+                sender.sendMessage(prefix + parse(maxRank, (Player) sender));
             }
         }
         return true;
@@ -470,7 +478,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
             assert meta != null;
             meta.setDisplayName(ChatColor.DARK_GRAY + "Last Page");
             back.setItemMeta(meta);
-            if (event.getView().getTitle().equals(color(guiName, (Player) event.getWhoClicked()))) {
+            if (event.getView().getTitle().equals(parse(guiName, (Player) event.getWhoClicked()))) {
                 event.setCancelled(true);
                 if (event.getCurrentItem() != null)
                     if (Objects.equals(event.getCurrentItem(), exit)) {
@@ -485,11 +493,11 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                                         rankup((Player) event.getWhoClicked(), ranks.get(i));
                                     } else {
                                         event.getWhoClicked().closeInventory();
-                                        event.getWhoClicked().sendMessage(prefix + color(rankUpDeny, (Player) event.getWhoClicked()));
+                                        event.getWhoClicked().sendMessage(prefix + parse(rankUpDeny, (Player) event.getWhoClicked()));
                                         ((Player) event.getWhoClicked()).playSound(event.getWhoClicked().getLocation(), Sound.ENTITY_VILLAGER_NO, 1, 1);
                                     }
                                 } else {
-                                    event.getWhoClicked().sendMessage(prefix + color(notOnRank, (Player) event.getWhoClicked()));
+                                    event.getWhoClicked().sendMessage(prefix + parse(notOnRank, (Player) event.getWhoClicked()));
                                     ((Player) event.getWhoClicked()).playSound(event.getWhoClicked().getLocation(), Sound.ENTITY_VILLAGER_NO, 1, 1);
                                 }
                             }
@@ -514,6 +522,10 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
         }
     }
 
+    public String parse (String text, OfflinePlayer player){
+        return PlaceholderAPI.setPlaceholders(player, color(text));
+    }
+
     @EventHandler(priority = EventPriority.HIGH)
     public void onPlayerChat(AsyncPlayerChatEvent event){
         if (!addPrefix)
@@ -525,7 +537,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
         parsedPrefix = parsedPrefix.replaceAll("\\{name}", "%s");
         if (overwritePrefix)
             parsedPrefix+= "%s";
-        parsedPrefix = color(parsedPrefix, event.getPlayer());
+        parsedPrefix = parse(parsedPrefix, event.getPlayer());
         if (overwritePrefix){
             event.setFormat(parsedPrefix);
         } else {

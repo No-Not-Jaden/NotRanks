@@ -265,12 +265,12 @@ public class Rank {
                     completedYet.set(i, true);
                     // completed requirement
                     if (!sentMessage) {
-                        p.sendMessage(prefix + color(completeRequirement, p));
+                        p.sendMessage(prefix + PlaceholderAPI.setPlaceholders(p, color(completeRequirement)));
                         sentMessage = true;
                     }
                     // check if all other requirements have been completed
                     if (!completedYet.contains(false)){
-                        p.sendMessage(prefix + color(completeRank, p));
+                        p.sendMessage(prefix + PlaceholderAPI.setPlaceholders(p, color(completeRank)));
                     }
                 }
             }

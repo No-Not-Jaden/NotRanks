@@ -2,11 +2,17 @@ package me.jadenp.notranks;
 
 import me.clip.placeholderapi.PlaceholderAPI;
 import net.md_5.bungee.api.ChatColor;
+import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.awt.*;
 import java.io.File;
+import java.io.IOException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static net.md_5.bungee.api.ChatColor.COLOR_CHAR;
 
 public class LanguageOptions {
 
@@ -22,7 +28,7 @@ public class LanguageOptions {
     public static String prefix;
     public static String maxRank;
 
-    public static void loadConfig(){
+    public static void loadConfig() throws IOException {
         File language = new File(NotRanks.getInstance().getDataFolder() + File.separator + "language.yml");
 
         if (!language.exists()){
@@ -53,6 +59,8 @@ public class LanguageOptions {
         if (!langConf.isSet("max-rank"))
             langConf.set("max-rank", "&cYou are already at the max rank!");
 
+        langConf.save(language);
+
 
         // 0
         guiName = langConf.getString("gui-name");
@@ -73,25 +81,31 @@ public class LanguageOptions {
         // 8
         completeRank = langConf.getString("complete-rank");
         // 9
-        prefix = color(langConf.getString("prefix"), null);
+        prefix = color(langConf.getString("prefix"));
         //10
         maxRank = langConf.getString("max-rank");
 
+
     }
 
-    public static String color(String text, OfflinePlayer player){
-        text = PlaceholderAPI.setPlaceholders(player, text);
-        while (text.contains("[#")){
-            String hex = text.substring(text.indexOf('#'), text.indexOf(']'));
-            text = text.substring(0,text.indexOf('[')) + ChatColor.of(hex2Rgb(hex)) + text.substring(text.indexOf(']') + 1);
+    public static String color(String str){
+        str = ChatColor.translateAlternateColorCodes('&', str);
+        return translateHexColorCodes("&#","", str);
+    }
+    public static String translateHexColorCodes(String startTag, String endTag, String message)
+    {
+        final Pattern hexPattern = Pattern.compile(startTag + "([A-Fa-f0-9]{6})" + endTag);
+        Matcher matcher = hexPattern.matcher(message);
+        StringBuffer buffer = new StringBuffer(message.length() + 4 * 8);
+        while (matcher.find())
+        {
+            String group = matcher.group(1);
+            matcher.appendReplacement(buffer, COLOR_CHAR + "x"
+                    + COLOR_CHAR + group.charAt(0) + COLOR_CHAR + group.charAt(1)
+                    + COLOR_CHAR + group.charAt(2) + COLOR_CHAR + group.charAt(3)
+                    + COLOR_CHAR + group.charAt(4) + COLOR_CHAR + group.charAt(5)
+            );
         }
-        return ChatColor.translateAlternateColorCodes('&', text);
-    }
-
-    public static Color hex2Rgb(String colorStr) {
-        return new Color(
-                Integer.valueOf( colorStr.substring( 1, 3 ), 16 ),
-                Integer.valueOf( colorStr.substring( 3, 5 ), 16 ),
-                Integer.valueOf( colorStr.substring( 5, 7 ), 16 ) );
+        return matcher.appendTail(buffer).toString();
     }
 }
