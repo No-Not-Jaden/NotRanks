@@ -12,6 +12,8 @@ currency:
   decimals: 0
 # What head will the ranks change to when they are completed
 completed-hdb: 6269
+# if you want a strikethrough over completed requirements
+requirement-strikethrough: true
 # rank name before player name
 prefix:
   enabled: true
@@ -25,6 +27,64 @@ prefix:
   format: '&7[{prefix}&7] &f{name} &*: &r'
   # name of beginning rank
   no-rank: '&fUnranked'
+# gui options - the gui name is in language.yml
+gui:
+  # this will surround the ranks with fill items and expand the inventory size as new ranks are added
+  auto-size: true
+  fill-item: GRAY_STAINED_GLASS_PANE
+  # this will replace the next arrow and pack arrows with the fill item unless more pages are available
+  replace-page-items: true
+  # if auto-size is enabled, then the next gui-options won't do anything
+  # size of gui
+  size: 27
+  1:
+    # which slots will be filled - <x> or <x>-<y> where x < y
+    slot: 0-26
+    # what item
+    # items can either be preset items, or you can create a new item
+    # in this case it is a preset item
+    # preset items you can use include:
+    # * fill - material set above as fill-item with no name
+    # * next - next arrow
+    # * back - back arrow
+    # * exit - barrier named Exit that will close the GUI if clicked
+    # * rank <x> - will fill in the rank number | if no number is specified, it will autofill the next rank
+    item: fill
+  2:
+    slot: 0
+    # actions that can be run when the item is clicked
+    # [gui] <x> - goes to the <x> page of ranks
+    # [exit] - closes the gui
+    # [next] - opens the next page of ranks if available
+    # [back] - opens the previous page of ranks if available
+    # [command] - runs a command, {player} can be used
+    actions:
+      - '[gui] 1'
+    # in this case, a new item is being created
+    item:
+      material: SUNFLOWER
+      amount: 1
+      enchanted: true
+      hide-nbt: true
+      name: '&e&lRank Menu'
+      lore:
+        - ''
+        - '&6Complete requirements to'
+        - '&6unlock special rewards'
+        - ''
+  3:
+    slot: 18
+    item: back
+  4:
+    slot: 26
+    item: next
+  5:
+    slot: 22
+    item: exit
+  6:
+    slot: 10-16
+    item: rank
+
 1:
   name: '&9&lStarter'
   # only will work if HeadDataBase installed, otherwise use the item feature
@@ -42,6 +102,15 @@ prefix:
     - '&7￫ &fStone Broken: {req2}'
     - '&e<△> &c&lREWARDS &e<△>'
     - '&7￫ &fabsolutely nothing'
+  # this will change the lore when the rank is completed
+  # this could be useful if you want to unlock lore or add a secret message
+  completion-lore:
+    enabled: false
+    lore:
+      - '&7*-------------*'
+      - '&a&l&nRank Completed'
+      - '&7*-------------*'
+  hide-nbt: true
   requirements:
     #                        vv operator - can be "<=" ">=" "!=" "=" ">" "<" ||| true/false & text can only use "!=" & "="
     # papi placeholder vv    vv  vv required amount - Make sure you download the placeholder before you use it

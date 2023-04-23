@@ -57,7 +57,7 @@ public class RankPlaceholder extends PlaceholderExpansion {
         if (identifier.equalsIgnoreCase("rank_number")) {
             return plugin.getRank(player) + "";
         } else if (identifier.equalsIgnoreCase("rank")){
-            return ChatColor.translateAlternateColorCodes('&', ConfigOptions.ranks.get(plugin.getRank(player)).getName());
+            return plugin.parse(ConfigOptions.ranks.get(plugin.getRank(player)).getName(), player);
         } else {
             int req1 = Integer.parseInt(identifier.substring(identifier.lastIndexOf("_") + 1));
             if (identifier.substring(0, identifier.lastIndexOf("_")).equalsIgnoreCase("requirement_progress")){

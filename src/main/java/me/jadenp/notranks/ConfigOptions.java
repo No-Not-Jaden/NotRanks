@@ -1,11 +1,19 @@
 package me.jadenp.notranks;
 
+import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemFlag;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+
+import static me.jadenp.notranks.LanguageOptions.color;
+import static me.jadenp.notranks.LanguageOptions.guiName;
+import static org.bukkit.util.NumberConversions.ceil;
 
 public class ConfigOptions {
     public static ArrayList<Rank> ranks = new ArrayList<>();
@@ -20,8 +28,42 @@ public class ConfigOptions {
     public static boolean overwritePrefix;
     public static String prefixFormat;
     public static String noRank;
+    public static boolean autoSize;
+    public static ItemStack fillItem;
+    public static boolean replacePageItems;
+    public static int guiSize;
+    public static ItemStack exit = new ItemStack(Material.BARRIER);
+    public static ItemStack next = new ItemStack(Material.SPECTRAL_ARROW);
+    public static ItemStack back = new ItemStack(Material.TIPPED_ARROW);
+    public static List<GUItem> customGUI = new ArrayList<>();
+    public static GUItem[] guiLayout;
+    public static int ranksPerPage;
+    public static String completedStrikethrough;
 
     public static void loadConfig(){
+        // close everyone out of gui
+        for (Player player : Bukkit.getOnlinePlayers()){
+            if (player.getOpenInventory().getTitle().equals(color(guiName))){
+                player.closeInventory();
+            }
+        }
+        NotRanks.getInstance().guiPage.clear();
+
+        ItemMeta meta = exit.getItemMeta();
+        assert meta != null;
+        meta.setDisplayName(ChatColor.RED + "" + ChatColor.BOLD + "Exit");
+        exit.setItemMeta(meta);
+
+        meta = next.getItemMeta();
+        assert meta != null;
+        meta.setDisplayName(ChatColor.DARK_GRAY + "Next Page");
+        next.setItemMeta(meta);
+
+        meta = back.getItemMeta();
+        assert meta != null;
+        meta.setDisplayName(ChatColor.DARK_GRAY + "Last Page");
+        back.setItemMeta(meta);
+
         NotRanks plugin = NotRanks.getInstance();
 
         HDBEnabled = plugin.getServer().getPluginManager().getPlugin("HeadDatabase") != null;
@@ -45,13 +87,30 @@ public class ConfigOptions {
             plugin.getConfig().set("prefix.format", "&7[{prefix}&7] &r");
         if (!plugin.getConfig().isSet("prefix.no-rank"))
             plugin.getConfig().set("prefix.no-rank", "&fUnranked");
-
+        if (!plugin.getConfig().isSet("gui.auto-size"))
+            plugin.getConfig().set("gui.auto-size", true);
+        if (!plugin.getConfig().isSet("gui.fill-item"))
+            plugin.getConfig().set("gui.fill-item", "GRAY_STAINED_GLASS_PANE");
+        if (!plugin.getConfig().isSet("gui.replace-page-items"))
+            plugin.getConfig().set("gui.replace-page-items", true);
+        if (!plugin.getConfig().isSet("gui.size"))
+            plugin.getConfig().set("gui.size", 27);
+        if (!plugin.getConfig().isSet("requirement-strikethrough"))
+            plugin.getConfig().set("requirement-strikethrough", true);
 
         // loading rank info from the config
         ranks.clear();
         for (int i = 1; plugin.getConfig().getString(i + ".name") != null; i++) {
-            //Bukkit.getLogger().info(i + "");
-            ranks.add(new Rank(plugin.getConfig().getString(i + ".name"), plugin.getConfig().getStringList(i + ".lore"),  plugin.getConfig().getStringList(i + ".requirements"), plugin.getConfig().getInt(i + ".cost"), (List<String>) plugin.getConfig().getStringList(i + ".commands"), plugin.getConfig().getInt(i + ".hdb"),  plugin.getConfig().getInt("completed-hdb"), plugin.getConfig().getString(i +".item")));
+            List<String> lore = plugin.getConfig().isSet(i + ".lore") ? plugin.getConfig().getStringList(i + ".lore") : new ArrayList<>();
+            List<String> requirements = plugin.getConfig().isSet(i + ".requirements") ? plugin.getConfig().getStringList(i + ".requirements") : new ArrayList<>();
+            int cost = plugin.getConfig().isSet(i + ".cost") ? plugin.getConfig().getInt(i + ".cost") : 0;
+            List<String> commands = plugin.getConfig().isSet(i + ".commands") ? plugin.getConfig().getStringList(i + ".commands") : new ArrayList<>();
+            int hdb = plugin.getConfig().isSet(i + ".hdb") ? plugin.getConfig().getInt(i + ".hdb") : 1;
+            String item = plugin.getConfig().isSet(i +".item") ? plugin.getConfig().getString(i +".item") : "EMERALD_BLOCK";
+            boolean completionLoreEnabled = plugin.getConfig().isSet(i + ".completion-lore.enabled") && plugin.getConfig().getBoolean(i + ".completion-lore.enabled");
+            List<String> completionLore = plugin.getConfig().isSet(i + ".completion-lore.lore") ? plugin.getConfig().getStringList(i + ".completion-lore.lore") : new ArrayList<>();
+            boolean hideNBT = plugin.getConfig().isSet(i + ".hide-nbt") && plugin.getConfig().getBoolean(i + ".hide-nbt");
+            ranks.add(new Rank(plugin.getConfig().getString(i + ".name"), lore, requirements, cost, commands, hdb, plugin.getConfig().getInt("completed-hdb"), item, completionLoreEnabled, completionLore, hideNBT));
         }
 
         currency = plugin.getConfig().getString("currency.unit");
@@ -64,17 +123,224 @@ public class ConfigOptions {
         overwritePrefix = plugin.getConfig().getBoolean("prefix.overwrite-previous");
         prefixFormat = plugin.getConfig().getString("prefix.format");
         noRank = plugin.getConfig().getString("prefix.no-rank");
+        autoSize = plugin.getConfig().getBoolean("gui.auto-size");
+        replacePageItems = plugin.getConfig().getBoolean("gui.replace-page-items");
+        guiSize = plugin.getConfig().getInt("gui.size");
+        completedStrikethrough = plugin.getConfig().getBoolean("requirement-strikethrough") ? ChatColor.STRIKETHROUGH + "" : "";
 
-        if (!usingPlaceholderCurrency){
+        Material fillMaterial;
+        String fill = plugin.getConfig().getString("gui.fill-item");
+        try {
+            assert fill != null;
+            fillMaterial = Material.valueOf(fill.toUpperCase());
+        } catch (IllegalArgumentException e){
+            Bukkit.getLogger().warning("Fill item material: " + fill + " is not a valid material!");
+            fillMaterial = Material.GRAY_STAINED_GLASS_PANE;
+        }
+        fillItem = new ItemStack(fillMaterial);
+        meta = fillItem.getItemMeta();
+        assert meta != null;
+        meta.setDisplayName("");
+        fillItem.setItemMeta(meta);
+
+        int rankNum = 1;
+        // get gui settings
+        if (autoSize){
+            // auto-size settings
+            guiSize = ((ranks.size() / 7 + 1) * 9) + 18;
+            if (guiSize > 54)
+                guiSize = 54;
+            int[] everything = new int[guiSize];
+            for (int i = 0; i < everything.length; i++) {
+                everything[i] = i;
+            }
+            customGUI.add(new GUItem(everything, new ArrayList<>(), fillItem));
+            customGUI.add(new GUItem(new int[]{22}, new ArrayList<>(), exit));
+            customGUI.add(new GUItem(new int[]{18}, new ArrayList<>(), back));
+            customGUI.add(new GUItem(new int[]{26}, new ArrayList<>(), next));
+            for (int i = 10; i < guiSize - 10; i++) {
+                if (i % 9 != 0 && (i + 1) % 9 != 0){
+                    customGUI.add(new GUItem(new int[]{i}, Collections.singletonList("rank " + rankNum), null));
+                    rankNum++;
+                }
+            }
+        } else {
+            // custom settings
+            for (int i = 1; plugin.getConfig().isSet("gui." + i + ".slot"); i++) {
+                // get slots used
+                int[] slots;
+                String slot = plugin.getConfig().getString("gui." + i + ".slot");
+                assert slot != null;
+                try {
+                    if (slot.contains("-")) {
+                        int before = Integer.parseInt(slot.substring(0, slot.indexOf("-")));
+                        int after = Integer.parseInt(slot.substring(slot.indexOf("-") + 1));
+                        if (after <= before)
+                            throw new RuntimeException();
+                        slots = new int[after - before];
+                        for (int j = before; j < after; j++) {
+                            slots[j - before] = j;
+                        }
+                    } else {
+                        slots = new int[]{Integer.parseInt(slot)};
+                    }
+                } catch (RuntimeException e) {
+                    Bukkit.getLogger().warning("Invalid GUI slot (" + slot + ") for item: " + i);
+                    slots = new int[0];
+                }
+                // get item
+                ItemStack itemStack;
+                List<String> actions = new ArrayList<>();
+                String item = plugin.getConfig().getString("gui." + i + ".item");
+                if (item != null) {
+                    // item is one of the preset items
+                    switch (item.toLowerCase()) {
+                        case "fill":
+                            itemStack = fillItem;
+                            break;
+                        case "next":
+                            itemStack = next;
+                            break;
+                        case "back":
+                            itemStack = back;
+                            break;
+                        case "exit":
+                            itemStack = exit;
+                            break;
+                        default:
+                            if (item.startsWith("rank")) {
+                                itemStack = null;
+                            } else {
+                                Bukkit.getLogger().warning("Unknown preset item (" + item + ") for item: " + i);
+                                itemStack = new ItemStack(Material.STRUCTURE_VOID);
+                                meta = itemStack.getItemMeta();
+                                assert meta != null;
+                                meta.setDisplayName(ChatColor.DARK_AQUA + "Config Error");
+                                meta.setLore(new ArrayList<>(Arrays.asList(ChatColor.DARK_AQUA + "" + org.bukkit.ChatColor.ITALIC + "Unknown preset item: " + item, ChatColor.DARK_AQUA + "" + org.bukkit.ChatColor.ITALIC + "for item: " + i)));
+                                itemStack.setItemMeta(meta);
+                            }
+                            break;
+                    }
+                } else {
+                    // create new item
+                    Material material;
+                    String materialName = plugin.getConfig().getString("gui." + i + ".item.material");
+                    try {
+                        material = Material.valueOf(materialName);
+                    } catch (IllegalArgumentException e) {
+                        Bukkit.getLogger().warning("Unknown material (" + materialName + ") for item: " + i);
+                        material = Material.STRUCTURE_VOID;
+                    }
+                    int amount = plugin.getConfig().isSet("gui." + i + ".item.amount") ? plugin.getConfig().getInt("gui." + i + ".item.amount") : 1;
+                    itemStack = new ItemStack(material, amount);
+                    boolean enchanted = plugin.getConfig().isSet("gui." + i + ".item.enchanted") && (plugin.getConfig().getBoolean("gui." + i + ".item.enchanted"));
+                    if (enchanted)
+                        itemStack.addUnsafeEnchantment(Enchantment.DURABILITY, 1);
+                    meta = itemStack.getItemMeta();
+                    assert meta != null;
+                    meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+                    boolean hideNBT = plugin.getConfig().isSet("gui." + i + ".item.hide-nbt") && (plugin.getConfig().getBoolean("gui." + i + ".item.hide-nbt"));
+                    if (hideNBT)
+                        meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
+                    if (plugin.getConfig().isSet("gui." + i + ".item.name"))
+                        meta.setDisplayName(color(plugin.getConfig().getString("gui." + i + ".item.name")));
+                    if (plugin.getConfig().isSet("gui." + i + ".item.lore")) {
+                        List<String> lore = plugin.getConfig().getStringList("gui." + i + ".item.lore");
+                        lore.replaceAll(LanguageOptions::color);
+                        meta.setLore(lore);
+                    }
+                    itemStack.setItemMeta(meta);
+                }
+                if (plugin.getConfig().isSet("gui." + i + ".actions"))
+                    actions.addAll(plugin.getConfig().getStringList("gui." + i + ".actions"));
+                customGUI.add(new GUItem(slots, actions, itemStack));
+            }
+        }
+        ranksPerPage = 0;
+        guiLayout = new GUItem[guiSize];
+        for (GUItem guItem : customGUI){
+            // add everything to the layout
+            for (int i = 0; i < guItem.getSlot().length; i++){
+                if (guiSize > guItem.getSlot()[i]){
+                    if (guItem.getItem() == null) {
+                        // rank items need to be formatted in order
+                        ranksPerPage++;
+                        if (guItem.getActions().get(0).length() == 4){
+                            guItem.getActions().set(0, "rank " + ranksPerPage);
+                        }
+                    }
+                    guiLayout[guItem.getSlot()[i]] = guItem;
+                }
+            }
+        }
+
+        if (!usingPlaceholderCurrency) {
             try {
                 Material.valueOf(currency);
-            } catch (IllegalArgumentException ignored){
+            } catch (IllegalArgumentException ignored) {
                 Bukkit.getLogger().warning("[NotRanks] Material for currency is not valid! defaulting to DIAMOND.");
                 currency = "DIAMOND";
             }
         }
 
         plugin.saveConfig();
+    }
+
+    public static ItemStack stripPlaceholders(ItemStack item){
+        ItemMeta meta = item.getItemMeta();
+        assert meta != null;
+        meta.setDisplayName(org.bukkit.ChatColor.stripColor(org.bukkit.ChatColor.translateAlternateColorCodes('&', meta.getDisplayName().replaceAll("(?<= %).*?(?=% )", " `1~ "))));
+        if (meta.hasLore()) {
+            List<String> lore = meta.getLore();
+            assert lore != null;
+            lore.replaceAll(text -> org.bukkit.ChatColor.stripColor(org.bukkit.ChatColor.translateAlternateColorCodes('&', text.replaceAll("(?<= %).*?(?=% )", " `1~ "))));
+            meta.setLore(lore);
+        }
+        item.setItemMeta(meta);
+        return item;
+    }
+    public static boolean matchItem(ItemStack compare, ItemStack parsedItem){
+        ItemMeta rankMeta = stripPlaceholders(parsedItem).getItemMeta();
+        assert rankMeta != null;
+        ItemMeta compareMeta = compare.getItemMeta();
+        assert compareMeta != null;
+        String[] displayName = rankMeta.getDisplayName().split("`1~");
+        if (!containsAll(displayName, org.bukkit.ChatColor.stripColor(compareMeta.getDisplayName())))
+            return false;
+        if (compareMeta.hasLore() != rankMeta.hasLore())
+            return false;
+        if (compareMeta.hasLore()){
+            List<String> compareLore = compareMeta.getLore();
+            List<String> rankLore = rankMeta.getLore();
+            assert compareLore != null;
+            assert rankLore != null;
+            if (compareLore.size() != rankLore.size())
+                return false;
+            for (int i = 0; i < compareLore.size(); i++) {
+                if (!containsAll(rankLore.get(i).split("`1~"), compareLore.get(i)))
+                    return false;
+            }
+        }
+
+        return true;
+
+    }
+
+    /**
+     * Returns if str contains all requirements in the order given
+     *
+     * @param requirements strings that str needs and the order they need to be in
+     * @param str the string to compare
+     * @return true if str contains all requirements in the order given
+     */
+    public static boolean containsAll(String[] requirements, String str){
+        if (requirements.length == 0)
+            return true;
+        if (!str.contains(requirements[0]))
+            return false;
+        String[] req = new String[requirements.length-1];
+        System.arraycopy(requirements, 1, req, 0, req.length);
+        return containsAll(req, str.substring(str.indexOf(requirements[0]) + requirements[0].length()));
     }
 
 }

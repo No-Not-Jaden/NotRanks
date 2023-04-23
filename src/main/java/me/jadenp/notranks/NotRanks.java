@@ -41,7 +41,11 @@ import static me.jadenp.notranks.LanguageOptions.*;
 import static org.bukkit.util.NumberConversions.ceil;
 
 /**
- * check to see if rankup msg works
+ * customizable gui
+ * change strikethrough
+ * completion lore
+ * hide nbt
+ * empty ranks
  */
 public final class NotRanks extends JavaPlugin implements CommandExecutor, Listener {
 
@@ -56,6 +60,8 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
     public HashMap<String, Integer> playerRank = new HashMap<>();
 
     public static NotRanks instance;
+    public HashMap<UUID, Integer> guiPage = new HashMap<>();
+    public int maxPages;
 
     public static NotRanks getInstance() {
         return instance;
@@ -214,85 +220,114 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
 
     public void loadConfig() throws IOException {
         log();
-        ConfigOptions.loadConfig();
         LanguageOptions.loadConfig();
+        ConfigOptions.loadConfig();
+        maxPages = ranks.size() / ranksPerPage;
+        if (ranks.size() % ranksPerPage > 0)
+            maxPages++;
     }
 
     public void openGUI(Player p, int page) {
-        ItemStack fill = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
-        ItemMeta meta = fill.getItemMeta();
-        assert meta != null;
-        meta.setDisplayName(" ");
-        fill.setItemMeta(meta);
-        ItemStack exit = new ItemStack(Material.BARRIER);
-        meta = exit.getItemMeta();
-        assert meta != null;
-        meta.setDisplayName(ChatColor.RED + "" + ChatColor.BOLD + "Exit");
-        exit.setItemMeta(meta);
-        ItemStack next = new ItemStack(Material.SPECTRAL_ARROW);
-        meta = next.getItemMeta();
-        assert meta != null;
-        meta.setDisplayName(ChatColor.DARK_GRAY + "Next Page");
-        next.setItemMeta(meta);
-        ItemStack back = new ItemStack(Material.TIPPED_ARROW);
-        meta = back.getItemMeta();
-        assert meta != null;
-        meta.setDisplayName(ChatColor.DARK_GRAY + "Last Page");
-        back.setItemMeta(meta);
-        int size = (ceil((double) ranks.size() / 7) * 9);
-        if (size <= 36) {
-            Inventory inv = Bukkit.createInventory(p, size + 18, parse(guiName, p));
-            ItemStack[] contents = inv.getContents();
-            for (int i = 0; i < 10; i++) {
-                contents[i] = fill;
-            }
-            int rankNum = 0;
-            for (int i = 10; i < contents.length; i++) {
-                // some math if contents is at end or start of line
-                // check if i-10 ranks is a thing or set to  fill
-                if (i % 9 == 0 || (i + 1) % 9 == 0) {
-                    contents[i] = fill;
-                } else if (rankNum < ranks.size()) {
-                    contents[i] = ranks.get(rankNum).getItem(p, (playerRank.get(p.getUniqueId().toString()) > rankNum));
-                    rankNum++;
-                } else {
-                    contents[i] = fill;
+        if (page < 1)
+            page = 1;
+        if (page > maxPages)
+            page = maxPages;
+        Inventory inv = Bukkit.createInventory(p, guiSize, color(guiName));
+        ItemStack[] contents = inv.getContents();
+        for (int i = 0; i < guiSize; i++) {
+            GUItem guItem = guiLayout[i];
+            if (guItem.getItem() == null){
+                // rank item
+                ItemStack item = fillItem;
+                try {
+                    int rankNum = Integer.parseInt(guItem.getActions().get(0).substring(5)) - 1 + ((page - 1) * ranksPerPage);
+                    item = ranks.get(rankNum).getItem(p, (playerRank.get(p.getUniqueId().toString()) > rankNum));
+                } catch (NumberFormatException | IndexOutOfBoundsException e){
+                    Bukkit.getLogger().warning("Error getting rank number: " + guItem.getActions().get(0));
                 }
-
-            }
-            // set last item to exit button
-            contents[contents.length - 5] = exit;
-            inv.setContents(contents);
-            p.openInventory(inv);
-        } else {
-            Inventory inv = Bukkit.createInventory(p, 54, parse(guiName, p));
-            ItemStack[] contents = inv.getContents();
-            for (int i = 0; i < 10; i++) {
-                contents[i] = fill;
-            }
-            int rankNum = 0;
-            rankNum += (page-1) * 36;
-            for (int i = 10; i < 45; i++) {
-                // some math if contents is at end or start of line
-                // check if i-10 ranks is a thing or set to  fill
-                if (i % 9 == 0 || (i + 1) % 9 == 0) {
-                    contents[i] = fill;
-                } else if (rankNum < ranks.size()) {
-                    contents[i] = ranks.get(rankNum).getItem(p, (playerRank.get(p.getUniqueId().toString()) > rankNum));
-                    rankNum++;
+                contents[i] = item;
+            } else if ((guItem.getItem().isSimilar(next) || guItem.getActions().contains("[next]")) && replacePageItems) {
+                if (ranks.size() > ranksPerPage * page){
+                    // there are more ranks on the next page
+                    contents[i] = next;
                 } else {
-                    contents[i] = fill;
+                    contents[i] = fillItem;
                 }
-            }
-            for (int i = 45; i < 54; i++) {
-                contents[i] = fill;
-            }
-            contents[contents.length - 5] = exit;
-            contents[contents.length - 1] = next;
-            if (page > 1){
-                contents[contents.length-9] = back;
+            } else if ((guItem.getItem().isSimilar(back) || guItem.getActions().contains("[back]")) && replacePageItems) {
+                if (page > 1){
+                    // there are more ranks on the previous
+                    contents[i] = back;
+                } else {
+                    contents[i] = fillItem;
+                }
+            } else {
+                contents[i] = guItem.getPapiItem(p);
             }
         }
+        inv.setContents(contents);
+        guiPage.put(p.getUniqueId(), page);
+        p.openInventory(inv);
+        /*if (autoSize) {
+            int size = (ceil((double) ranks.size() / 7) * 9);
+            if (size <= 36) {
+                Inventory inv = Bukkit.createInventory(p, size + 18, color(guiName));
+                ItemStack[] contents = inv.getContents();
+                for (int i = 0; i < 10; i++) {
+                    contents[i] = fillItem;
+                }
+                int rankNum = 0;
+                for (int i = 10; i < contents.length; i++) {
+                    // some math if contents is at end or start of line
+                    // check if i-10 ranks is a thing or set to  fill
+                    if (i % 9 == 0 || (i + 1) % 9 == 0) {
+                        contents[i] = fillItem;
+                    } else if (rankNum < ranks.size()) {
+                        contents[i] = ranks.get(rankNum).getItem(p, (playerRank.get(p.getUniqueId().toString()) > rankNum));
+                        rankNum++;
+                    } else {
+                        contents[i] = fillItem;
+                    }
+
+                }
+                // set last item to exit button
+                contents[contents.length - 5] = exit;
+                inv.setContents(contents);
+                p.openInventory(inv);
+            } else {
+                Inventory inv = Bukkit.createInventory(p, 54, color(guiName));
+                ItemStack[] contents = inv.getContents();
+                for (int i = 0; i < 10; i++) {
+                    contents[i] = fillItem;
+                }
+                int rankNum = 0;
+                rankNum += (page - 1) * 36;
+                for (int i = 10; i < 45; i++) {
+                    // some math if contents is at end or start of line
+                    // check if i-10 ranks is a thing or set to  fill
+                    if (i % 9 == 0 || (i + 1) % 9 == 0) {
+                        contents[i] = fillItem;
+                    } else if (rankNum < ranks.size()) {
+                        contents[i] = ranks.get(rankNum).getItem(p, (playerRank.get(p.getUniqueId().toString()) > rankNum));
+                        rankNum++;
+                    } else {
+                        contents[i] = fillItem;
+                    }
+                }
+                for (int i = 45; i < 54; i++) {
+                    contents[i] = fillItem;
+                }
+                contents[contents.length - 5] = exit;
+                contents[contents.length - 1] = next;
+                if (page > 1) {
+                    contents[contents.length - 9] = back;
+                }
+                inv.setContents(contents);
+                p.openInventory(inv);
+            }
+        } else {
+
+
+        }*/
     }
 
 
@@ -462,64 +497,44 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
 
     @EventHandler
     public void onInventoryInteract(InventoryClickEvent event) {
-        if (event.getCurrentItem() != null) {
-            ItemStack exit = new ItemStack(Material.BARRIER);
-            ItemMeta meta = exit.getItemMeta();
-            assert meta != null;
-            meta.setDisplayName(ChatColor.RED + "" + ChatColor.BOLD + "Exit");
-            exit.setItemMeta(meta);
-            ItemStack next = new ItemStack(Material.SPECTRAL_ARROW);
-            meta = next.getItemMeta();
-            assert meta != null;
-            meta.setDisplayName(ChatColor.DARK_GRAY + "Next Page");
-            next.setItemMeta(meta);
-            ItemStack back = new ItemStack(Material.TIPPED_ARROW);
-            meta = back.getItemMeta();
-            assert meta != null;
-            meta.setDisplayName(ChatColor.DARK_GRAY + "Last Page");
-            back.setItemMeta(meta);
-            if (event.getView().getTitle().equals(parse(guiName, (Player) event.getWhoClicked()))) {
-                event.setCancelled(true);
-                if (event.getCurrentItem() != null)
-                    if (Objects.equals(event.getCurrentItem(), exit)) {
-                        event.getWhoClicked().closeInventory();
-                    } else if (Objects.requireNonNull(event.getCurrentItem()).getType() == Material.PLAYER_HEAD) {
-                        for (int i = 0; i < ranks.size(); i++) {
-                            if (event.getCurrentItem().getItemMeta().getDisplayName().equals(ranks.get(i).getName())) {
-                                if (playerRank.get(event.getWhoClicked().getUniqueId().toString()) == i) {
-                                    if (ranks.get(i).checkRequirements((Player) event.getWhoClicked())) {
-                                        event.getWhoClicked().closeInventory();
-
-                                        rankup((Player) event.getWhoClicked(), ranks.get(i));
-                                    } else {
-                                        event.getWhoClicked().closeInventory();
-                                        event.getWhoClicked().sendMessage(prefix + parse(rankUpDeny, (Player) event.getWhoClicked()));
-                                        ((Player) event.getWhoClicked()).playSound(event.getWhoClicked().getLocation(), Sound.ENTITY_VILLAGER_NO, 1, 1);
-                                    }
-                                } else {
-                                    event.getWhoClicked().sendMessage(prefix + parse(notOnRank, (Player) event.getWhoClicked()));
-                                    ((Player) event.getWhoClicked()).playSound(event.getWhoClicked().getLocation(), Sound.ENTITY_VILLAGER_NO, 1, 1);
-                                }
-                            }
-                        }
-
-                    } else if (event.getCurrentItem().equals(next)) {
-                        for (int rankNum = 0; rankNum < ranks.size(); rankNum += 36) {
-                            if (event.getInventory().contains(ranks.get(rankNum).getItem((Player) event.getWhoClicked(), (playerRank.get(event.getWhoClicked().getUniqueId().toString()) > rankNum)))) {
-                                openGUI((Player) event.getWhoClicked(), rankNum + 2);
-                            }
-                        }
-                    } else if (event.getCurrentItem().equals(back)) {
-                        for (int rankNum = 0; rankNum < ranks.size(); rankNum += 36) {
-                            if (event.getInventory().contains(ranks.get(rankNum).getItem((Player) event.getWhoClicked(), (playerRank.get(event.getWhoClicked().getUniqueId().toString()) > rankNum)))) {
-                                openGUI((Player) event.getWhoClicked(), rankNum);
-                            }
-                        }
-                    }
-                ((Player) event.getWhoClicked()).updateInventory();
-
+        if (!event.getView().getTitle().equals(color(guiName)))
+            return;
+        event.setCancelled(true);
+        if (event.getSlot() > event.getView().getTopInventory().getSize())
+            return;
+        ItemStack current = event.getCurrentItem();
+        if (current == null)
+            return;
+        if (current.isSimilar(exit)) {
+            event.getView().close();
+        }
+        if (current.isSimilar(next)){
+            openGUI((Player) event.getWhoClicked(), guiPage.get(event.getWhoClicked().getUniqueId()) + 1);
+        }
+        if (current.isSimilar(back)){
+            openGUI((Player) event.getWhoClicked(), guiPage.get(event.getWhoClicked().getUniqueId()) - 1);
+        }
+        GUItem guItem = guiLayout[event.getSlot()];
+        for (String action : guItem.getActions()){
+            if (action.startsWith("[gui]")){
+                int page = 1;
+                try {
+                    page = Integer.parseInt(action.substring(6));
+                } catch (NumberFormatException e){
+                    Bukkit.getLogger().warning("Error getting gui page number: " + action);
+                }
+                openGUI((Player) event.getWhoClicked(), page);
+            } else if (action.startsWith("[exit]")){
+                event.getView().close();
+            } else if (action.startsWith("[next]")){
+                openGUI((Player) event.getWhoClicked(), guiPage.get(event.getWhoClicked().getUniqueId()) + 1);
+            } else if (action.startsWith("[back]")){
+                openGUI((Player) event.getWhoClicked(), guiPage.get(event.getWhoClicked().getUniqueId()) - 1);
+            } else if (action.startsWith("[command]")){
+                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), action.substring(10));
             }
         }
+        ((Player) event.getWhoClicked()).updateInventory();
     }
 
     public String parse (String text, OfflinePlayer player){
