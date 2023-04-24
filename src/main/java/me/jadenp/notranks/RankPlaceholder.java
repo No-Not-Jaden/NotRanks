@@ -56,7 +56,7 @@ public class RankPlaceholder extends PlaceholderExpansion {
         // %notranks_rank%
         // %notranks_rank_number%
         // %notranks_requirement_<x>%
-        // %notranks_requirement_progress%
+        // %notranks_rank_progress%
         if (identifier.equalsIgnoreCase("rank_number")) {
             return plugin.getRank(player) + "";
         } else if (identifier.equalsIgnoreCase("rank")){
@@ -65,11 +65,12 @@ public class RankPlaceholder extends PlaceholderExpansion {
             return plugin.parse(rankName, player);
         } else if (identifier.startsWith("requirement")){
             try {
-                return plugin.parse(ranks.get(plugin.getRank(player)).getRequirements().get(Integer.parseInt(identifier.substring(identifier.lastIndexOf("_") + 1))), player);
+                int rankNum = Integer.parseInt(identifier.substring(identifier.lastIndexOf("_") + 1));
+                return plugin.parse(ranks.get(plugin.getRank(player)).getRequirementProgress(rankNum, player, (plugin.playerRank.get(player.getUniqueId().toString()) >= rankNum)), player);
             } catch (NumberFormatException | IndexOutOfBoundsException e){
                 return "";
             }
-        } else if (identifier.equalsIgnoreCase("requirement_progress")){
+        } else if (identifier.equalsIgnoreCase("rank_progress")){
             try {
                 return plugin.parse(((int) (ranks.get(plugin.getRank(player)).getCompletionPercent(player) * 100)) + "", player);
             } catch (NumberFormatException | IndexOutOfBoundsException e){

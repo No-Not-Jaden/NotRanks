@@ -274,7 +274,7 @@ public class Rank {
 
     }
 
-    public float getCompletionPercent(OfflinePlayer player){
+    public float getCompletionPercent(OfflinePlayer player) {
         if (!firstTimeCompletion.containsKey(player.getUniqueId().toString()))
             return 0;
         List<Boolean> completion = firstTimeCompletion.get(player.getUniqueId().toString());
@@ -336,21 +336,11 @@ public class Rank {
                                 reqNum++;
                         }
                         if (requirements.size() >= reqNum) {
-
-                            String placeholder = requirements.get(reqNum - 1).substring(0, requirements.get(reqNum - 1).indexOf(" "));
-                            String value = requirements.get(reqNum - 1).substring(requirements.get(reqNum - 1).lastIndexOf(" ") + 1);
-                            String parsed = PlaceholderAPI.setPlaceholders(p, placeholder);
-
-
-                            if (!isRequirementCompleted(requirements.get(reqNum - 1), p) && !completed) {
-                                str = ChatColor.RED + ChatColor.translateAlternateColorCodes('&', substringBefore(str, "{req" + reqNum + "}")) + ChatColor.YELLOW + parsed + ChatColor.DARK_GRAY + " / " + ChatColor.RED + value + ChatColor.translateAlternateColorCodes('&', substringAfter(str, "{req" + reqNum + "}"));
-                            } else {
-                                str = ChatColor.GREEN + "" + completedStrikethrough + ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&', substringBefore(str, "{req" + reqNum + "}"))) + value + ChatColor.DARK_GRAY + "" + completedStrikethrough + " / " + ChatColor.GREEN + "" + completedStrikethrough + value + ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&', substringAfter(str, "{req" + reqNum + "}")));
-                            }
-
+                            str = getRequirementString(reqNum, p, completed, str);
                         } else {
                             str = ChatColor.DARK_RED + ChatColor.translateAlternateColorCodes('&', substringBefore(str, "{req")) + "{ERROR}" + ChatColor.translateAlternateColorCodes('&', substringAfter(str, "}"));
                         }
+
                     }
                 } else {
                     str = ChatColor.translateAlternateColorCodes('&', str);
@@ -360,6 +350,39 @@ public class Rank {
 
 
         return text;
+    }
+
+    public String getRequirementString(int reqNum, OfflinePlayer p, boolean completed, String str) {
+        if (!isRequirementCompleted(requirements.get(reqNum - 1), p) && !completed) {
+            str = ChatColor.RED + ChatColor.translateAlternateColorCodes('&', substringBefore(str, "{req" + reqNum + "}")) + getRequirementProgress(reqNum, p, false) + ChatColor.translateAlternateColorCodes('&', substringAfter(str, "{req" + reqNum + "}"));
+        } else {
+            str = ChatColor.GREEN + "" + completedStrikethrough + ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&', substringBefore(str, "{req" + reqNum + "}"))) + getRequirementProgress(reqNum, p, completed) + ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&', substringAfter(str, "{req" + reqNum + "}")));
+        }
+        return str;
+    }
+
+    public String getRequirementProgress(int reqNum, OfflinePlayer p, boolean completed) {
+        String str = "";
+        if (reqNum == 0)
+            reqNum = 1;
+        if (requirements != null) {
+            for (int i = 0; i < 100; i++) {
+                if (requirements.get(reqNum - 1).isEmpty())
+                    reqNum++;
+            }
+            if (requirements.size() >= reqNum) {
+
+                String placeholder = requirements.get(reqNum - 1).substring(0, requirements.get(reqNum - 1).indexOf(" "));
+                String value = requirements.get(reqNum - 1).substring(requirements.get(reqNum - 1).lastIndexOf(" ") + 1);
+                String parsed = PlaceholderAPI.setPlaceholders(p, placeholder);
+                if (!isRequirementCompleted(requirements.get(reqNum - 1), p) && !completed) {
+                    str = ChatColor.YELLOW + parsed + ChatColor.DARK_GRAY + " / " + ChatColor.RED + value;
+                } else {
+                    str = ChatColor.GREEN + "" + completedStrikethrough + value + ChatColor.DARK_GRAY + "" + completedStrikethrough + " / " + ChatColor.GREEN + "" + completedStrikethrough + value;
+                }
+            }
+        }
+        return str;
     }
 
     public ItemStack getItem(Player p, boolean enchanted) {
