@@ -10,8 +10,12 @@ currency:
   suffix: '&b♦'
   # how many decimals will be shown
   decimals: 0
-# What head will the ranks change to when they are completed
-completed-hdb: 6269
+# Head Data Base
+hdb:
+  # set this to true if you want to be able to use heads as ranks in the gui
+  enabled: true
+  # What head will the ranks change to when they are completed
+  completed: 6269
 # if you want a strikethrough over completed requirements
 requirement-strikethrough: true
 # rank name before player name
@@ -107,9 +111,9 @@ gui:
   completion-lore:
     enabled: false
     lore:
-      - '&7*-------------*'
+      - '&7*--------------*'
       - '&a&l&nRank Completed'
-      - '&7*-------------*'
+      - '&7*--------------*'
   hide-nbt: true
   requirements:
     #                        vv operator - can be "<=" ">=" "!=" "=" ">" "<" ||| true/false & text can only use "!=" & "="

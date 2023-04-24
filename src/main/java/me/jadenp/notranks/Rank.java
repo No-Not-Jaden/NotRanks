@@ -6,6 +6,7 @@ import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
@@ -227,11 +228,6 @@ public class Rank {
 
     public void checkRankCompletion(Player p) {
         List<Boolean> progress;
-        /*if (!completed.containsKey(p.getUniqueId().toString())){
-            progress = new ArrayList<>();
-         else {
-            progress = completed.get(p.getUniqueId().toString());
-        }*/
         progress = new ArrayList<>();
         if (requirements != null) {
             if (!requirements.isEmpty()) {
@@ -276,6 +272,17 @@ public class Rank {
             completed.put(p.getUniqueId().toString(), progress);
         }
 
+    }
+
+    public float getCompletionPercent(OfflinePlayer player){
+        if (!firstTimeCompletion.containsKey(player.getUniqueId().toString()))
+            return 0;
+        List<Boolean> completion = firstTimeCompletion.get(player.getUniqueId().toString());
+        int tru = 0;
+        for (boolean b : completion)
+            if (b)
+                tru++;
+        return (float) tru / completion.size();
     }
 
     public List<String> getLore(Player p, boolean completed) {
@@ -357,7 +364,7 @@ public class Rank {
 
     public ItemStack getItem(Player p, boolean enchanted) {
         ItemStack item;
-        if (HDBEnabled && hdbNum != -1) {
+        if (HDBEnabled && hdbNum != -1 && usingHDB) {
             HeadDatabaseAPI hdb = new HeadDatabaseAPI();
             if (enchanted) {
                 try {
@@ -379,9 +386,18 @@ public class Rank {
         assert meta != null;
         meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', name));
         meta.setLore(getLore(p, enchanted));
-        if (hideNBT)
+        if (hideNBT) {
             meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
+            meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+            meta.addItemFlags(ItemFlag.HIDE_DESTROYS);
+            meta.addItemFlags(ItemFlag.HIDE_DYE);
+            meta.addItemFlags(ItemFlag.HIDE_PLACED_ON);
+            meta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE);
+            meta.addItemFlags(ItemFlag.HIDE_POTION_EFFECTS);
+        }
         item.setItemMeta(meta);
+        if (enchanted)
+            item.addUnsafeEnchantment(Enchantment.ARROW_INFINITE, 1);
         return item;
     }
 

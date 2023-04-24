@@ -39,6 +39,7 @@ public class ConfigOptions {
     public static GUItem[] guiLayout;
     public static int ranksPerPage;
     public static String completedStrikethrough;
+    public static boolean usingHDB;
 
     public static void loadConfig(){
         // close everyone out of gui
@@ -97,6 +98,10 @@ public class ConfigOptions {
             plugin.getConfig().set("gui.size", 27);
         if (!plugin.getConfig().isSet("requirement-strikethrough"))
             plugin.getConfig().set("requirement-strikethrough", true);
+        if (!plugin.getConfig().isSet("hdb.enabled"))
+            plugin.getConfig().set("hdb.enabled", true);
+        if (!plugin.getConfig().isSet("hdb.completed"))
+            plugin.getConfig().set("hdb.completed", 6269);
 
         // loading rank info from the config
         ranks.clear();
@@ -110,7 +115,7 @@ public class ConfigOptions {
             boolean completionLoreEnabled = plugin.getConfig().isSet(i + ".completion-lore.enabled") && plugin.getConfig().getBoolean(i + ".completion-lore.enabled");
             List<String> completionLore = plugin.getConfig().isSet(i + ".completion-lore.lore") ? plugin.getConfig().getStringList(i + ".completion-lore.lore") : new ArrayList<>();
             boolean hideNBT = plugin.getConfig().isSet(i + ".hide-nbt") && plugin.getConfig().getBoolean(i + ".hide-nbt");
-            ranks.add(new Rank(plugin.getConfig().getString(i + ".name"), lore, requirements, cost, commands, hdb, plugin.getConfig().getInt("completed-hdb"), item, completionLoreEnabled, completionLore, hideNBT));
+            ranks.add(new Rank(plugin.getConfig().getString(i + ".name"), lore, requirements, cost, commands, hdb, plugin.getConfig().getInt("hdb.completed"), item, completionLoreEnabled, completionLore, hideNBT));
         }
 
         currency = plugin.getConfig().getString("currency.unit");
@@ -127,6 +132,7 @@ public class ConfigOptions {
         replacePageItems = plugin.getConfig().getBoolean("gui.replace-page-items");
         guiSize = plugin.getConfig().getInt("gui.size");
         completedStrikethrough = plugin.getConfig().getBoolean("requirement-strikethrough") ? ChatColor.STRIKETHROUGH + "" : "";
+        usingHDB = plugin.getConfig().getBoolean("hdb.enabled");
 
         Material fillMaterial;
         String fill = plugin.getConfig().getString("gui.fill-item");
@@ -140,8 +146,9 @@ public class ConfigOptions {
         fillItem = new ItemStack(fillMaterial);
         meta = fillItem.getItemMeta();
         assert meta != null;
-        meta.setDisplayName("");
+        meta.setDisplayName(ChatColor.BLACK + "");
         fillItem.setItemMeta(meta);
+
 
         int rankNum = 1;
         // get gui settings
@@ -177,8 +184,8 @@ public class ConfigOptions {
                         int after = Integer.parseInt(slot.substring(slot.indexOf("-") + 1));
                         if (after <= before)
                             throw new RuntimeException();
-                        slots = new int[after - before];
-                        for (int j = before; j < after; j++) {
+                        slots = new int[after - before + 1];
+                        for (int j = before; j < after + 1; j++) {
                             slots[j - before] = j;
                         }
                     } else {
@@ -191,8 +198,10 @@ public class ConfigOptions {
                 // get item
                 ItemStack itemStack;
                 List<String> actions = new ArrayList<>();
-                String item = plugin.getConfig().getString("gui." + i + ".item");
-                if (item != null) {
+                if (!plugin.getConfig().isSet("gui." + i + ".item.material")) {
+                    String item = plugin.getConfig().getString("gui." + i + ".item");
+                    if (item == null)
+                        continue;
                     // item is one of the preset items
                     switch (item.toLowerCase()) {
                         case "fill":
@@ -210,6 +219,7 @@ public class ConfigOptions {
                         default:
                             if (item.startsWith("rank")) {
                                 itemStack = null;
+                                actions.add(item);
                             } else {
                                 Bukkit.getLogger().warning("Unknown preset item (" + item + ") for item: " + i);
                                 itemStack = new ItemStack(Material.STRUCTURE_VOID);
@@ -240,8 +250,15 @@ public class ConfigOptions {
                     assert meta != null;
                     meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
                     boolean hideNBT = plugin.getConfig().isSet("gui." + i + ".item.hide-nbt") && (plugin.getConfig().getBoolean("gui." + i + ".item.hide-nbt"));
-                    if (hideNBT)
+                    if (hideNBT){
                         meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
+                        meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+                        meta.addItemFlags(ItemFlag.HIDE_DESTROYS);
+                        meta.addItemFlags(ItemFlag.HIDE_DYE);
+                        meta.addItemFlags(ItemFlag.HIDE_PLACED_ON);
+                        meta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE);
+                        meta.addItemFlags(ItemFlag.HIDE_POTION_EFFECTS);
+                    }
                     if (plugin.getConfig().isSet("gui." + i + ".item.name"))
                         meta.setDisplayName(color(plugin.getConfig().getString("gui." + i + ".item.name")));
                     if (plugin.getConfig().isSet("gui." + i + ".item.lore")) {
@@ -266,7 +283,11 @@ public class ConfigOptions {
                         // rank items need to be formatted in order
                         ranksPerPage++;
                         if (guItem.getActions().get(0).length() == 4){
-                            guItem.getActions().set(0, "rank " + ranksPerPage);
+                            List<String> actions = new ArrayList<>(guItem.getActions());
+                            actions.set(0, "rank " + ranksPerPage);
+                            GUItem newItem = new GUItem(new int[]{guItem.getSlot()[i]}, actions, guItem.getItem());
+                            guiLayout[guItem.getSlot()[i]] = newItem;
+                            continue;
                         }
                     }
                     guiLayout[guItem.getSlot()[i]] = guItem;

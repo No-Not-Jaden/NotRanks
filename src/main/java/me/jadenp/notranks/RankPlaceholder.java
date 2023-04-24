@@ -13,6 +13,9 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 
+import static me.jadenp.notranks.ConfigOptions.noRank;
+import static me.jadenp.notranks.ConfigOptions.ranks;
+
 public class RankPlaceholder extends PlaceholderExpansion {
 
     private NotRanks plugin;
@@ -53,40 +56,27 @@ public class RankPlaceholder extends PlaceholderExpansion {
         // %notranks_rank%
         // %notranks_rank_number%
         // %notranks_requirement_<x>%
-        // %notranks_requirement_progress_<x>%
+        // %notranks_requirement_progress%
         if (identifier.equalsIgnoreCase("rank_number")) {
             return plugin.getRank(player) + "";
         } else if (identifier.equalsIgnoreCase("rank")){
-            return plugin.parse(ConfigOptions.ranks.get(plugin.getRank(player)).getName(), player);
-        } else {
-            int req1 = Integer.parseInt(identifier.substring(identifier.lastIndexOf("_") + 1));
-            if (identifier.substring(0, identifier.lastIndexOf("_")).equalsIgnoreCase("requirement_progress")){
-                int req;
-                try {
-                    req = req1;
-                } catch (NumberFormatException | IndexOutOfBoundsException ignored){
-                    return "";
-                }
-                String requirement = ConfigOptions.ranks.get(plugin.getRank(player)).getRequirements().get(req);
-                return PlaceholderAPI.setPlaceholders(player, requirement.substring(0, requirement.indexOf(" ")));
-            } else if (identifier.substring(0, identifier.lastIndexOf("_")).equalsIgnoreCase("requirement")){
-                int req;
-                try {
-                    req = req1;
-                } catch (NumberFormatException | IndexOutOfBoundsException ignored){
-                    return "";
-                }
-                String requirement = ConfigOptions.ranks.get(plugin.getRank(player)).getRequirements().get(req);
-                String placeholder = requirement.substring(0, requirement.indexOf(" "));
-                String value = requirement.substring(requirement.indexOf(" ") + 1);
-                String parsed = PlaceholderAPI.setPlaceholders(player, placeholder);
-                if (ConfigOptions.ranks.get(plugin.getRank(player)).isRequirementCompleted(requirement, player)){
-                    return net.md_5.bungee.api.ChatColor.YELLOW + parsed + net.md_5.bungee.api.ChatColor.DARK_GRAY + " / " + net.md_5.bungee.api.ChatColor.RED + value;
-                } else {
-                    return net.md_5.bungee.api.ChatColor.GREEN + value + net.md_5.bungee.api.ChatColor.DARK_GRAY + "" + net.md_5.bungee.api.ChatColor.STRIKETHROUGH + " / " + net.md_5.bungee.api.ChatColor.GREEN + value;
-                }
+            int rank = plugin.getRank(player) - 1;
+            String rankName = rank != -1 ? ranks.get(rank).getName() : noRank;
+            return plugin.parse(rankName, player);
+        } else if (identifier.startsWith("requirement")){
+            try {
+                return plugin.parse(ranks.get(plugin.getRank(player)).getRequirements().get(Integer.parseInt(identifier.substring(identifier.lastIndexOf("_") + 1))), player);
+            } catch (NumberFormatException | IndexOutOfBoundsException e){
+                return "";
+            }
+        } else if (identifier.equalsIgnoreCase("requirement_progress")){
+            try {
+                return plugin.parse(((int) (ranks.get(plugin.getRank(player)).getCompletionPercent(player) * 100)) + "", player);
+            } catch (NumberFormatException | IndexOutOfBoundsException e){
+                return "";
             }
         }
+
 
         return null;
     }

@@ -42,10 +42,11 @@ import static org.bukkit.util.NumberConversions.ceil;
 
 /**
  * customizable gui
- * change strikethrough
- * completion lore
- * hide nbt
- * empty ranks
+ * change strikethrough x
+ * completion lore x
+ * hide nbt x
+ * empty ranks x
+ * rank placeholder x others no
  */
 public final class NotRanks extends JavaPlugin implements CommandExecutor, Listener {
 
@@ -75,6 +76,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
         Objects.requireNonNull(getCommand("ranks")).setExecutor(this);
         Objects.requireNonNull(getCommand("rankup")).setExecutor(this);
         Bukkit.getServer().getPluginManager().registerEvents(this, this);
+        new RankPlaceholder(this).register();
         saveDefaultConfig();
         // create logs stuff
         if (!logsFolder.exists()){
@@ -238,12 +240,12 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
             GUItem guItem = guiLayout[i];
             if (guItem.getItem() == null){
                 // rank item
-                ItemStack item = fillItem;
+                ItemStack item;
                 try {
                     int rankNum = Integer.parseInt(guItem.getActions().get(0).substring(5)) - 1 + ((page - 1) * ranksPerPage);
                     item = ranks.get(rankNum).getItem(p, (playerRank.get(p.getUniqueId().toString()) > rankNum));
                 } catch (NumberFormatException | IndexOutOfBoundsException e){
-                    Bukkit.getLogger().warning("Error getting rank number: " + guItem.getActions().get(0));
+                    item = fillItem;
                 }
                 contents[i] = item;
             } else if ((guItem.getItem().isSimilar(next) || guItem.getActions().contains("[next]")) && replacePageItems) {
@@ -505,6 +507,8 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
         ItemStack current = event.getCurrentItem();
         if (current == null)
             return;
+        if (current.isSimilar(fillItem))
+            return;
         if (current.isSimilar(exit)) {
             event.getView().close();
         }
@@ -532,6 +536,18 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                 openGUI((Player) event.getWhoClicked(), guiPage.get(event.getWhoClicked().getUniqueId()) - 1);
             } else if (action.startsWith("[command]")){
                 Bukkit.dispatchCommand(Bukkit.getConsoleSender(), action.substring(10));
+            } else if (action.startsWith("rank")){
+                int rank = Integer.parseInt(action.substring(5));
+                int currentRank = getRank((Player) event.getWhoClicked());
+                if (rank <= currentRank || rank > currentRank + 1){
+                    // not on this rank
+                    event.getWhoClicked().sendMessage(prefix + parse(notOnRank, (Player) event.getWhoClicked()));
+                    continue;
+                }
+                if (ranks.get(playerRank.get(event.getWhoClicked().getUniqueId().toString())).checkRequirements(((Player) event.getWhoClicked()))) {
+                    rankup(((Player) event.getWhoClicked()), ranks.get(playerRank.get(event.getWhoClicked().getUniqueId().toString())));
+                    event.getView().close();
+                }
             }
         }
         ((Player) event.getWhoClicked()).updateInventory();
