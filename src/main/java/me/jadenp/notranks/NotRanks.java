@@ -535,7 +535,9 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
             } else if (action.startsWith("[back]")){
                 openGUI((Player) event.getWhoClicked(), guiPage.get(event.getWhoClicked().getUniqueId()) - 1);
             } else if (action.startsWith("[command]")){
-                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), action.substring(10));
+                String text = action.substring(10);
+                text = text.replaceAll("\\{player}", event.getWhoClicked().getName());
+                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), text);
             } else if (action.startsWith("rank")){
                 int rank = Integer.parseInt(action.substring(5));
                 int currentRank = getRank((Player) event.getWhoClicked());
