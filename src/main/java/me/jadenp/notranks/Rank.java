@@ -50,6 +50,10 @@ public class Rank {
         this.hideNBT = hideNBT;
     }
 
+    public double getCost() {
+        return cost;
+    }
+
     private Object parseValue(String str) {
         if (str.equalsIgnoreCase("true"))
             return true;

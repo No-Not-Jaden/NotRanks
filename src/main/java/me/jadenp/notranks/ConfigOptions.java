@@ -149,6 +149,7 @@ public class ConfigOptions {
         meta.setDisplayName(ChatColor.BLACK + "");
         fillItem.setItemMeta(meta);
 
+        customGUI.clear();
 
         int rankNum = 1;
         // get gui settings
