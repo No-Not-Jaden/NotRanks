@@ -40,6 +40,10 @@ public class ConfigOptions {
     public static int ranksPerPage;
     public static String completedStrikethrough;
     public static boolean usingHDB;
+    public static int numberFormatting;
+    public static String nfThousands;
+    public static int nfDecimals;
+    public static LinkedHashMap<Long, String> nfDivisions = new LinkedHashMap<>();
 
     public static void loadConfig(){
         // close everyone out of gui
@@ -102,6 +106,14 @@ public class ConfigOptions {
             plugin.getConfig().set("hdb.enabled", true);
         if (!plugin.getConfig().isSet("hdb.completed"))
             plugin.getConfig().set("hdb.completed", 6269);
+        if (!plugin.getConfig().isSet("number-formatting.type"))
+            plugin.getConfig().set("number-formatting.type", 1);
+        if (!plugin.getConfig().isSet("number-formatting.thousands"))
+            plugin.getConfig().set("number-formatting.thousands", ",");
+        if (!plugin.getConfig().isSet("number-formatting.divisions.decimals")) {
+            plugin.getConfig().set("number-formatting.divisions.decimals", 2);
+            plugin.getConfig().set("number-formatting.divisions.1000", "K");
+        }
 
         // loading rank info from the config
         ranks.clear();
@@ -133,6 +145,22 @@ public class ConfigOptions {
         guiSize = plugin.getConfig().getInt("gui.size");
         completedStrikethrough = plugin.getConfig().getBoolean("requirement-strikethrough") ? ChatColor.STRIKETHROUGH + "" : "";
         usingHDB = plugin.getConfig().getBoolean("hdb.enabled");
+        numberFormatting = plugin.getConfig().getInt("number-formatting.type");
+        nfThousands = plugin.getConfig().getString("number-formatting.thousands");
+        nfDecimals = plugin.getConfig().getInt("number-formatting.divisions.decimals");
+
+        nfDivisions.clear();
+        Map<Long, String> preDivisions = new HashMap<>();
+        for (String s : plugin.getConfig().getConfigurationSection("number-formatting.divisions").getKeys(false)){
+            if (s.equals("decimals"))
+                return;
+            try {
+                preDivisions.put(Long.parseLong(s), plugin.getConfig().getString("number-formatting.divisions." + s));
+            } catch (NumberFormatException e){
+                Bukkit.getLogger().warning("Division is not a number: " + s);
+            }
+        }
+        nfDivisions = sortByValue(preDivisions);
 
         Material fillMaterial;
         String fill = plugin.getConfig().getString("gui.fill-item");
@@ -362,6 +390,21 @@ public class ConfigOptions {
         String[] req = new String[requirements.length-1];
         System.arraycopy(requirements, 1, req, 0, req.length);
         return containsAll(req, str.substring(str.indexOf(requirements[0]) + requirements[0].length()));
+    }
+    public static LinkedHashMap<Long, String> sortByValue(Map<Long, String> hm) {
+        // Create a list from elements of HashMap
+        List<Map.Entry<Long, String>> list =
+                new LinkedList<>(hm.entrySet());
+
+        // Sort the list
+        list.sort((o1, o2) -> (o2.getKey()).compareTo(o1.getKey()));
+
+        // put data from sorted list to hashmap
+        LinkedHashMap<Long, String> temp = new LinkedHashMap<>();
+        for (Map.Entry<Long, String> aa : list) {
+            temp.put(aa.getKey(), aa.getValue());
+        }
+        return temp;
     }
 
 }

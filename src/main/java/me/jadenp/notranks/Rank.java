@@ -375,6 +375,20 @@ public class Rank {
                 String placeholder = requirements.get(reqNum - 1).substring(0, requirements.get(reqNum - 1).indexOf(" "));
                 String value = requirements.get(reqNum - 1).substring(requirements.get(reqNum - 1).lastIndexOf(" ") + 1);
                 String parsed = PlaceholderAPI.setPlaceholders(p, placeholder);
+
+                try {
+                    Double.parseDouble(value);
+                    // is number
+                    if (numberFormatting == 1){
+                        // thousands
+
+                    } else if (numberFormatting == 2){
+                        // divisions
+
+                    }
+                } catch (NumberFormatException ignored){
+                }
+
                 if (!isRequirementCompleted(requirements.get(reqNum - 1), p) && !completed) {
                     str = ChatColor.YELLOW + parsed + ChatColor.DARK_GRAY + " / " + ChatColor.RED + value;
                 } else {
@@ -383,6 +397,12 @@ public class Rank {
             }
         }
         return str;
+    }
+
+    public String addThousands(String str){
+        if (str.length() <= 3)
+            return str;
+        return str.substring(str.length() - 3) + nfThousands + addThousands(str.substring(0, str.length()-3));
     }
 
     public ItemStack getItem(Player p, boolean enchanted) {

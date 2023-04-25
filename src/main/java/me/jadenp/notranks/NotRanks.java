@@ -46,7 +46,10 @@ import static org.bukkit.util.NumberConversions.ceil;
  * completion lore x
  * hide nbt x
  * empty ranks x
- * rank placeholder x others no
+ * rank placeholder x
+ *
+ * format cost or other numbers
+ * unformatted placeholders
  */
 public final class NotRanks extends JavaPlugin implements CommandExecutor, Listener {
 
