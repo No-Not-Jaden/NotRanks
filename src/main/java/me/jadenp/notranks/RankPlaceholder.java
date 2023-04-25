@@ -13,8 +13,8 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 
-import static me.jadenp.notranks.ConfigOptions.noRank;
-import static me.jadenp.notranks.ConfigOptions.ranks;
+import static me.jadenp.notranks.ConfigOptions.*;
+import static me.jadenp.notranks.ConfigOptions.decimals;
 
 public class RankPlaceholder extends PlaceholderExpansion {
 
@@ -57,6 +57,7 @@ public class RankPlaceholder extends PlaceholderExpansion {
         // %notranks_rank_number%
         // %notranks_requirement_<x>%
         // %notranks_rank_progress%
+        // %notranks_rank_cost%
         if (identifier.equalsIgnoreCase("rank_number")) {
             return plugin.getRank(player) + "";
         } else if (identifier.equalsIgnoreCase("rank")){
@@ -73,6 +74,17 @@ public class RankPlaceholder extends PlaceholderExpansion {
         } else if (identifier.equalsIgnoreCase("rank_progress")){
             try {
                 return plugin.parse(((int) (ranks.get(plugin.getRank(player)).getCompletionPercent(player) * 100)) + "", player);
+            } catch (NumberFormatException | IndexOutOfBoundsException e){
+                return "";
+            }
+        } else if (identifier.equalsIgnoreCase("rank_cost")){
+            try {
+                String strAmount = ((double) Math.round(ranks.get(plugin.getRank(player)).getCost() * Math.pow(10, decimals)) / Math.pow(10, decimals)) + "";
+                if (decimals == 0) {
+                    if (strAmount.contains("."))
+                        strAmount = strAmount.substring(0, strAmount.indexOf("."));
+                }
+                return plugin.parse(strAmount, player);
             } catch (NumberFormatException | IndexOutOfBoundsException e){
                 return "";
             }

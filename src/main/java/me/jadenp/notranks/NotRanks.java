@@ -542,7 +542,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                 text = text.replaceAll("\\{player}", event.getWhoClicked().getName());
                 Bukkit.dispatchCommand(Bukkit.getConsoleSender(), text);
             } else if (action.startsWith("rank")){
-                int rank = Integer.parseInt(action.substring(5));
+                int rank = Integer.parseInt(action.substring(5)) + ((guiPage.get(event.getWhoClicked().getUniqueId()) - 1) * ranksPerPage);
                 int currentRank = getRank((Player) event.getWhoClicked());
                 if (rank <= currentRank || rank > currentRank + 1){
                     // not on this rank
