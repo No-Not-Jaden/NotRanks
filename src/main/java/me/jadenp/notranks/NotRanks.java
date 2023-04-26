@@ -48,8 +48,9 @@ import static org.bukkit.util.NumberConversions.ceil;
  * empty ranks x
  * rank placeholder x
  *
- * format cost or other numbers
+ * format cost or other numbers -
  * unformatted placeholders
+ * completed line section for {reqx} -
  */
 public final class NotRanks extends JavaPlugin implements CommandExecutor, Listener {
 

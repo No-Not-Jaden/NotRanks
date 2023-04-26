@@ -16,8 +16,16 @@ hdb:
   enabled: true
   # What head will the ranks change to when they are completed
   completed: 6269
-# if you want a strikethrough over completed requirements
-requirement-strikethrough: true
+# what you want to add to the requirement line when it is completed
+requirement-completion:
+  # beginning of line
+  before: '&a&m'
+  # before {req<x>}
+  prefix: ''
+  # after {req<x>}
+  suffix: ''
+  # at the end of the line
+  after: ' &7(&a✓&7)'
 # formatting of large numbers
 number-formatting:
   # 0 - disabled

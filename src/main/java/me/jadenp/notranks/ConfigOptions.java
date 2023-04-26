@@ -38,12 +38,15 @@ public class ConfigOptions {
     public static List<GUItem> customGUI = new ArrayList<>();
     public static GUItem[] guiLayout;
     public static int ranksPerPage;
-    public static String completedStrikethrough;
     public static boolean usingHDB;
     public static int numberFormatting;
     public static String nfThousands;
     public static int nfDecimals;
     public static LinkedHashMap<Long, String> nfDivisions = new LinkedHashMap<>();
+    public static String completionBefore;
+    public static String completionPrefix;
+    public static String completionSuffix;
+    public static String completionAfter;
 
     public static void loadConfig(){
         // close everyone out of gui
@@ -100,8 +103,23 @@ public class ConfigOptions {
             plugin.getConfig().set("gui.replace-page-items", true);
         if (!plugin.getConfig().isSet("gui.size"))
             plugin.getConfig().set("gui.size", 27);
-        if (!plugin.getConfig().isSet("requirement-strikethrough"))
-            plugin.getConfig().set("requirement-strikethrough", true);
+
+        if (plugin.getConfig().isSet("requirement-strikethrough")){
+            if (plugin.getConfig().getBoolean("requirement-strikethrough")){
+                plugin.getConfig().set("requirement-completion.before", "&a&m");
+            } else {
+                plugin.getConfig().set("requirement-completion.before", "&a");
+            }
+            plugin.getConfig().set("requirement-strikethrough", null);
+        }
+        if (!plugin.getConfig().isSet("requirement-completion.before"))
+            plugin.getConfig().set("requirement-completion.before", "&a&m");
+        if (!plugin.getConfig().isSet("requirement-completion.prefix"))
+            plugin.getConfig().set("requirement-completion.prefix", "");
+        if (!plugin.getConfig().isSet("requirement-completion.suffix"))
+            plugin.getConfig().set("requirement-completion.suffix", "");
+        if (!plugin.getConfig().isSet("requirement-completion.after"))
+            plugin.getConfig().set("requirement-completion.after", "");
         if (!plugin.getConfig().isSet("hdb.enabled"))
             plugin.getConfig().set("hdb.enabled", true);
         if (!plugin.getConfig().isSet("hdb.completed"))
@@ -143,11 +161,15 @@ public class ConfigOptions {
         autoSize = plugin.getConfig().getBoolean("gui.auto-size");
         replacePageItems = plugin.getConfig().getBoolean("gui.replace-page-items");
         guiSize = plugin.getConfig().getInt("gui.size");
-        completedStrikethrough = plugin.getConfig().getBoolean("requirement-strikethrough") ? ChatColor.STRIKETHROUGH + "" : "";
         usingHDB = plugin.getConfig().getBoolean("hdb.enabled");
         numberFormatting = plugin.getConfig().getInt("number-formatting.type");
         nfThousands = plugin.getConfig().getString("number-formatting.thousands");
         nfDecimals = plugin.getConfig().getInt("number-formatting.divisions.decimals");
+        completionBefore = plugin.getConfig().getString("requirement-completion.before");
+        completionAfter = plugin.getConfig().getString("requirement-completion.after");
+        completionPrefix = plugin.getConfig().getString("requirement-completion.prefix");
+        completionSuffix = plugin.getConfig().getString("requirement-completion.suffix");
+
 
         nfDivisions.clear();
         Map<Long, String> preDivisions = new HashMap<>();

@@ -327,7 +327,7 @@ public class Rank {
                             str = ChatColor.RED + ChatColor.translateAlternateColorCodes('&', substringBefore(str, "{cost}") + currencyPrefix) + ChatColor.YELLOW + strAmount + ChatColor.translateAlternateColorCodes('&', currencySuffix) + ChatColor.DARK_GRAY + " / " + ChatColor.translateAlternateColorCodes('&', currencyPrefix) + ChatColor.RED + strCost + ChatColor.translateAlternateColorCodes('&', currencySuffix + substringAfter(str, "{cost}"));
                         } else {
                             // STILL GOTTA DO THIS
-                            str = ChatColor.GREEN + "" + completedStrikethrough + ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&', substringBefore(str, "{cost}") + currencyPrefix)) + strCost + ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&', currencySuffix)) + ChatColor.DARK_GRAY + "" + completedStrikethrough + " / " + ChatColor.GREEN + ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&', currencyPrefix)) + "" + completedStrikethrough + "" + strCost + ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&', currencySuffix + substringAfter(str, "{cost}")));
+                            str = color(completionBefore) + ChatColor.stripColor(color( substringBefore(str, "{cost}"))) + color(completionPrefix) + ChatColor.stripColor(color(currencyPrefix)) + strCost + ChatColor.stripColor(color( currencySuffix)) + " / " + ChatColor.stripColor(color(currencyPrefix)) + strCost + ChatColor.stripColor(color( currencySuffix)) + color(completionSuffix)  + ChatColor.stripColor(color(substringAfter(str, "{cost}"))) + color(completionAfter);
                         }
                     }
                 } else if (str.contains("{req") && str.contains("}")) {
@@ -360,7 +360,7 @@ public class Rank {
         if (!isRequirementCompleted(requirements.get(reqNum - 1), p) && !completed) {
             str = ChatColor.RED + ChatColor.translateAlternateColorCodes('&', substringBefore(str, "{req" + reqNum + "}")) + getRequirementProgress(reqNum, p, false) + ChatColor.translateAlternateColorCodes('&', substringAfter(str, "{req" + reqNum + "}"));
         } else {
-            str = ChatColor.GREEN + "" + completedStrikethrough + ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&', substringBefore(str, "{req" + reqNum + "}"))) + getRequirementProgress(reqNum, p, completed) + ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&', substringAfter(str, "{req" + reqNum + "}")));
+            str = color(completionBefore) + ChatColor.stripColor(color(substringBefore(str, "{req" + reqNum + "}"))) + getRequirementProgress(reqNum, p, completed) + ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&', substringAfter(str, "{req" + reqNum + "}"))) + color(completionAfter);
         }
         return str;
     }
@@ -385,10 +385,10 @@ public class Rank {
                     // is number
                     if (numberFormatting == 1){
                         // thousands
-
+                        value = addThousands(value);
                     } else if (numberFormatting == 2){
                         // divisions
-
+                        value = setDivision(value);
                     }
                 } catch (NumberFormatException ignored){
                 }
@@ -396,7 +396,7 @@ public class Rank {
                 if (!isRequirementCompleted(requirements.get(reqNum - 1), p) && !completed) {
                     str = ChatColor.YELLOW + parsed + ChatColor.DARK_GRAY + " / " + ChatColor.RED + value;
                 } else {
-                    str = ChatColor.GREEN + "" + completedStrikethrough + value + ChatColor.DARK_GRAY + "" + completedStrikethrough + " / " + ChatColor.GREEN + "" + completedStrikethrough + value;
+                    str = color(completionPrefix) + value + " / " + value + color(completionSuffix);
                 }
             }
         }
@@ -406,7 +406,31 @@ public class Rank {
     public String addThousands(String str){
         if (str.length() <= 3)
             return str;
-        return str.substring(str.length() - 3) + nfThousands + addThousands(str.substring(0, str.length()-3));
+        if (str.contains(".")) {
+            int endIndex = str.length() - (3 + str.substring(str.indexOf(".")).length());
+            return addThousands(str.substring(0, endIndex)) + nfThousands + str.substring(endIndex);
+        }
+        return addThousands(str.substring(0, str.length()-3)) + nfThousands + str.substring(str.length() - 3);
+    }
+
+    public String setDivision(String str){
+        double amount;
+        try {
+            amount = Double.parseDouble(str);
+        } catch (NumberFormatException e){
+            return str;
+        }
+        for (Map.Entry<Long, String> entry : nfDivisions.entrySet()){
+            if (amount / entry.getKey() > 1){
+                String strCost = ((double) Math.round(amount / entry.getKey() * Math.pow(10, nfDecimals)) / Math.pow(10, nfDecimals)) + "";
+                if (nfDecimals == 0) {
+                    if (strCost.contains("."))
+                        strCost = strCost.substring(0, strCost.indexOf("."));
+                }
+                return strCost + entry.getValue();
+            }
+        }
+        return str;
     }
 
     public ItemStack getItem(Player p, boolean enchanted) {
