@@ -51,6 +51,7 @@ import static org.bukkit.util.NumberConversions.ceil;
  * format cost or other numbers -
  * unformatted placeholders
  * completed line section for {reqx} -
+ * rankup msg
  */
 public final class NotRanks extends JavaPlugin implements CommandExecutor, Listener {
 
@@ -194,12 +195,11 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
             // log here
         } else {
             if (rankUp.length() > 0) {
-                String text = parse(rankUp, p);
-                if (text.contains("{player}"))
-                    text = text.replace("{player}", p.getName());
-                if (text.contains("{rank}"))
-                    text = text.replace("{rank}", ranks.get(playerRank.get(p.getUniqueId().toString())).getName());
-                Bukkit.broadcastMessage(prefix + text);
+                String text = rankUp;
+                text = text.replaceAll("\\{player}", p.getName());
+                text = text.replaceAll("\\{rank}", ranks.get(playerRank.get(p.getUniqueId().toString())).getName());
+
+                Bukkit.broadcastMessage(prefix + parse(text, p));
             }
             p.playSound(p.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 1, 1);
             newRank.rankup(p);
