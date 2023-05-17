@@ -47,6 +47,7 @@ public class ConfigOptions {
     public static String completionPrefix;
     public static String completionSuffix;
     public static String completionAfter;
+    public static int maxPages;
 
     public static void loadConfig(){
         // close everyone out of gui
@@ -175,7 +176,7 @@ public class ConfigOptions {
         Map<Long, String> preDivisions = new HashMap<>();
         for (String s : plugin.getConfig().getConfigurationSection("number-formatting.divisions").getKeys(false)){
             if (s.equals("decimals"))
-                return;
+                continue;
             try {
                 preDivisions.put(Long.parseLong(s), plugin.getConfig().getString("number-formatting.divisions." + s));
             } catch (NumberFormatException e){
@@ -345,6 +346,15 @@ public class ConfigOptions {
                 }
             }
         }
+        if (ranksPerPage == 0){
+            Bukkit.getLogger().warning("Did not find any ranks!");
+            ranksPerPage = 1;
+        } else {
+            Bukkit.getLogger().info("Registered " + ranksPerPage + " ranks per page.");
+        }
+        maxPages = ranks.size() / ranksPerPage;
+        if (ranks.size() % ranksPerPage > 0)
+            maxPages++;
 
         if (!usingPlaceholderCurrency) {
             try {

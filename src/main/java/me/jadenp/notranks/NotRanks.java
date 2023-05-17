@@ -67,7 +67,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
 
     public static NotRanks instance;
     public HashMap<UUID, Integer> guiPage = new HashMap<>();
-    public int maxPages;
+
 
     public static NotRanks getInstance() {
         return instance;
@@ -125,7 +125,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
             }
         }
         try {
-            loadConfig();
+            this.loadConfig();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -228,9 +228,6 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
         log();
         LanguageOptions.loadConfig();
         ConfigOptions.loadConfig();
-        maxPages = ranks.size() / ranksPerPage;
-        if (ranks.size() % ranksPerPage > 0)
-            maxPages++;
     }
 
     public void openGUI(Player p, int page) {
@@ -242,6 +239,8 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
         ItemStack[] contents = inv.getContents();
         for (int i = 0; i < guiSize; i++) {
             GUItem guItem = guiLayout[i];
+            if (guItem == null)
+                continue;
             if (guItem.getItem() == null){
                 // rank item
                 ItemStack item;
@@ -553,6 +552,8 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                 if (ranks.get(playerRank.get(event.getWhoClicked().getUniqueId().toString())).checkRequirements(((Player) event.getWhoClicked()))) {
                     rankup(((Player) event.getWhoClicked()), ranks.get(playerRank.get(event.getWhoClicked().getUniqueId().toString())));
                     event.getView().close();
+                } else {
+                    event.getWhoClicked().sendMessage(prefix + parse(rankUpDeny, (Player) event.getWhoClicked()));
                 }
             }
         }

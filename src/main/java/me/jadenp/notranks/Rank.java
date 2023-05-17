@@ -60,19 +60,11 @@ public class Rank {
         if (str.equalsIgnoreCase("false"))
             return false;
 
-        int number;
-        try {
-            number = Integer.parseInt(str);
-        } catch (NumberFormatException ignored) {
-            double alsoNumber;
-            try {
-                alsoNumber = Double.parseDouble(str);
-            } catch (NumberFormatException ignored2) {
-                return str;
-            }
-            return alsoNumber;
+        try{
+            return Double.parseDouble(str);
+        } catch (NumberFormatException e){
+            return str;
         }
-        return number;
     }
 
     private boolean compareObjects(Object parsedValue, Object parsedPlaceholder, String operator) {
@@ -245,6 +237,8 @@ public class Rank {
         // checking cost
         String requirement = currency + " >= " + cost;
         progress.add(isRequirementCompleted(requirement, p));
+
+        //Bukkit.getLogger().info(progress.toString());
 
 
         // go through and see if any change?
