@@ -11,9 +11,13 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.plugin.Plugin;
+import org.bukkit.inventory.meta.SkullMeta;
+import org.bukkit.profile.PlayerProfile;
+import org.bukkit.profile.PlayerTextures;
 
 import java.awt.*;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.*;
 import java.util.List;
 
@@ -27,22 +31,22 @@ public class Rank {
     private final List<String> requirements;
     private final double cost;
     private final List<String> commands;
-    private final int hdbNum;
+    private final String head;
     private final Map<String, List<Boolean>> completed = new HashMap<>();
     private final Map<String, List<Boolean>> firstTimeCompletion = new HashMap<>();
-    private final int finishedHead;
+    private final String finishedHead;
     private final Material material;
     private final boolean completionLoreEnabled;
     private final List<String> completionLore;
     private final boolean hideNBT;
 
-    public Rank(String name, List<String> lore, List<String> requirements, double cost, List<String> commands, int hdbNum, int finishedHead, String item, boolean completionLoreEnabled, List<String> completionLore, boolean hideNBT) {
+    public Rank(String name, List<String> lore, List<String> requirements, double cost, List<String> commands, String head, String finishedHead, String item, boolean completionLoreEnabled, List<String> completionLore, boolean hideNBT) {
         this.name = decodeHex(name);
         this.lore = lore;
         this.requirements = requirements;
         this.cost = cost;
         this.commands = commands;
-        this.hdbNum = hdbNum;
+        this.head = head;
         this.finishedHead = finishedHead;
         material = Material.getMaterial(item);
         this.completionLoreEnabled = completionLoreEnabled;
@@ -304,15 +308,26 @@ public class Rank {
                         amount = checkItemAmount(p, Material.valueOf(currency));
                     }
                     String strCost = ((double) Math.round(cost * Math.pow(10, decimals)) / Math.pow(10, decimals)) + "";
+                    String strAmount = ((double) Math.round(amount * Math.pow(10, decimals)) / Math.pow(10, decimals)) + "";
                     if (decimals == 0) {
                         if (strCost.contains("."))
                             strCost = strCost.substring(0, strCost.indexOf("."));
                     }
-                    String strAmount = ((double) Math.round(amount * Math.pow(10, decimals)) / Math.pow(10, decimals)) + "";
                     if (decimals == 0) {
                         if (strAmount.contains("."))
                             strAmount = strAmount.substring(0, strAmount.indexOf("."));
                     }
+                    if (numberFormatting == 1){
+                        // thousands
+                        strCost = addThousands(strCost);
+                        strAmount = addThousands(strAmount);
+                    } else if (numberFormatting == 2){
+                        // divisions
+                        strCost = setDivision(strCost);
+                        strAmount = setDivision(strAmount);
+                    }
+
+
                     if (error) {
                         // use smthn else to replace amount
                         str = ChatColor.RED + ChatColor.translateAlternateColorCodes('&', substringBefore(str, "{cost}") + currencyPrefix) + ChatColor.YELLOW + currency + ChatColor.translateAlternateColorCodes('&', currencySuffix) + ChatColor.DARK_GRAY + " / " + ChatColor.translateAlternateColorCodes('&', currencyPrefix) + ChatColor.RED + cost + ChatColor.translateAlternateColorCodes('&', currencySuffix + substringAfter(str, "{cost}"));
@@ -415,7 +430,7 @@ public class Rank {
             return str;
         }
         for (Map.Entry<Long, String> entry : nfDivisions.entrySet()){
-            if (amount / entry.getKey() > 1){
+            if (amount / entry.getKey() >= 1){
                 String strCost = ((double) Math.round(amount / entry.getKey() * Math.pow(10, nfDecimals)) / Math.pow(10, nfDecimals)) + "";
                 if (nfDecimals == 0) {
                     if (strCost.contains("."))
@@ -427,26 +442,75 @@ public class Rank {
         return str;
     }
 
-    public ItemStack getItem(Player p, boolean enchanted) {
-        ItemStack item;
-        if (HDBEnabled && hdbNum != -1 && usingHDB) {
-            HeadDatabaseAPI hdb = new HeadDatabaseAPI();
-            if (enchanted) {
-                try {
-                    item = hdb.getItemHead(finishedHead + "");
-                } catch (NullPointerException nullPointerException) {
-                    item = new ItemStack(material);
-                }
-            } else {
-                try {
-                    item = hdb.getItemHead(hdbNum + "");
-                } catch (NullPointerException nullPointerException) {
-                    item = new ItemStack(material);
-                }
-            }
-        } else {
-            item = new ItemStack(material);
+    private boolean usingBase64(String str){
+        try {
+            Integer.parseInt(str);
+            return false;
+        } catch (NumberFormatException e) {
+            return true;
         }
+    }
+
+    public PlayerProfile createProfile(String base64){
+        try {
+            String urlString = new String(Base64.getDecoder().decode(base64));
+            String before = "{\"textures\":{\"SKIN\":{\"url\":\"";
+            String after = "\"}}}";
+
+            urlString = urlString.substring(before.length(), urlString.length() - after.length());
+            URL url = new URL(urlString);
+            PlayerProfile profile = Bukkit.createPlayerProfile(UUID.randomUUID(), "");
+            PlayerTextures textures = profile.getTextures();
+            textures.setSkin(url);
+            profile.setTextures(textures);
+            return profile;
+        } catch (IllegalArgumentException | MalformedURLException e){
+            if (debug)
+                e.printStackTrace();
+            return null;
+        }
+    }
+
+    public ItemStack createPlayerSkull(String data){
+        if (debug)
+            Bukkit.getLogger().info("[NotRanks] Attempting to get player skull from: " + data);
+        ItemStack item = null;
+        if (usingBase64(data)){
+            item = new ItemStack(Material.PLAYER_HEAD);
+            SkullMeta meta = (SkullMeta) item.getItemMeta();
+            assert meta != null;
+            meta.setOwnerProfile(createProfile(data));
+            item.setItemMeta(meta);
+        } else if (HDBEnabled){
+            HeadDatabaseAPI hdb = new HeadDatabaseAPI();
+            try {
+                item = hdb.getItemHead(data);
+            } catch (NullPointerException nullPointerException) {
+                if (debug)
+                    nullPointerException.printStackTrace();
+                return null;
+            }
+        }
+        return item;
+    }
+
+    public ItemStack getItem(Player p, boolean enchanted) {
+        ItemStack item = null;
+        if (usingHeads){
+            if (enchanted){
+                item = createPlayerSkull(finishedHead);
+            } else {
+                item = createPlayerSkull(head);
+            }
+            if (debug && item == null){
+                Bukkit.getLogger().info("[NotRanks] Could not get head.");
+            }
+        }
+
+        if (item == null)
+            item = new ItemStack(material);
+
+
         ItemMeta meta = item.getItemMeta();
         assert meta != null;
         meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', name));

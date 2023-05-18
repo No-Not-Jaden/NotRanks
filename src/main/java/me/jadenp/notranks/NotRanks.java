@@ -50,7 +50,7 @@ import static org.bukkit.util.NumberConversions.ceil;
  *
  * format cost or other numbers -
  * unformatted placeholders
- * completed line section for {reqx} -
+ * completed line section for {reqx} - x
  * rankup msg
  */
 public final class NotRanks extends JavaPlugin implements CommandExecutor, Listener {
@@ -272,67 +272,6 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
         inv.setContents(contents);
         guiPage.put(p.getUniqueId(), page);
         p.openInventory(inv);
-        /*if (autoSize) {
-            int size = (ceil((double) ranks.size() / 7) * 9);
-            if (size <= 36) {
-                Inventory inv = Bukkit.createInventory(p, size + 18, color(guiName));
-                ItemStack[] contents = inv.getContents();
-                for (int i = 0; i < 10; i++) {
-                    contents[i] = fillItem;
-                }
-                int rankNum = 0;
-                for (int i = 10; i < contents.length; i++) {
-                    // some math if contents is at end or start of line
-                    // check if i-10 ranks is a thing or set to  fill
-                    if (i % 9 == 0 || (i + 1) % 9 == 0) {
-                        contents[i] = fillItem;
-                    } else if (rankNum < ranks.size()) {
-                        contents[i] = ranks.get(rankNum).getItem(p, (playerRank.get(p.getUniqueId().toString()) > rankNum));
-                        rankNum++;
-                    } else {
-                        contents[i] = fillItem;
-                    }
-
-                }
-                // set last item to exit button
-                contents[contents.length - 5] = exit;
-                inv.setContents(contents);
-                p.openInventory(inv);
-            } else {
-                Inventory inv = Bukkit.createInventory(p, 54, color(guiName));
-                ItemStack[] contents = inv.getContents();
-                for (int i = 0; i < 10; i++) {
-                    contents[i] = fillItem;
-                }
-                int rankNum = 0;
-                rankNum += (page - 1) * 36;
-                for (int i = 10; i < 45; i++) {
-                    // some math if contents is at end or start of line
-                    // check if i-10 ranks is a thing or set to  fill
-                    if (i % 9 == 0 || (i + 1) % 9 == 0) {
-                        contents[i] = fillItem;
-                    } else if (rankNum < ranks.size()) {
-                        contents[i] = ranks.get(rankNum).getItem(p, (playerRank.get(p.getUniqueId().toString()) > rankNum));
-                        rankNum++;
-                    } else {
-                        contents[i] = fillItem;
-                    }
-                }
-                for (int i = 45; i < 54; i++) {
-                    contents[i] = fillItem;
-                }
-                contents[contents.length - 5] = exit;
-                contents[contents.length - 1] = next;
-                if (page > 1) {
-                    contents[contents.length - 9] = back;
-                }
-                inv.setContents(contents);
-                p.openInventory(inv);
-            }
-        } else {
-
-
-        }*/
     }
 
 
@@ -430,6 +369,10 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
 
                 }
                 sender.sendMessage(prefix + ChatColor.RED + "/ranks help" + ChatColor.DARK_RED + "  What you just typed in");
+            } else if (args[0].equalsIgnoreCase("debug") && sender.hasPermission("notranks.admin")) {
+                debug = !debug;
+                sender.sendMessage(prefix + ChatColor.YELLOW + "Debug mode is now set to: " + debug);
+
             } else {
                 sender.sendMessage(prefix + parse(unknownCommand, (Player) sender));
             }
