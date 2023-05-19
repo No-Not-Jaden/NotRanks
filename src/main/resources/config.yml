@@ -10,11 +10,11 @@ currency:
   suffix: '&b♦'
   # how many decimals will be shown
   decimals: 0
-# Head Data Base
-hdb:
+# HeadDataBase or Base64
+heads:
   # set this to true if you want to be able to use heads as ranks in the gui
   enabled: true
-  # What head will the ranks change to when they are completed
+  # What head will the ranks change to when they are completed - HeadDataBase index or Base64
   completed: 6269
 # what you want to add to the requirement line when it is completed
 requirement-completion:
@@ -37,7 +37,7 @@ number-formatting:
   # makes the number smaller and adds a suffix ex: 1000 = 1K | 1234 = 1.23K | 5467900 = 5.47M
   divisions:
     # how many decimals to include after a division
-    decimals: 2
+    decimals: 1
     # the division and suffix
     1000: K
     1000000: M
@@ -120,8 +120,8 @@ gui:
 
 1:
   name: '&9&lStarter'
-  # only will work if HeadDataBase installed, otherwise use the item feature
-  hdb: 193
+  # If HeadDataBase is installed, this will try and get a head ID, otherwise Base64
+  head: 193
   # this item will be used if HDB isnt installed or is set to -1
   item: EMERALD_BLOCK
   # {cost} to get x/total - with prefix & suffix around each number

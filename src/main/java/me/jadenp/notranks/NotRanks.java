@@ -2,9 +2,9 @@ package me.jadenp.notranks;
 
 
 import me.clip.placeholderapi.PlaceholderAPI;
-import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Bukkit;
-import org.bukkit.Material;
+import net.md_5.bungee.api.ChatColor;
+
 import org.bukkit.OfflinePlayer;
 import org.bukkit.Sound;
 import org.bukkit.command.Command;
@@ -20,7 +20,6 @@ import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
@@ -39,7 +38,6 @@ import static me.jadenp.notranks.LanguageOptions.*;
 /**
  * Wrong rank item -
  */
-
 public final class NotRanks extends JavaPlugin implements CommandExecutor, Listener {
 
     public File playerdata = new File(this.getDataFolder() + File.separator + "playerdata.yml");
@@ -348,6 +346,10 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
 
                 }
                 sender.sendMessage(prefix + ChatColor.RED + "/ranks help" + ChatColor.DARK_RED + "  What you just typed in");
+            } else if (args[0].equalsIgnoreCase("debug") && sender.hasPermission("notranks.admin")) {
+                debug = !debug;
+                sender.sendMessage(prefix + ChatColor.YELLOW + "Debug mode is now set to: " + debug);
+
             } else {
                 sender.sendMessage(prefix + parse(unknownCommand, (Player) sender));
             }

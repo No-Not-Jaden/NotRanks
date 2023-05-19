@@ -18,6 +18,7 @@ public class ConfigOptions {
     public static ArrayList<Rank> ranks = new ArrayList<>();
     public static boolean HDBEnabled;
     public static String currency;
+    public static int maxPages;
     public static boolean usingPlaceholderCurrency;
     public static List<String> removeCommands;
     public static String currencyPrefix;
@@ -37,7 +38,7 @@ public class ConfigOptions {
     public static List<GUItem> customGUI = new ArrayList<>();
     public static GUItem[] guiLayout;
     public static int ranksPerPage;
-    public static boolean usingHDB;
+    public static boolean usingHeads;
     public static int numberFormatting;
     public static String nfThousands;
     public static int nfDecimals;
@@ -46,7 +47,6 @@ public class ConfigOptions {
     public static String completionPrefix;
     public static String completionSuffix;
     public static String completionAfter;
-    public static int maxPages;
     public static String denyClickItem;
 
     public static void loadConfig(){
@@ -123,10 +123,15 @@ public class ConfigOptions {
             plugin.getConfig().set("requirement-completion.suffix", "");
         if (!plugin.getConfig().isSet("requirement-completion.after"))
             plugin.getConfig().set("requirement-completion.after", "");
-        if (!plugin.getConfig().isSet("hdb.enabled"))
-            plugin.getConfig().set("hdb.enabled", true);
-        if (!plugin.getConfig().isSet("hdb.completed"))
-            plugin.getConfig().set("hdb.completed", 6269);
+        if (plugin.getConfig().isSet("hdb.enabled")){
+            plugin.getConfig().set("head.enabled", plugin.getConfig().getBoolean("hdb.enabled"));
+            plugin.getConfig().set("head.completed", plugin.getConfig().getString("hdb.completed"));
+            plugin.getConfig().set("hdb", null);
+        }
+        if (!plugin.getConfig().isSet("head.enabled"))
+            plugin.getConfig().set("head.enabled", true);
+        if (!plugin.getConfig().isSet("head.completed"))
+            plugin.getConfig().set("head.completed", 6269);
         if (!plugin.getConfig().isSet("number-formatting.type"))
             plugin.getConfig().set("number-formatting.type", 1);
         if (!plugin.getConfig().isSet("number-formatting.thousands"))
@@ -143,12 +148,20 @@ public class ConfigOptions {
             List<String> requirements = plugin.getConfig().isSet(i + ".requirements") ? plugin.getConfig().getStringList(i + ".requirements") : new ArrayList<>();
             int cost = plugin.getConfig().isSet(i + ".cost") ? plugin.getConfig().getInt(i + ".cost") : 0;
             List<String> commands = plugin.getConfig().isSet(i + ".commands") ? plugin.getConfig().getStringList(i + ".commands") : new ArrayList<>();
-            int hdb = plugin.getConfig().isSet(i + ".hdb") ? plugin.getConfig().getInt(i + ".hdb") : 1;
+            String head;
+            if (plugin.getConfig().isSet(i + ".hdb")) {
+                head = plugin.getConfig().getString(i + ".hdb");
+                plugin.getConfig().set(i + ".head", head);
+                plugin.getConfig().set(i + ".hdb", null);
+            } else {
+                head = plugin.getConfig().isSet(i + ".head") ? plugin.getConfig().getString(i + ".head") : "1";
+            }
+
             String item = plugin.getConfig().isSet(i +".item") ? plugin.getConfig().getString(i +".item") : "EMERALD_BLOCK";
             boolean completionLoreEnabled = plugin.getConfig().isSet(i + ".completion-lore.enabled") && plugin.getConfig().getBoolean(i + ".completion-lore.enabled");
             List<String> completionLore = plugin.getConfig().isSet(i + ".completion-lore.lore") ? plugin.getConfig().getStringList(i + ".completion-lore.lore") : new ArrayList<>();
             boolean hideNBT = plugin.getConfig().isSet(i + ".hide-nbt") && plugin.getConfig().getBoolean(i + ".hide-nbt");
-            ranks.add(new Rank(plugin.getConfig().getString(i + ".name"), lore, requirements, cost, commands, hdb, plugin.getConfig().getInt("hdb.completed"), item, completionLoreEnabled, completionLore, hideNBT));
+            ranks.add(new Rank(plugin.getConfig().getString(i + ".name"), lore, requirements, cost, commands, head, plugin.getConfig().getString("heads.completed"), item, completionLoreEnabled, completionLore, hideNBT));
         }
 
         currency = plugin.getConfig().getString("currency.unit");
@@ -164,7 +177,7 @@ public class ConfigOptions {
         autoSize = plugin.getConfig().getBoolean("gui.auto-size");
         replacePageItems = plugin.getConfig().getBoolean("gui.replace-page-items");
         guiSize = plugin.getConfig().getInt("gui.size");
-        usingHDB = plugin.getConfig().getBoolean("hdb.enabled");
+        usingHeads = plugin.getConfig().getBoolean("heads.enabled");
         numberFormatting = plugin.getConfig().getInt("number-formatting.type");
         nfThousands = plugin.getConfig().getString("number-formatting.thousands");
         nfDecimals = plugin.getConfig().getInt("number-formatting.divisions.decimals");
