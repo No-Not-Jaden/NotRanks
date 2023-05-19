@@ -11,11 +11,12 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.plugin.Plugin;
 
 import java.awt.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static me.jadenp.notranks.ConfigOptions.*;
 import static me.jadenp.notranks.LanguageOptions.*;
@@ -238,7 +239,9 @@ public class Rank {
         String requirement = currency + " >= " + cost;
         progress.add(isRequirementCompleted(requirement, p));
 
-        //Bukkit.getLogger().info(progress.toString());
+        List<String> req = requirements != null ? new ArrayList<>(requirements) : new ArrayList<>();
+        req.add(requirement);
+
 
 
         // go through and see if any change?
@@ -250,6 +253,8 @@ public class Rank {
                     completedYet.set(i, true);
                     // completed requirement
                     if (!sentMessage) {
+                        CompleteRequirementEvent event = new CompleteRequirementEvent(p, this, req.get(i));
+                        Bukkit.getPluginManager().callEvent(event);
                         p.sendMessage(prefix + PlaceholderAPI.setPlaceholders(p, color(completeRequirement)));
                         sentMessage = true;
                     }
@@ -507,10 +512,6 @@ public class Rank {
                 }
                 Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), command);
             }
-    }
-
-    public List<String> getRequirements() {
-        return requirements;
     }
 
     public String getName() {

@@ -2,9 +2,8 @@ package me.jadenp.notranks;
 
 
 import me.clip.placeholderapi.PlaceholderAPI;
-import org.bukkit.Bukkit;
 import net.md_5.bungee.api.ChatColor;
-
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.Sound;
@@ -33,26 +32,14 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.List;
 
 import static me.jadenp.notranks.ConfigOptions.*;
 import static me.jadenp.notranks.LanguageOptions.*;
 
-import static org.bukkit.util.NumberConversions.ceil;
-
 /**
- * customizable gui
- * change strikethrough x
- * completion lore x
- * hide nbt x
- * empty ranks x
- * rank placeholder x
- *
- * format cost or other numbers -
- * unformatted placeholders
- * completed line section for {reqx} -
- * rankup msg
+ * Wrong rank item -
  */
+
 public final class NotRanks extends JavaPlugin implements CommandExecutor, Listener {
 
     public File playerdata = new File(this.getDataFolder() + File.separator + "playerdata.yml");
@@ -84,35 +71,33 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
         new RankPlaceholder(this).register();
         saveDefaultConfig();
         // create logs stuff
-        if (!logsFolder.exists()){
-            logsFolder.mkdir();
-        }
-        if (!today.exists()){
-            try {
-                today.createNewFile();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        } else {
-            try {
-                Scanner scanner = new Scanner(today);
-                while (scanner.hasNextLine()){
-                    String data = scanner.nextLine();
-                    logs.add(data);
+        //noinspection ResultOfMethodCallIgnored
+        logsFolder.mkdir();
+        try {
+            if (!today.createNewFile()){
+                try {
+                    Scanner scanner = new Scanner(today);
+                    while (scanner.hasNextLine()){
+                        String data = scanner.nextLine();
+                        logs.add(data);
+                    }
+                    scanner.close();
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
                 }
-                scanner.close();
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
             }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
         // creating file to store player's ranks if the file hadn't already been created
-        if (!playerdata.exists()) {
             try {
-                playerdata.createNewFile();
+                if (playerdata.createNewFile()){
+                    Bukkit.getLogger().info("Creating a new player data file.");
+                }
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        }
+
 
 
 
@@ -191,9 +176,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
     public void rankup(Player p, Rank newRank) {
         RankupEvent event = new RankupEvent(p, newRank, ranks.get(playerRank.get(p.getUniqueId().toString())), playerRank.get(p.getUniqueId().toString()) + 1);
         Bukkit.getPluginManager().callEvent(event);
-        if (event.isCancelled()){
-            // log here
-        } else {
+        if (!event.isCancelled()){
             if (rankUp.length() > 0) {
                 String text = rankUp;
                 text = text.replaceAll("\\{player}", p.getName());
@@ -206,12 +189,8 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
             logs.add("[" +formatExact.format(now) + "] " + p.getName() + " ranked up to " + newRank.getName() + ".");
             playerRank.replace(p.getUniqueId().toString(), playerRank.get(p.getUniqueId().toString()) + 1);
         }
-
     }
 
-    public void setRank(Player p, int rank) {
-        playerRank.replace(p.getUniqueId().toString(), rank);
-    }
 
     public void saveRanks() throws IOException {
         YamlConfiguration configuration = new YamlConfiguration();
@@ -272,67 +251,6 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
         inv.setContents(contents);
         guiPage.put(p.getUniqueId(), page);
         p.openInventory(inv);
-        /*if (autoSize) {
-            int size = (ceil((double) ranks.size() / 7) * 9);
-            if (size <= 36) {
-                Inventory inv = Bukkit.createInventory(p, size + 18, color(guiName));
-                ItemStack[] contents = inv.getContents();
-                for (int i = 0; i < 10; i++) {
-                    contents[i] = fillItem;
-                }
-                int rankNum = 0;
-                for (int i = 10; i < contents.length; i++) {
-                    // some math if contents is at end or start of line
-                    // check if i-10 ranks is a thing or set to  fill
-                    if (i % 9 == 0 || (i + 1) % 9 == 0) {
-                        contents[i] = fillItem;
-                    } else if (rankNum < ranks.size()) {
-                        contents[i] = ranks.get(rankNum).getItem(p, (playerRank.get(p.getUniqueId().toString()) > rankNum));
-                        rankNum++;
-                    } else {
-                        contents[i] = fillItem;
-                    }
-
-                }
-                // set last item to exit button
-                contents[contents.length - 5] = exit;
-                inv.setContents(contents);
-                p.openInventory(inv);
-            } else {
-                Inventory inv = Bukkit.createInventory(p, 54, color(guiName));
-                ItemStack[] contents = inv.getContents();
-                for (int i = 0; i < 10; i++) {
-                    contents[i] = fillItem;
-                }
-                int rankNum = 0;
-                rankNum += (page - 1) * 36;
-                for (int i = 10; i < 45; i++) {
-                    // some math if contents is at end or start of line
-                    // check if i-10 ranks is a thing or set to  fill
-                    if (i % 9 == 0 || (i + 1) % 9 == 0) {
-                        contents[i] = fillItem;
-                    } else if (rankNum < ranks.size()) {
-                        contents[i] = ranks.get(rankNum).getItem(p, (playerRank.get(p.getUniqueId().toString()) > rankNum));
-                        rankNum++;
-                    } else {
-                        contents[i] = fillItem;
-                    }
-                }
-                for (int i = 45; i < 54; i++) {
-                    contents[i] = fillItem;
-                }
-                contents[contents.length - 5] = exit;
-                contents[contents.length - 1] = next;
-                if (page > 1) {
-                    contents[contents.length - 9] = back;
-                }
-                inv.setContents(contents);
-                p.openInventory(inv);
-            }
-        } else {
-
-
-        }*/
     }
 
 
@@ -553,7 +471,43 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                     rankup(((Player) event.getWhoClicked()), ranks.get(playerRank.get(event.getWhoClicked().getUniqueId().toString())));
                     event.getView().close();
                 } else {
-                    event.getWhoClicked().sendMessage(prefix + parse(rankUpDeny, (Player) event.getWhoClicked()));
+                    if (denyClickItem.equals("DISABLE")) {
+                        event.getWhoClicked().sendMessage(prefix + parse(rankUpDeny, (Player) event.getWhoClicked()));
+                    } else if (denyClickItem.equals("RANK")){
+                        ItemStack[] contents = event.getInventory().getContents();
+                        ItemStack item = contents[event.getSlot()];
+                        ItemMeta meta = item.getItemMeta();
+                        assert meta != null;
+                        meta.setDisplayName(parse(rankUpDeny, (Player) event.getWhoClicked()));
+                        item.setItemMeta(meta);
+                        contents[event.getSlot()] = item;
+                        event.getInventory().setContents(contents);
+                        new BukkitRunnable(){
+                            @Override
+                            public void run() {
+                                if (guiPage.containsKey(event.getWhoClicked().getUniqueId())){
+                                    openGUI((Player) event.getWhoClicked(), guiPage.get(event.getWhoClicked().getUniqueId()));
+                                }
+                            }
+                        }.runTaskLater(this, 20);
+                    } else {
+                        ItemStack[] contents = event.getInventory().getContents();
+                        ItemStack item = new ItemStack(Material.valueOf(denyClickItem));
+                        ItemMeta meta = item.getItemMeta();
+                        assert meta != null;
+                        meta.setDisplayName(parse(rankUpDeny, (Player) event.getWhoClicked()));
+                        item.setItemMeta(meta);
+                        contents[event.getSlot()] = item;
+                        event.getInventory().setContents(contents);new BukkitRunnable(){
+                            @Override
+                            public void run() {
+                                if (guiPage.containsKey(event.getWhoClicked().getUniqueId())){
+                                    openGUI((Player) event.getWhoClicked(), guiPage.get(event.getWhoClicked().getUniqueId()));
+                                }
+                            }
+                        }.runTaskLater(this, 20);
+
+                    }
                 }
             }
         }

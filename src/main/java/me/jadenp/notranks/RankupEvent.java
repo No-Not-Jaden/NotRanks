@@ -1,18 +1,18 @@
 package me.jadenp.notranks;
 
 import org.bukkit.entity.Player;
-import org.bukkit.event.Event;
-
 import org.bukkit.event.Cancellable;
+import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
 
+@SuppressWarnings("unused")
 public class RankupEvent extends Event implements Cancellable{
 
-    private Player player;
-    private Rank newRank;
-    private Rank oldRank;
-    private int rankNumber;
+    private final Player player;
+    private final Rank newRank;
+    private final Rank oldRank;
+    private final int rankNumber;
     private boolean isCancelled;
     public RankupEvent(Player player, Rank newRank, Rank oldRank, int rankNumber){
         this.player = player;
@@ -49,7 +49,7 @@ public class RankupEvent extends Event implements Cancellable{
 
     private static final HandlerList handlers = new HandlerList();
     @Override
-    public HandlerList getHandlers() {
+    public @NotNull HandlerList getHandlers() {
         return handlers;
     }
 

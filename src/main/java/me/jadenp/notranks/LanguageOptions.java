@@ -1,12 +1,8 @@
 package me.jadenp.notranks;
 
-import me.clip.placeholderapi.PlaceholderAPI;
 import net.md_5.bungee.api.ChatColor;
-import org.bukkit.Bukkit;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.file.YamlConfiguration;
 
-import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.regex.Matcher;

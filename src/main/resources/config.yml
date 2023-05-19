@@ -63,6 +63,10 @@ gui:
   fill-item: GRAY_STAINED_GLASS_PANE
   # this will replace the next arrow and pack arrows with the fill item unless more pages are available
   replace-page-items: true
+  # what item will pop up when you click on the wrong rank
+  # set to DISABLE to disable
+  # set to RANK to only change it item name
+  deny-click-item: VOID_BARRIER
   # if auto-size is enabled, then the next gui-options won't do anything
   # size of gui
   size: 27

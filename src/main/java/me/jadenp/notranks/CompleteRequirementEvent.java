@@ -1,23 +1,21 @@
 package me.jadenp.notranks;
+
 import org.bukkit.entity.Player;
-import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
-import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
-public class CompleteRequirementEvent extends Event implements Cancellable {
+@SuppressWarnings("unused")
+public class CompleteRequirementEvent extends Event{
 
-    private Player player;
-    private Rank rank;
-    private String requirementName;
-    private String value;
-    public CompleteRequirementEvent(Player player, Rank rank, String requirementName, String value, NotRanks notRanks){
+    private final Player player;
+    private final Rank rank;
+    private final String requirementName;
+    public CompleteRequirementEvent(Player player, Rank rank, String requirementName){
         this.player = player;
         this.rank = rank;
         this.requirementName = requirementName;
-        this.value = value;
-        notRanks.writeLog(player.getName() + " completed requirement " + requirementName + " for " + rank.getName() + ". (" + value + ")");
+        NotRanks.getInstance().writeLog(player.getName() + " completed requirement '" + requirementName + "' for " + rank.getName() + ".");
     }
 
     public Player getPlayer() {
@@ -32,24 +30,10 @@ public class CompleteRequirementEvent extends Event implements Cancellable {
         return requirementName;
     }
 
-    public String getValue() {
-        return value;
-    }
-
-    @Override
-    public boolean isCancelled() {
-        return false;
-    }
-
-    @Override
-    public void setCancelled(boolean cancel) {
-
-    }
-
     private static final HandlerList handlers = new HandlerList();
 
     @Override
-    public HandlerList getHandlers() {
+    public @NotNull HandlerList getHandlers() {
         return handlers;
     }
 

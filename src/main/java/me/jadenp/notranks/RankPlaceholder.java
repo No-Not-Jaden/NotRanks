@@ -1,24 +1,14 @@
 package me.jadenp.notranks;
 
-import me.clip.placeholderapi.PlaceholderAPI;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
-import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.entity.Player;
-import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import java.io.File;
 
 import static me.jadenp.notranks.ConfigOptions.*;
-import static me.jadenp.notranks.ConfigOptions.decimals;
 
 public class RankPlaceholder extends PlaceholderExpansion {
 
-    private NotRanks plugin;
+    private final NotRanks plugin;
 
     public RankPlaceholder(NotRanks plugin){
         this.plugin = plugin;

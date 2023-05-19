@@ -13,7 +13,6 @@ import java.util.*;
 
 import static me.jadenp.notranks.LanguageOptions.color;
 import static me.jadenp.notranks.LanguageOptions.guiName;
-import static org.bukkit.util.NumberConversions.ceil;
 
 public class ConfigOptions {
     public static ArrayList<Rank> ranks = new ArrayList<>();
@@ -48,6 +47,7 @@ public class ConfigOptions {
     public static String completionSuffix;
     public static String completionAfter;
     public static int maxPages;
+    public static String denyClickItem;
 
     public static void loadConfig(){
         // close everyone out of gui
@@ -104,6 +104,8 @@ public class ConfigOptions {
             plugin.getConfig().set("gui.replace-page-items", true);
         if (!plugin.getConfig().isSet("gui.size"))
             plugin.getConfig().set("gui.size", 27);
+        if (!plugin.getConfig().isSet("gui.deny-click-tem"))
+            plugin.getConfig().set("gui.deny-click-item", "VOID_BARRIER");
 
         if (plugin.getConfig().isSet("requirement-strikethrough")){
             if (plugin.getConfig().getBoolean("requirement-strikethrough")){
@@ -170,11 +172,19 @@ public class ConfigOptions {
         completionAfter = plugin.getConfig().getString("requirement-completion.after");
         completionPrefix = plugin.getConfig().getString("requirement-completion.prefix");
         completionSuffix = plugin.getConfig().getString("requirement-completion.suffix");
+        denyClickItem = Objects.requireNonNull(plugin.getConfig().getString("gui.deny-click-item")).toUpperCase();
+        if (!denyClickItem.equals("DISABLE") && !denyClickItem.equals("RANK"))
+            try {
+                Material.valueOf(denyClickItem);
+            } catch (IllegalArgumentException e){
+                Bukkit.getLogger().warning("Could not get a material from \"" + denyClickItem + "\" for deny click item.");
+                denyClickItem = "DISABLE";
+            }
 
 
         nfDivisions.clear();
         Map<Long, String> preDivisions = new HashMap<>();
-        for (String s : plugin.getConfig().getConfigurationSection("number-formatting.divisions").getKeys(false)){
+        for (String s : Objects.requireNonNull(plugin.getConfig().getConfigurationSection("number-formatting.divisions")).getKeys(false)){
             if (s.equals("decimals"))
                 continue;
             try {
@@ -366,63 +376,6 @@ public class ConfigOptions {
         }
 
         plugin.saveConfig();
-    }
-
-    public static ItemStack stripPlaceholders(ItemStack item){
-        ItemMeta meta = item.getItemMeta();
-        assert meta != null;
-        meta.setDisplayName(org.bukkit.ChatColor.stripColor(org.bukkit.ChatColor.translateAlternateColorCodes('&', meta.getDisplayName().replaceAll("(?<= %).*?(?=% )", " `1~ "))));
-        if (meta.hasLore()) {
-            List<String> lore = meta.getLore();
-            assert lore != null;
-            lore.replaceAll(text -> org.bukkit.ChatColor.stripColor(org.bukkit.ChatColor.translateAlternateColorCodes('&', text.replaceAll("(?<= %).*?(?=% )", " `1~ "))));
-            meta.setLore(lore);
-        }
-        item.setItemMeta(meta);
-        return item;
-    }
-    public static boolean matchItem(ItemStack compare, ItemStack parsedItem){
-        ItemMeta rankMeta = stripPlaceholders(parsedItem).getItemMeta();
-        assert rankMeta != null;
-        ItemMeta compareMeta = compare.getItemMeta();
-        assert compareMeta != null;
-        String[] displayName = rankMeta.getDisplayName().split("`1~");
-        if (!containsAll(displayName, org.bukkit.ChatColor.stripColor(compareMeta.getDisplayName())))
-            return false;
-        if (compareMeta.hasLore() != rankMeta.hasLore())
-            return false;
-        if (compareMeta.hasLore()){
-            List<String> compareLore = compareMeta.getLore();
-            List<String> rankLore = rankMeta.getLore();
-            assert compareLore != null;
-            assert rankLore != null;
-            if (compareLore.size() != rankLore.size())
-                return false;
-            for (int i = 0; i < compareLore.size(); i++) {
-                if (!containsAll(rankLore.get(i).split("`1~"), compareLore.get(i)))
-                    return false;
-            }
-        }
-
-        return true;
-
-    }
-
-    /**
-     * Returns if str contains all requirements in the order given
-     *
-     * @param requirements strings that str needs and the order they need to be in
-     * @param str the string to compare
-     * @return true if str contains all requirements in the order given
-     */
-    public static boolean containsAll(String[] requirements, String str){
-        if (requirements.length == 0)
-            return true;
-        if (!str.contains(requirements[0]))
-            return false;
-        String[] req = new String[requirements.length-1];
-        System.arraycopy(requirements, 1, req, 0, req.length);
-        return containsAll(req, str.substring(str.indexOf(requirements[0]) + requirements[0].length()));
     }
     public static LinkedHashMap<Long, String> sortByValue(Map<Long, String> hm) {
         // Create a list from elements of HashMap

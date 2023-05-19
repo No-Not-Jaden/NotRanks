@@ -1,13 +1,10 @@
 package me.jadenp.notranks;
 
 import me.clip.placeholderapi.PlaceholderAPI;
-import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
-import org.bukkit.entity.Item;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
-import java.util.Arrays;
 import java.util.List;
 
 public class GUItem {
@@ -29,10 +26,6 @@ public class GUItem {
     public ItemStack getItem() {
         return item;
     }
-
-
-
-
 
     public ItemStack getPapiItem(OfflinePlayer player){
         ItemMeta meta = item.getItemMeta();
