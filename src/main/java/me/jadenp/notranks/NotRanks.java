@@ -17,6 +17,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.Inventory;
@@ -37,9 +38,6 @@ import java.util.*;
 import static me.jadenp.notranks.ConfigOptions.*;
 import static me.jadenp.notranks.LanguageOptions.*;
 
-/**
- * Wrong rank item -
- */
 public final class NotRanks extends JavaPlugin implements CommandExecutor, Listener {
 
     public File playerdata = new File(this.getDataFolder() + File.separator + "playerdata.yml");
@@ -51,6 +49,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
     File today = new File(logsFolder + File.separator + format.format(now) + ".txt");
     public ArrayList<String> logs = new ArrayList<>();
     public HashMap<String, Integer> playerRank = new HashMap<>();
+    public Map<UUID, Long> notifyThroughGUIDelay = new HashMap<>();
 
     public static NotRanks instance;
     public HashMap<UUID, Integer> guiPage = new HashMap<>();
@@ -124,6 +123,8 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
+                // clean out notifyThroughGUIDelay
+                notifyThroughGUIDelay.entrySet().removeIf(entries -> entries.getValue() < System.currentTimeMillis());
             }
         }.runTaskTimer(this, 6000L, 6000L);
 
@@ -249,8 +250,8 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
             }
         }
         inv.setContents(contents);
-        guiPage.put(p.getUniqueId(), page);
         p.openInventory(inv);
+        guiPage.put(p.getUniqueId(), page);
     }
 
 
@@ -426,6 +427,8 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
     public void onInventoryInteract(InventoryClickEvent event) {
         if (!event.getView().getTitle().equals(color(guiName)))
             return;
+        if (!guiPage.containsKey(event.getWhoClicked().getUniqueId()))
+            guiPage.put(event.getWhoClicked().getUniqueId(), 1);
         event.setCancelled(true);
         if (event.getSlot() > event.getView().getTopInventory().getSize())
             return;
@@ -468,54 +471,66 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                 int currentRank = getRank((Player) event.getWhoClicked());
                 if (rank <= currentRank || rank > currentRank + 1){
                     // not on this rank
-                    event.getWhoClicked().sendMessage(prefix + parse(notOnRank, (Player) event.getWhoClicked()));
+                    notifyThroughGUI(event, parse(notOnRank, (Player) event.getWhoClicked()));
                     continue;
                 }
                 if (ranks.get(playerRank.get(event.getWhoClicked().getUniqueId().toString())).checkRequirements(((Player) event.getWhoClicked()))) {
                     rankup(((Player) event.getWhoClicked()), ranks.get(playerRank.get(event.getWhoClicked().getUniqueId().toString())));
                     event.getView().close();
                 } else {
-                    if (denyClickItem.equals("DISABLE")) {
-                        event.getWhoClicked().sendMessage(prefix + parse(rankUpDeny, (Player) event.getWhoClicked()));
-                    } else if (denyClickItem.equals("RANK")){
-                        ItemStack[] contents = event.getInventory().getContents();
-                        ItemStack item = contents[event.getSlot()];
-                        ItemMeta meta = item.getItemMeta();
-                        assert meta != null;
-                        meta.setDisplayName(parse(rankUpDeny, (Player) event.getWhoClicked()));
-                        item.setItemMeta(meta);
-                        contents[event.getSlot()] = item;
-                        event.getInventory().setContents(contents);
-                        new BukkitRunnable(){
-                            @Override
-                            public void run() {
-                                if (guiPage.containsKey(event.getWhoClicked().getUniqueId())){
-                                    openGUI((Player) event.getWhoClicked(), guiPage.get(event.getWhoClicked().getUniqueId()));
-                                }
-                            }
-                        }.runTaskLater(this, 20);
-                    } else {
-                        ItemStack[] contents = event.getInventory().getContents();
-                        ItemStack item = new ItemStack(Material.valueOf(denyClickItem));
-                        ItemMeta meta = item.getItemMeta();
-                        assert meta != null;
-                        meta.setDisplayName(parse(rankUpDeny, (Player) event.getWhoClicked()));
-                        item.setItemMeta(meta);
-                        contents[event.getSlot()] = item;
-                        event.getInventory().setContents(contents);new BukkitRunnable(){
-                            @Override
-                            public void run() {
-                                if (guiPage.containsKey(event.getWhoClicked().getUniqueId())){
-                                    openGUI((Player) event.getWhoClicked(), guiPage.get(event.getWhoClicked().getUniqueId()));
-                                }
-                            }
-                        }.runTaskLater(this, 20);
-
-                    }
+                    notifyThroughGUI(event, parse(rankUpDeny, (Player) event.getWhoClicked()));
                 }
             }
         }
         ((Player) event.getWhoClicked()).updateInventory();
+    }
+
+    @EventHandler
+    public void onInventoryClose(InventoryCloseEvent event){
+        guiPage.remove(event.getPlayer().getUniqueId());
+    }
+
+    public void notifyThroughGUI(InventoryClickEvent event, String message){
+        // check the delay time
+        if (notifyThroughGUIDelay.containsKey(event.getWhoClicked().getUniqueId()) && notifyThroughGUIDelay.get(event.getWhoClicked().getUniqueId()) > System.currentTimeMillis())
+            return;
+        notifyThroughGUIDelay.put(event.getWhoClicked().getUniqueId(), System.currentTimeMillis() + 1000);
+        if (denyClickItem.equals("DISABLE")) {
+            event.getWhoClicked().sendMessage(prefix + message);
+        } else if (denyClickItem.equals("RANK")){
+            ItemStack[] contents = event.getInventory().getContents();
+            ItemStack item = contents[event.getSlot()];
+            ItemMeta meta = item.getItemMeta();
+            assert meta != null;
+            meta.setDisplayName(message);
+            item.setItemMeta(meta);
+            contents[event.getSlot()] = item;
+            event.getInventory().setContents(contents);
+            new BukkitRunnable(){
+                @Override
+                public void run() {
+                    if (guiPage.containsKey(event.getWhoClicked().getUniqueId())){
+                        openGUI((Player) event.getWhoClicked(), guiPage.get(event.getWhoClicked().getUniqueId()));
+                    }
+                }
+            }.runTaskLater(this, 20);
+        } else {
+            ItemStack[] contents = event.getInventory().getContents();
+            ItemStack item = new ItemStack(Material.valueOf(denyClickItem));
+            ItemMeta meta = item.getItemMeta();
+            assert meta != null;
+            meta.setDisplayName(message);
+            item.setItemMeta(meta);
+            contents[event.getSlot()] = item;
+            event.getInventory().setContents(contents);new BukkitRunnable(){
+                @Override
+                public void run() {
+                    if (guiPage.containsKey(event.getWhoClicked().getUniqueId())){
+                        openGUI((Player) event.getWhoClicked(), guiPage.get(event.getWhoClicked().getUniqueId()));
+                    }
+                }
+            }.runTaskLater(this, 20);
+        }
     }
 
     public String parse (String text, OfflinePlayer player){

@@ -105,8 +105,8 @@ public class ConfigOptions {
             plugin.getConfig().set("gui.replace-page-items", true);
         if (!plugin.getConfig().isSet("gui.size"))
             plugin.getConfig().set("gui.size", 27);
-        if (!plugin.getConfig().isSet("gui.deny-click-tem"))
-            plugin.getConfig().set("gui.deny-click-item", "VOID_BARRIER");
+        if (!plugin.getConfig().isSet("gui.deny-click-item"))
+            plugin.getConfig().set("gui.deny-click-item", "STRUCTURE_VOID");
 
         if (plugin.getConfig().isSet("requirement-strikethrough")){
             if (plugin.getConfig().getBoolean("requirement-strikethrough")){
