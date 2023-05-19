@@ -48,6 +48,7 @@ public class ConfigOptions {
     public static String completionSuffix;
     public static String completionAfter;
     public static String denyClickItem;
+    public static boolean debug = false;
 
     public static void loadConfig(){
         // close everyone out of gui
