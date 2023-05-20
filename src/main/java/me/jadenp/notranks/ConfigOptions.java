@@ -162,7 +162,7 @@ public class ConfigOptions {
             boolean completionLoreEnabled = plugin.getConfig().isSet(i + ".completion-lore.enabled") && plugin.getConfig().getBoolean(i + ".completion-lore.enabled");
             List<String> completionLore = plugin.getConfig().isSet(i + ".completion-lore.lore") ? plugin.getConfig().getStringList(i + ".completion-lore.lore") : new ArrayList<>();
             boolean hideNBT = plugin.getConfig().isSet(i + ".hide-nbt") && plugin.getConfig().getBoolean(i + ".hide-nbt");
-            ranks.add(new Rank(plugin.getConfig().getString(i + ".name"), lore, requirements, cost, commands, head, plugin.getConfig().getString("heads.completed"), item, completionLoreEnabled, completionLore, hideNBT));
+            ranks.add(new Rank(plugin.getConfig().getString(i + ".name"), lore, requirements, cost, commands, head, plugin.getConfig().getString("head.completed"), item, completionLoreEnabled, completionLore, hideNBT));
         }
 
         currency = plugin.getConfig().getString("currency.unit");
@@ -178,7 +178,7 @@ public class ConfigOptions {
         autoSize = plugin.getConfig().getBoolean("gui.auto-size");
         replacePageItems = plugin.getConfig().getBoolean("gui.replace-page-items");
         guiSize = plugin.getConfig().getInt("gui.size");
-        usingHeads = plugin.getConfig().getBoolean("heads.enabled");
+        usingHeads = plugin.getConfig().getBoolean("head.enabled");
         numberFormatting = plugin.getConfig().getInt("number-formatting.type");
         nfThousands = plugin.getConfig().getString("number-formatting.thousands");
         nfDecimals = plugin.getConfig().getInt("number-formatting.divisions.decimals");

@@ -352,6 +352,8 @@ public class Rank {
                         reqNum = 1;
                     if (requirements != null) {
                         for (int i = 0; i < 100; i++) {
+                            if (requirements.size() < reqNum)
+                                break;
                             if (requirements.get(reqNum - 1).isEmpty())
                                 reqNum++;
                         }
@@ -530,6 +532,9 @@ public class Rank {
             meta.addItemFlags(ItemFlag.HIDE_PLACED_ON);
             meta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE);
             meta.addItemFlags(ItemFlag.HIDE_POTION_EFFECTS);
+        }
+        if (!hideNBT && enchanted){
+            meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
         }
         item.setItemMeta(meta);
         if (enchanted)

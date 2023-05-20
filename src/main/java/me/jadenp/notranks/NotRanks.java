@@ -221,7 +221,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
             GUItem guItem = guiLayout[i];
             if (guItem == null)
                 continue;
-            if (guItem.getItem() == null){
+            if (!guItem.getActions().isEmpty() && guItem.getActions().get(0).startsWith("rank")){
                 // rank item
                 ItemStack item;
                 try {
@@ -229,6 +229,10 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                     item = ranks.get(rankNum).getItem(p, (playerRank.get(p.getUniqueId().toString()) > rankNum));
                 } catch (NumberFormatException | IndexOutOfBoundsException e){
                     item = fillItem;
+                    if (debug) {
+                        Bukkit.getLogger().info("[NotRanks] Could not get rank item");
+                        e.printStackTrace();
+                    }
                 }
                 contents[i] = item;
             } else if ((guItem.getItem().isSimilar(next) || guItem.getActions().contains("[next]")) && replacePageItems) {

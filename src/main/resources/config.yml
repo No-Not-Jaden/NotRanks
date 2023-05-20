@@ -11,7 +11,7 @@ currency:
   # how many decimals will be shown
   decimals: 0
 # HeadDataBase or Base64
-heads:
+head:
   # set this to true if you want to be able to use heads as ranks in the gui
   enabled: true
   # What head will the ranks change to when they are completed - HeadDataBase index or Base64
@@ -63,7 +63,7 @@ gui:
   fill-item: GRAY_STAINED_GLASS_PANE
   # this will replace the next arrow and pack arrows with the fill item unless more pages are available
   replace-page-items: true
-  # what item will pop up when you click on the wrong rank
+  # what item will pop up when you are denied in the config
   # set to DISABLE to disable
   # set to RANK to only change it item name
   deny-click-item: STRUCTURE_VOID
@@ -122,7 +122,7 @@ gui:
   name: '&9&lStarter'
   # If HeadDataBase is installed, this will try and get a head ID, otherwise Base64
   head: 193
-  # this item will be used if HDB isnt installed or is set to -1
+  # this item will be used if heads is disabled
   item: EMERALD_BLOCK
   # {cost} to get x/total - with prefix & suffix around each number
   # {req1} to get the first requirement x/total ({req2} {req3} etc)
