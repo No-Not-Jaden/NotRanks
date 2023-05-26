@@ -1,6 +1,8 @@
 package me.jadenp.notranks;
 
+import me.clip.placeholderapi.PlaceholderAPI;
 import net.md_5.bungee.api.ChatColor;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
@@ -11,8 +13,6 @@ import java.util.regex.Pattern;
 import static net.md_5.bungee.api.ChatColor.COLOR_CHAR;
 
 public class LanguageOptions {
-
-    public static String guiName;
     public static String rankUp;
     public static String rankUpDeny;
     public static String unknownCommand;
@@ -23,6 +23,7 @@ public class LanguageOptions {
     public static String completeRank;
     public static String prefix;
     public static String maxRank;
+    public static String unknownRankPath;
 
     public static void loadConfig() throws IOException {
         File language = new File(NotRanks.getInstance().getDataFolder() + File.separator + "language.yml");
@@ -32,8 +33,6 @@ public class LanguageOptions {
         }
 
         YamlConfiguration langConf = YamlConfiguration.loadConfiguration(language);
-        if (!langConf.isSet("gui-name"))
-            langConf.set("gui-name", "&cRanks");
         if (!langConf.isSet("rankup"))
             langConf.set("rankup", "&e{player} ranked up to {rank}!'");
         if (!langConf.isSet("rankup-deny"))
@@ -47,19 +46,21 @@ public class LanguageOptions {
         if (!langConf.isSet("not-on-rank"))
             langConf.set("not-on-rank", "&cYou are not on this rank!");
         if (!langConf.isSet("complete-requirement"))
-            langConf.set("complete-requirement", "&eYou've completed a requirement towards your next rank! &f/rank &7to view your progress.");
+            langConf.set("complete-requirement", "&eYou've completed a requirement towards your next rank on path {path}! &f/rank {path} &7to view your progress.");
         if (!langConf.isSet("complete-rank"))
-            langConf.set("complete-rank", "&eA new rank is now available!");
+            langConf.set("complete-rank", "&eA new rank is now available on path {path}!");
         if (!langConf.isSet("prefix"))
             langConf.set("prefix", "&7[&cRanks&7] &8> &r");
         if (!langConf.isSet("max-rank"))
             langConf.set("max-rank", "&cYou are already at the max rank!");
+        if (!langConf.isSet("unknown-rank-path"))
+            langConf.set("unknown-rank-path", "&cUnknown rank path!");
 
         langConf.save(language);
 
 
         // 0
-        guiName = langConf.getString("gui-name");
+
         // 1
         rankUp = langConf.getString("rankup");
         // 2
@@ -81,7 +82,13 @@ public class LanguageOptions {
         //10
         maxRank = langConf.getString("max-rank");
 
+        unknownRankPath = langConf.getString("unknown-rank-path");
 
+
+    }
+
+    public static String parse(String str, OfflinePlayer player){
+        return PlaceholderAPI.setPlaceholders(player, color(str));
     }
 
     public static String color(String str){

@@ -1,24 +1,29 @@
 package me.jadenp.notranks;
 
-import net.md_5.bungee.api.ChatColor;
+import me.jadenp.notranks.gui.CustomItem;
+import me.jadenp.notranks.gui.GUI;
+import me.jadenp.notranks.gui.GUIOptions;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.jetbrains.annotations.Nullable;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.*;
 
-import static me.jadenp.notranks.LanguageOptions.color;
-import static me.jadenp.notranks.LanguageOptions.guiName;
-
 public class ConfigOptions {
-    public static ArrayList<Rank> ranks = new ArrayList<>();
+    public static Map<String, List<Rank>> ranks = new HashMap<>();
+    // <Player UUID, <Rank Type, Completed Rank Index (starting from 0)>>
+    public static Map<UUID, Map<String, List<Integer>>> rankData = new HashMap<>();
     public static boolean HDBEnabled;
     public static String currency;
-    public static int maxPages;
     public static boolean usingPlaceholderCurrency;
     public static List<String> removeCommands;
     public static String currencyPrefix;
@@ -28,16 +33,6 @@ public class ConfigOptions {
     public static boolean overwritePrefix;
     public static String prefixFormat;
     public static String noRank;
-    public static boolean autoSize;
-    public static ItemStack fillItem;
-    public static boolean replacePageItems;
-    public static int guiSize;
-    public static ItemStack exit = new ItemStack(Material.BARRIER);
-    public static ItemStack next = new ItemStack(Material.SPECTRAL_ARROW);
-    public static ItemStack back = new ItemStack(Material.TIPPED_ARROW);
-    public static List<GUItem> customGUI = new ArrayList<>();
-    public static GUItem[] guiLayout;
-    public static int ranksPerPage;
     public static boolean usingHeads;
     public static int numberFormatting;
     public static String nfThousands;
@@ -47,34 +42,24 @@ public class ConfigOptions {
     public static String completionPrefix;
     public static String completionSuffix;
     public static String completionAfter;
-    public static String denyClickItem;
     public static boolean debug = false;
+    public static File guiFile;
+    public static File ranksFile;
 
-    public static void loadConfig(){
+    public static void loadConfig() throws IOException {
         // close everyone out of gui
         for (Player player : Bukkit.getOnlinePlayers()){
-            if (player.getOpenInventory().getTitle().equals(color(guiName))){
+            if (GUI.playerPages.containsKey(player.getUniqueId())){
                 player.closeInventory();
             }
         }
-        NotRanks.getInstance().guiPage.clear();
+        GUI.playerPages.clear();
 
-        ItemMeta meta = exit.getItemMeta();
-        assert meta != null;
-        meta.setDisplayName(ChatColor.RED + "" + ChatColor.BOLD + "Exit");
-        exit.setItemMeta(meta);
-
-        meta = next.getItemMeta();
-        assert meta != null;
-        meta.setDisplayName(ChatColor.DARK_GRAY + "Next Page");
-        next.setItemMeta(meta);
-
-        meta = back.getItemMeta();
-        assert meta != null;
-        meta.setDisplayName(ChatColor.DARK_GRAY + "Last Page");
-        back.setItemMeta(meta);
 
         NotRanks plugin = NotRanks.getInstance();
+
+        guiFile = new File(plugin.getDataFolder() + File.separator + "gui.yml");
+        ranksFile = new File(plugin.getDataFolder() + File.separator + "ranks.yml");
 
         HDBEnabled = plugin.getServer().getPluginManager().getPlugin("HeadDatabase") != null;
 
@@ -97,17 +82,6 @@ public class ConfigOptions {
             plugin.getConfig().set("prefix.format", "&7[{prefix}&7] &r");
         if (!plugin.getConfig().isSet("prefix.no-rank"))
             plugin.getConfig().set("prefix.no-rank", "&fUnranked");
-        if (!plugin.getConfig().isSet("gui.auto-size"))
-            plugin.getConfig().set("gui.auto-size", true);
-        if (!plugin.getConfig().isSet("gui.fill-item"))
-            plugin.getConfig().set("gui.fill-item", "GRAY_STAINED_GLASS_PANE");
-        if (!plugin.getConfig().isSet("gui.replace-page-items"))
-            plugin.getConfig().set("gui.replace-page-items", true);
-        if (!plugin.getConfig().isSet("gui.size"))
-            plugin.getConfig().set("gui.size", 27);
-        if (!plugin.getConfig().isSet("gui.deny-click-item"))
-            plugin.getConfig().set("gui.deny-click-item", "STRUCTURE_VOID");
-
         if (plugin.getConfig().isSet("requirement-strikethrough")){
             if (plugin.getConfig().getBoolean("requirement-strikethrough")){
                 plugin.getConfig().set("requirement-completion.before", "&a&m");
@@ -142,29 +116,158 @@ public class ConfigOptions {
             plugin.getConfig().set("number-formatting.divisions.1000", "K");
         }
 
+        if (!guiFile.exists())
+            plugin.saveResource("gui.yml", false);
+        if (!ranksFile.exists())
+            plugin.saveResource("ranks.yml", false);
+
+        // migrate ranks
+        YamlConfiguration ranksConfig = YamlConfiguration.loadConfiguration(ranksFile);
+        for (int i = 1; plugin.getConfig().isConfigurationSection(i + ""); i++){
+            ranksConfig.set("default." + i + ".name", plugin.getConfig().getString(i + ".name"));
+            ranksConfig.set("default." + i + ".head", plugin.getConfig().getString(i + ".head"));
+            ranksConfig.set("default." + i + ".item", plugin.getConfig().getString(i + ".item"));
+            ranksConfig.set("default." + i + ".lore", plugin.getConfig().getStringList(i + ".lore"));
+            ranksConfig.set("default." + i + ".completion-lore.enabled", plugin.getConfig().getBoolean(i + ".completion-lore.enabled"));
+            ranksConfig.set("default." + i + ".completion-lore.lore", plugin.getConfig().getStringList(i + ".completion-lore.lore"));
+            ranksConfig.set("default." + i + ".hide-nbt", plugin.getConfig().getBoolean(i + ".hide-nbt"));
+            ranksConfig.set("default." + i + ".requirements", plugin.getConfig().getStringList(i + ".requirements"));
+            ranksConfig.set("default." + i + ".cost", plugin.getConfig().getInt(i + ".cost"));
+            ranksConfig.set("default." + i + ".commands", plugin.getConfig().getStringList(i + ".commands"));
+            plugin.getConfig().set(i + "", null);
+        }
+        ranksConfig.save(ranksFile);
+
         // loading rank info from the config
         ranks.clear();
-        for (int i = 1; plugin.getConfig().getString(i + ".name") != null; i++) {
-            List<String> lore = plugin.getConfig().isSet(i + ".lore") ? plugin.getConfig().getStringList(i + ".lore") : new ArrayList<>();
-            List<String> requirements = plugin.getConfig().isSet(i + ".requirements") ? plugin.getConfig().getStringList(i + ".requirements") : new ArrayList<>();
-            int cost = plugin.getConfig().isSet(i + ".cost") ? plugin.getConfig().getInt(i + ".cost") : 0;
-            List<String> commands = plugin.getConfig().isSet(i + ".commands") ? plugin.getConfig().getStringList(i + ".commands") : new ArrayList<>();
-            String head;
-            if (plugin.getConfig().isSet(i + ".hdb")) {
-                head = plugin.getConfig().getString(i + ".hdb");
-                plugin.getConfig().set(i + ".head", head);
-                plugin.getConfig().set(i + ".hdb", null);
-            } else {
-                head = plugin.getConfig().isSet(i + ".head") ? plugin.getConfig().getString(i + ".head") : "1";
-            }
+        String completedHead = plugin.getConfig().getString("head.completed");
+        for (String key : ranksConfig.getKeys(false)){
+            List<Rank> rankPath = new ArrayList<>();
+            for (int i = 1; ranksConfig.isSet(key + "." + i); i++) {
+                String name = ranksConfig.isSet(key + "." + i + ".name") ? ranksConfig.getString(key + "." + i + ".name") : "&6&lRank " + i;
+                List<String> lore = ranksConfig.isSet(key + "." + i + ".lore") ? ranksConfig.getStringList(key + "." + i + ".lore") : new ArrayList<>();
+                List<String> requirements = ranksConfig.isSet(key + "." + i + ".requirements") ? ranksConfig.getStringList(key + "." + i + ".requirements") : new ArrayList<>();
+                int cost = ranksConfig.isSet(key + "." + i + ".cost") ? ranksConfig.getInt(key + "." + i + ".cost") : 0;
+                List<String> commands = ranksConfig.isSet(key + "." + i + ".commands") ? ranksConfig.getStringList(key + "." + i + ".commands") : new ArrayList<>();
+                String head = ranksConfig.isSet(key + "." + i + ".head") ? ranksConfig.getString(key + "." + i + ".head") : "1";
+                String item = ranksConfig.isSet(key + "." + i + ".item") ? ranksConfig.getString(key + "." + i + ".item") : "EMERALD_BLOCK";
+                boolean completionLoreEnabled = ranksConfig.isSet(key + "." + i + ".completion-lore.enabled") && ranksConfig.getBoolean(key + "." + i + ".completion-lore.enabled");
+                List<String> completionLore = ranksConfig.isSet(key + "." + i + ".completion-lore.lore") ? ranksConfig.getStringList(key + "." + i + ".completion-lore.lore") : new ArrayList<>();
+                boolean hideNBT = ranksConfig.isSet(key + "." + i + ".hide-nbt") && ranksConfig.getBoolean(key + "." + i + ".hide-nbt");
 
-            String item = plugin.getConfig().isSet(i +".item") ? plugin.getConfig().getString(i +".item") : "EMERALD_BLOCK";
-            boolean completionLoreEnabled = plugin.getConfig().isSet(i + ".completion-lore.enabled") && plugin.getConfig().getBoolean(i + ".completion-lore.enabled");
-            List<String> completionLore = plugin.getConfig().isSet(i + ".completion-lore.lore") ? plugin.getConfig().getStringList(i + ".completion-lore.lore") : new ArrayList<>();
-            boolean hideNBT = plugin.getConfig().isSet(i + ".hide-nbt") && plugin.getConfig().getBoolean(i + ".hide-nbt");
-            ranks.add(new Rank(plugin.getConfig().getString(i + ".name"), lore, requirements, cost, commands, head, plugin.getConfig().getString("head.completed"), item, completionLoreEnabled, completionLore, hideNBT));
+                rankPath.add(new Rank(name, lore, requirements, cost, commands, head, completedHead, item, completionLoreEnabled, completionLore, hideNBT));
+            }
+            ranks.put(key, rankPath);
         }
 
+        // migrate old config to separated files
+        YamlConfiguration guiConfig = YamlConfiguration.loadConfiguration(guiFile);
+        if (plugin.getConfig().isConfigurationSection("gui")){
+            guiConfig.set("default.auto-size", plugin.getConfig().getBoolean("gui.auto-size"));
+            guiConfig.set("default.remove-page-items", plugin.getConfig().getBoolean("gui.replace-page-items"));
+            guiConfig.set("default.size", plugin.getConfig().getInt("gui.size"));
+            guiConfig.set("default.deny-click-item", plugin.getConfig().getString("gui.deny-click-item"));
+            guiConfig.set("custom-items.fill.material", plugin.getConfig().getString("gui.fill-item"));
+            File language = new File(NotRanks.getInstance().getDataFolder() + File.separator + "language.yml");
+            YamlConfiguration languageConfig = YamlConfiguration.loadConfiguration(language);
+            if (languageConfig.isSet("gui-name")){
+                guiConfig.set("default.gui-name", languageConfig.get("gui-name"));
+                languageConfig.set("gui-name", null);
+                languageConfig.save(language);
+            }
+            List<String> rankSlots = new ArrayList<>();
+            for (int i = 1; plugin.getConfig().isSet("gui." + i + "slot"); i++) {
+                if (plugin.getConfig().isSet("gui." + i + ".item.material")){
+                    // create new custom item
+                    int itemNum = 1;
+                    while (guiConfig.isSet("custom-items.item" + itemNum))
+                        itemNum++;
+                    String generatedName = "item" + itemNum;
+                    guiConfig.set("custom-items." + generatedName + ".material", plugin.getConfig().getString("gui." + i + ".item.material"));
+                    guiConfig.set("custom-items." + generatedName + ".amount", plugin.getConfig().getInt("gui." + i + ".item.amount"));
+                    guiConfig.set("custom-items." + generatedName + ".enchanted", plugin.getConfig().getBoolean("gui." + i + ".item.enchanted"));
+                    guiConfig.set("custom-items." + generatedName + ".hide-nbt", plugin.getConfig().getBoolean("gui." + i + ".item.hide-nbt"));
+                    guiConfig.set("custom-items." + generatedName + ".name", plugin.getConfig().getString("gui." + i + ".item.name"));
+                    guiConfig.set("custom-items." + generatedName + ".lore", plugin.getConfig().getStringList("gui." + i + ".item.lore"));
+                    // changing actions to fit with NotBounties commands
+                    List<String> actions = plugin.getConfig().getStringList("gui." + i + ".actions");
+                    for (int j = 0; j < actions.size(); j++) {
+                        if (actions.get(j).startsWith("[command]")){
+                            actions.set(j, actions.get(j).substring(10));
+                        } else if (actions.get(j).startsWith("[gui]")){
+                            actions.set(j, "[gui] default " + actions.get(j).substring(6));
+                        }
+                    }
+                    guiConfig.set("custom-items." + generatedName + ".commands", actions);
+                    guiConfig.set("default.layout." + i + ".slot", plugin.getConfig().getString("gui." + i + ".slot"));
+                    guiConfig.set("default.layout." + i + ".item", generatedName);
+                } else if (Objects.requireNonNull(plugin.getConfig().getString("gui." + i + ".item")).equalsIgnoreCase("rank")){
+                    // move item to rank-slots
+                    rankSlots.add(plugin.getConfig().getString("gui." + i + ".slot"));
+                } else {
+                    guiConfig.set("default.layout." + i + ".slot", plugin.getConfig().getString("gui." + i + ".slot"));
+                    guiConfig.set("default.layout." + i + ".item", plugin.getConfig().getString("gui." + i + ".item"));
+                }
+            }
+            guiConfig.set("default.rank-slots", rankSlots);
+
+            plugin.getConfig().set("gui", null);
+            guiConfig.save(guiFile);
+        }
+
+        // read custom items
+        if (guiConfig.isConfigurationSection("custom-items")){
+            Map<String, CustomItem> customItems = new HashMap<>();
+            for (String key : Objects.requireNonNull(guiConfig.getConfigurationSection("custom-items")).getKeys(false)){
+                Material material = Material.STONE;
+                String mat = guiConfig.getString("custom-items." + key + ".material");
+                if (mat != null)
+                    try {
+                        material = Material.valueOf(mat.toUpperCase(Locale.ROOT));
+                    } catch (IllegalArgumentException e) {
+                        Bukkit.getLogger().warning("Unknown material \"" + mat + "\" in " + guiConfig.getName());
+                    }
+                int amount = guiConfig.isInt("custom-items." + key + ".amount") ? guiConfig.getInt("custom-items." + key + ".amount") : 1;
+
+                ItemStack itemStack = new ItemStack(material, amount);
+                ItemMeta itemMeta = itemStack.getItemMeta();
+                assert itemMeta != null;
+                if (guiConfig.isSet("custom-items." + key + ".name")) {
+                    itemMeta.setDisplayName(guiConfig.getString("custom-items." + key + ".name"));
+                }
+                if (guiConfig.isSet("custom-items." + key + ".custom-model-data")) {
+                    itemMeta.setCustomModelData(guiConfig.getInt("custom-items." + key + ".custom-model-data"));
+                }
+                if (guiConfig.isSet("custom-items." + key + ".lore")) {
+                    itemMeta.setLore(guiConfig.getStringList("custom-items." + key + ".lore"));
+                }
+                if (guiConfig.isSet("custom-items." + key + ".enchanted")) {
+                    if (guiConfig.getBoolean("custom-items." + key + ".enchanted")) {
+                        itemStack.addUnsafeEnchantment(Enchantment.DURABILITY, 1);
+                        itemMeta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+                    }
+                }
+                if (guiConfig.getBoolean("custom-items." + key + ".hide-nbt")) {
+                    itemMeta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
+                    itemMeta.addItemFlags(ItemFlag.HIDE_POTION_EFFECTS);
+                }
+                itemStack.setItemMeta(itemMeta);
+
+                List<String> itemCommands = guiConfig.isSet("custom-items." + key + ".commands") ? guiConfig.getStringList("custom-items." + key + ".commands") : new ArrayList<>();
+                CustomItem customItem = new CustomItem(itemStack, itemCommands);
+                customItems.put(key, customItem);
+            }
+            GUI.setCustomItems(customItems);
+        }
+
+        // read customGUIs
+        GUI.clearGUIs();
+        for (String key : guiConfig.getKeys(false)){
+            GUIOptions guiOptions = new GUIOptions(Objects.requireNonNull(guiConfig.getConfigurationSection(key)));
+            GUI.addGUI(guiOptions, key);
+        }
+
+        // read config
         currency = plugin.getConfig().getString("currency.unit");
         usingPlaceholderCurrency = Objects.requireNonNull(plugin.getConfig().getString("currency.unit")).contains("%");
         removeCommands = plugin.getConfig().getStringList("currency.remove-currency-commands");
@@ -175,9 +278,6 @@ public class ConfigOptions {
         overwritePrefix = plugin.getConfig().getBoolean("prefix.overwrite-previous");
         prefixFormat = plugin.getConfig().getString("prefix.format");
         noRank = plugin.getConfig().getString("prefix.no-rank");
-        autoSize = plugin.getConfig().getBoolean("gui.auto-size");
-        replacePageItems = plugin.getConfig().getBoolean("gui.replace-page-items");
-        guiSize = plugin.getConfig().getInt("gui.size");
         usingHeads = plugin.getConfig().getBoolean("head.enabled");
         numberFormatting = plugin.getConfig().getInt("number-formatting.type");
         nfThousands = plugin.getConfig().getString("number-formatting.thousands");
@@ -186,14 +286,6 @@ public class ConfigOptions {
         completionAfter = plugin.getConfig().getString("requirement-completion.after");
         completionPrefix = plugin.getConfig().getString("requirement-completion.prefix");
         completionSuffix = plugin.getConfig().getString("requirement-completion.suffix");
-        denyClickItem = Objects.requireNonNull(plugin.getConfig().getString("gui.deny-click-item")).toUpperCase();
-        if (!denyClickItem.equals("DISABLE") && !denyClickItem.equals("RANK"))
-            try {
-                Material.valueOf(denyClickItem);
-            } catch (IllegalArgumentException e){
-                Bukkit.getLogger().warning("Could not get a material from \"" + denyClickItem + "\" for deny click item.");
-                denyClickItem = "DISABLE";
-            }
 
 
         nfDivisions.clear();
@@ -209,176 +301,6 @@ public class ConfigOptions {
         }
         nfDivisions = sortByValue(preDivisions);
 
-        Material fillMaterial;
-        String fill = plugin.getConfig().getString("gui.fill-item");
-        try {
-            assert fill != null;
-            fillMaterial = Material.valueOf(fill.toUpperCase());
-        } catch (IllegalArgumentException e){
-            Bukkit.getLogger().warning("Fill item material: " + fill + " is not a valid material!");
-            fillMaterial = Material.GRAY_STAINED_GLASS_PANE;
-        }
-        fillItem = new ItemStack(fillMaterial);
-        meta = fillItem.getItemMeta();
-        assert meta != null;
-        meta.setDisplayName(ChatColor.BLACK + "");
-        fillItem.setItemMeta(meta);
-
-        customGUI.clear();
-
-        int rankNum = 1;
-        // get gui settings
-        if (autoSize){
-            // auto-size settings
-            guiSize = ((ranks.size() / 7 + 1) * 9) + 18;
-            if (guiSize > 54)
-                guiSize = 54;
-            int[] everything = new int[guiSize];
-            for (int i = 0; i < everything.length; i++) {
-                everything[i] = i;
-            }
-            customGUI.add(new GUItem(everything, new ArrayList<>(), fillItem));
-            customGUI.add(new GUItem(new int[]{22}, new ArrayList<>(), exit));
-            customGUI.add(new GUItem(new int[]{18}, new ArrayList<>(), back));
-            customGUI.add(new GUItem(new int[]{26}, new ArrayList<>(), next));
-            for (int i = 10; i < guiSize - 10; i++) {
-                if (i % 9 != 0 && (i + 1) % 9 != 0){
-                    customGUI.add(new GUItem(new int[]{i}, Collections.singletonList("rank " + rankNum), null));
-                    rankNum++;
-                }
-            }
-        } else {
-            // custom settings
-            for (int i = 1; plugin.getConfig().isSet("gui." + i + ".slot"); i++) {
-                // get slots used
-                int[] slots;
-                String slot = plugin.getConfig().getString("gui." + i + ".slot");
-                assert slot != null;
-                try {
-                    if (slot.contains("-")) {
-                        int before = Integer.parseInt(slot.substring(0, slot.indexOf("-")));
-                        int after = Integer.parseInt(slot.substring(slot.indexOf("-") + 1));
-                        if (after <= before)
-                            throw new RuntimeException();
-                        slots = new int[after - before + 1];
-                        for (int j = before; j < after + 1; j++) {
-                            slots[j - before] = j;
-                        }
-                    } else {
-                        slots = new int[]{Integer.parseInt(slot)};
-                    }
-                } catch (RuntimeException e) {
-                    Bukkit.getLogger().warning("Invalid GUI slot (" + slot + ") for item: " + i);
-                    slots = new int[0];
-                }
-                // get item
-                ItemStack itemStack;
-                List<String> actions = new ArrayList<>();
-                if (!plugin.getConfig().isSet("gui." + i + ".item.material")) {
-                    String item = plugin.getConfig().getString("gui." + i + ".item");
-                    if (item == null)
-                        continue;
-                    // item is one of the preset items
-                    switch (item.toLowerCase()) {
-                        case "fill":
-                            itemStack = fillItem;
-                            break;
-                        case "next":
-                            itemStack = next;
-                            break;
-                        case "back":
-                            itemStack = back;
-                            break;
-                        case "exit":
-                            itemStack = exit;
-                            break;
-                        default:
-                            if (item.startsWith("rank")) {
-                                itemStack = null;
-                                actions.add(item);
-                            } else {
-                                Bukkit.getLogger().warning("Unknown preset item (" + item + ") for item: " + i);
-                                itemStack = new ItemStack(Material.STRUCTURE_VOID);
-                                meta = itemStack.getItemMeta();
-                                assert meta != null;
-                                meta.setDisplayName(ChatColor.DARK_AQUA + "Config Error");
-                                meta.setLore(new ArrayList<>(Arrays.asList(ChatColor.DARK_AQUA + "" + org.bukkit.ChatColor.ITALIC + "Unknown preset item: " + item, ChatColor.DARK_AQUA + "" + org.bukkit.ChatColor.ITALIC + "for item: " + i)));
-                                itemStack.setItemMeta(meta);
-                            }
-                            break;
-                    }
-                } else {
-                    // create new item
-                    Material material;
-                    String materialName = plugin.getConfig().getString("gui." + i + ".item.material");
-                    try {
-                        material = Material.valueOf(materialName);
-                    } catch (IllegalArgumentException e) {
-                        Bukkit.getLogger().warning("Unknown material (" + materialName + ") for item: " + i);
-                        material = Material.STRUCTURE_VOID;
-                    }
-                    int amount = plugin.getConfig().isSet("gui." + i + ".item.amount") ? plugin.getConfig().getInt("gui." + i + ".item.amount") : 1;
-                    itemStack = new ItemStack(material, amount);
-                    boolean enchanted = plugin.getConfig().isSet("gui." + i + ".item.enchanted") && (plugin.getConfig().getBoolean("gui." + i + ".item.enchanted"));
-                    if (enchanted)
-                        itemStack.addUnsafeEnchantment(Enchantment.DURABILITY, 1);
-                    meta = itemStack.getItemMeta();
-                    assert meta != null;
-                    meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
-                    boolean hideNBT = plugin.getConfig().isSet("gui." + i + ".item.hide-nbt") && (plugin.getConfig().getBoolean("gui." + i + ".item.hide-nbt"));
-                    if (hideNBT){
-                        meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
-                        meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
-                        meta.addItemFlags(ItemFlag.HIDE_DESTROYS);
-                        meta.addItemFlags(ItemFlag.HIDE_DYE);
-                        meta.addItemFlags(ItemFlag.HIDE_PLACED_ON);
-                        meta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE);
-                        meta.addItemFlags(ItemFlag.HIDE_POTION_EFFECTS);
-                    }
-                    if (plugin.getConfig().isSet("gui." + i + ".item.name"))
-                        meta.setDisplayName(color(plugin.getConfig().getString("gui." + i + ".item.name")));
-                    if (plugin.getConfig().isSet("gui." + i + ".item.lore")) {
-                        List<String> lore = plugin.getConfig().getStringList("gui." + i + ".item.lore");
-                        lore.replaceAll(LanguageOptions::color);
-                        meta.setLore(lore);
-                    }
-                    itemStack.setItemMeta(meta);
-                }
-                if (plugin.getConfig().isSet("gui." + i + ".actions"))
-                    actions.addAll(plugin.getConfig().getStringList("gui." + i + ".actions"));
-                customGUI.add(new GUItem(slots, actions, itemStack));
-            }
-        }
-        ranksPerPage = 0;
-        guiLayout = new GUItem[guiSize];
-        for (GUItem guItem : customGUI){
-            // add everything to the layout
-            for (int i = 0; i < guItem.getSlot().length; i++){
-                if (guiSize > guItem.getSlot()[i]){
-                    if (guItem.getItem() == null) {
-                        // rank items need to be formatted in order
-                        ranksPerPage++;
-                        if (guItem.getActions().get(0).length() == 4){
-                            List<String> actions = new ArrayList<>(guItem.getActions());
-                            actions.set(0, "rank " + ranksPerPage);
-                            GUItem newItem = new GUItem(new int[]{guItem.getSlot()[i]}, actions, guItem.getItem());
-                            guiLayout[guItem.getSlot()[i]] = newItem;
-                            continue;
-                        }
-                    }
-                    guiLayout[guItem.getSlot()[i]] = guItem;
-                }
-            }
-        }
-        if (ranksPerPage == 0){
-            Bukkit.getLogger().warning("Did not find any ranks!");
-            ranksPerPage = 1;
-        } else {
-            Bukkit.getLogger().info("Registered " + ranksPerPage + " ranks per page.");
-        }
-        maxPages = ranks.size() / ranksPerPage;
-        if (ranks.size() % ranksPerPage > 0)
-            maxPages++;
 
         if (!usingPlaceholderCurrency) {
             try {
@@ -407,4 +329,51 @@ public class ConfigOptions {
         return temp;
     }
 
+    public static @Nullable Rank getRank(OfflinePlayer p, String rankType) {
+        int rankNum = getRankNum(p, rankType);
+        if (rankNum != 0)
+            return getRank(rankNum, rankType);
+        return null;
+    }
+
+    public static Rank getRank(int index, String rankType){
+        return ranks.get(rankType).get(index);
+    }
+
+    public static void addRank(OfflinePlayer p, String rankType, int index){
+        Map<String, List<Integer>> playerRankInfo = rankData.containsKey(p.getUniqueId()) ? rankData.get(p.getUniqueId()) : new HashMap<>();
+        List<Integer> completedRanks = playerRankInfo.containsKey(rankType) ? playerRankInfo.get(rankType) : new ArrayList<>();
+        completedRanks.add(index);
+        playerRankInfo.put(rankType, completedRanks);
+        rankData.put(p.getUniqueId(), playerRankInfo);
+    }
+
+    public static List<Integer> getRankCompletion(OfflinePlayer p, String rankType){
+        Map<String, List<Integer>> playerRankInfo = rankData.containsKey(p.getUniqueId()) ? rankData.get(p.getUniqueId()) : new HashMap<>();
+        return playerRankInfo.containsKey(rankType) ? playerRankInfo.get(rankType) : new ArrayList<>();
+    }
+
+    public static void setRankCompletion(OfflinePlayer p, String rankType, List<Integer> completion){
+        Map<String, List<Integer>> playerRankInfo = rankData.containsKey(p.getUniqueId()) ? rankData.get(p.getUniqueId()) : new HashMap<>();
+        playerRankInfo.put(rankType, completion);
+        rankData.put(p.getUniqueId(), playerRankInfo);
+    }
+
+    public static boolean isRankUnlocked(OfflinePlayer p, String rankType, int index){
+        if (rankData.containsKey(p.getUniqueId()) && rankData.get(p.getUniqueId()).containsKey(rankType)) {
+            List<Integer> completedRanks = rankData.get(p.getUniqueId()).get(rankType);
+            return completedRanks.contains(index);
+        }
+        return false;
+    }
+
+    public static int getRankNum(OfflinePlayer p, String rankType){
+        if (rankData.containsKey(p.getUniqueId()) && rankData.get(p.getUniqueId()).containsKey(rankType)) {
+            List<Integer> completedRanks = rankData.get(p.getUniqueId()).get(rankType);
+            if (completedRanks.isEmpty())
+                return -1;
+            return completedRanks.get(completedRanks.size()-1);
+        }
+        return -1;
+    }
 }

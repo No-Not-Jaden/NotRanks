@@ -1,5 +1,3 @@
-# name of the gui that opens when you do /ranks
-gui-name: '&cRanks'
 # message sent globally when someone ranks up (replace with '' if you do not want a rankup message)
 rankup: '&e{player} ranked up to {rank}!'
 # message sent to player when they attempt to rankup but do not have the proper requirements
@@ -13,10 +11,12 @@ open-gui: 'Opening ranks menu.'
 # message sent to player attempting to rankup to a higher rank than the immediate next rank
 not-on-rank: '&cYou are not on this rank!'
 # message to player when they have completed one of the requirements towards their next rank
-complete-requirement: '&eYou''ve completed a requirement towards your next rank! &f/rank &7to view your progress.'
+complete-requirement: '&eYou''ve completed a requirement towards your next rank on path {path}! &f/rank {path} &7to view your progress.'
 # message to player when they have completed all the requirements towards their next rank
-complete-rank: '&eA new rank is now available!'
+complete-rank: '&eA new rank is now available on path {path}!'
 # prefix of the plugin when sending messages in chat
 prefix: '&7[&cRanks&7] &8> &r'
 # message sent to player attempting to rankup when they are at the max rank
 max-rank: '&cYou are already at the max rank!'
+# message sent to player when they do not specify a valid rank path
+unknown-rank-path: '&cUnknown rank path!'

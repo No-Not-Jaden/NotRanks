@@ -229,7 +229,12 @@ public class Rank {
     }
 
 
-    public void checkRankCompletion(Player p) {
+    /**
+     * Check rank completion and send a message to the player if there is an update
+     * @param p Player to check completion
+     * @param path Path of the rank - this is only used in the completion notification
+     */
+    public void checkRankCompletion(Player p, String path) {
         List<Boolean> progress;
         progress = new ArrayList<>();
         if (requirements != null) {
@@ -261,12 +266,12 @@ public class Rank {
                     if (!sentMessage) {
                         CompleteRequirementEvent event = new CompleteRequirementEvent(p, this, req.get(i));
                         Bukkit.getPluginManager().callEvent(event);
-                        p.sendMessage(prefix + PlaceholderAPI.setPlaceholders(p, color(completeRequirement)));
+                        p.sendMessage(prefix + parse(completeRequirement.replaceAll("\\{path}", path), p));
                         sentMessage = true;
                     }
                     // check if all other requirements have been completed
                     if (!completedYet.contains(false)) {
-                        p.sendMessage(prefix + PlaceholderAPI.setPlaceholders(p, color(completeRank)));
+                        p.sendMessage(prefix + parse(completeRank.replaceAll("\\{path}", path), p));
                     }
                 }
             }
@@ -383,6 +388,13 @@ public class Rank {
         return str;
     }
 
+    /**
+     * Get the progress of a specific requirement
+     * @param reqNum Requirement number
+     * @param p Player to check requirements against
+     * @param completed Whether the requirement should be marked completed regardless of staus
+     * @return Requirement completion string that replaces {reqx} in rank lore
+     */
     public String getRequirementProgress(int reqNum, OfflinePlayer p, boolean completed) {
         String str = "";
         if (reqNum == 0)
@@ -562,8 +574,13 @@ public class Rank {
     }
 
 
-    public boolean checkRequirements(Player p) {
-        checkRankCompletion(p);
+    /**
+     * Check to see if a player has completed all the rank requirements
+     * @param p Player to view rank progress
+     * @return true if a player has completed all requirements for this rank
+     */
+    public boolean checkRequirements(Player p, String path) {
+        checkRankCompletion(p, path);
         if (completed.containsKey(p.getUniqueId().toString())) {
             return !(completed.get(p.getUniqueId().toString()).contains(false));
         } else {

@@ -1,0 +1,87 @@
+custom-items:
+  fill:
+    # material from https://hub.spigotmc.org/javadocs/spigot/org/bukkit/Material.html
+    material: GRAY_STAINED_GLASS_PANE
+    amount: 1
+    # for resource packs. Not required to use this
+    custom-model-data: 10
+    # name and lore accept placeholders and hex
+    # {amount} will be replaced with the value you are sorting by. This changes for different GUIs
+    # {amount_tax} will be replaced with {amount} * bounty tax
+    # this will make the name invisible
+    name: '&r'
+    lore: [ ]
+    enchanted: false
+    hide-nbt: true
+    # Commands to run when the item is clicked
+    # use {player} to replace with the player's name
+    # [close] to close GUI
+    # [p] (command) to send as the player
+    # [next] <x> goes to the next x amount of pages or next page if x is empty
+    # [back] <x> goes to the last x amount of pages or last page if x is empty
+    # [gui] (gui name) (page) opens a new gui - only gui name is required, ex: [gui] default | [gui] default 3
+    # adding @{permission} at the beginning will check for a permission before executing the command. !@ will check if they don't have permission
+    #   ex: '@notbounties.admin [next]' will only go to the next page if the player clicking the item has notbounties.admin
+    #   '!@essentials.fly [p] top' will run the command /top as the player if the player doesn't have essentials.fly
+    # {player} will be replaced with the name of the player who clicked
+    # {slot<x>} will be replaced with the name of the owner of the skull in that slot, or if there is no skull, it will be replaced with the item name
+    commands: [ ]
+default:
+  # name of the gui that opens when you do /ranks
+  gui-name: '&cRanks'
+  # whether the page number will be added to the name of the gui
+  add-page: false
+  # this will surround the ranks with fill items and expand the inventory size as new ranks are added
+  auto-size: true
+  # this will replace the next arrow and pack arrows with the fill item unless more pages are available
+  remove-page-items: true
+  # what item will pop up when you are denied in the config
+  # set to DISABLE to send a chat message
+  # set to RANK to only change the item name
+  deny-click-item: STRUCTURE_VOID
+  # if auto-size is enabled, then the next gui-options won't do anything
+  # size of gui
+  size: 27
+  # whether the players have to go through the ranks in order
+  orderly-progression: true
+  layout:
+    1:
+      # which slots will be filled - <x> or <x>-<y> where x < y
+      slot: 0-26
+      # item can either be an item from custom-items, or a rank item
+      # rank <x> - <x> is optional, only if you want to make your ranks not go from left to right, top to bottom
+      item: fill
+    2:
+      slot: 0
+      # actions that can be run when the item is clicked
+      # [gui] <x> - goes to the <x> page of ranks
+      # [exit] - closes the gui
+      # [next] - opens the next page of ranks if available
+      # [back] - opens the previous page of ranks if available
+      # [command] - runs a command, {player} can be used
+      actions:
+        - '[gui] 1'
+      # in this case, a new item is being created
+      item:
+        material: SUNFLOWER
+        amount: 1
+        enchanted: true
+        hide-nbt: true
+        name: '&e&lRank Menu'
+        lore:
+          - ''
+          - '&6Complete requirements to'
+          - '&6unlock special rewards'
+          - ''
+    3:
+      slot: 18
+      item: back
+    4:
+      slot: 26
+      item: next
+    5:
+      slot: 22
+      item: exit
+    6:
+      slot: 10-16
+      item: rank

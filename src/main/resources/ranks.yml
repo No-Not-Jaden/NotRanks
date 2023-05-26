@@ -1,0 +1,43 @@
+# gui that opens with no path specified
+default:
+  1:
+    name: '&9&lStarter'
+    # If HeadDataBase is installed, this will try and get a head ID, otherwise Base64
+    head: 193
+    # this item will be used if heads is disabled
+    item: EMERALD_BLOCK
+    # {cost} to get x/total - with prefix & suffix around each number
+    # {req1} to get the first requirement x/total ({req2} {req3} etc)
+    # lore will change from red to green after completion if there is ^^ included
+    lore:
+      - '&e<△> &c&lREQUIREMENTS &e<△>'
+      - '&7￫ &fPrice: {cost}'
+      - '&7￫ &fHours Played: {req3}'
+      - '&7￫ &fMob Kills: {req1}'
+      - '&7￫ &fStone Broken: {req2}'
+      - '&e<△> &c&lREWARDS &e<△>'
+      - '&7￫ &9&lStarter &ftitle.'
+    # this will change the lore when the rank is completed
+    # this could be useful if you want to unlock lore or add a secret message
+    completion-lore:
+      enabled: false
+      lore:
+        - '&7*--------------*'
+        - '&a&l&nRank Completed'
+        - '&7*--------------*'
+    hide-nbt: true
+    requirements:
+      #                        vv operator - can be "<=" ">=" "!=" "=" ">" "<" ||| true/false & text can only use "!=" & "="
+      # papi placeholder vv    vv  vv required amount - Make sure you download the placeholder before you use it
+      - '%statistic_mob_kills% >= 100'
+      #- '%mcmmo_power_level% >= 5'
+      - '%statistic_mine_block:STONE% >= 500'
+      # playtime
+      - '%statistic_hours_played% >= 1'
+    # auto checks and takes away with options defined in currency
+    cost: 3
+    commands:
+      # use {player} to replace it with the players name
+      # does not need a '/' in front of the command
+      - 'broadcast &e&lCongrats to &a{player} &e&lfor ranking up to &9&lStarter'
+      #- 'lp user {player} promote playerranks'

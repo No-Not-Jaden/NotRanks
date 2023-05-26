@@ -1,12 +1,9 @@
 package me.jadenp.notranks;
 
 
-import me.clip.placeholderapi.PlaceholderAPI;
-import org.bukkit.Bukkit;
+import me.jadenp.notranks.gui.GUI;
 import net.md_5.bungee.api.ChatColor;
-
-import org.bukkit.Material;
-import org.bukkit.OfflinePlayer;
+import org.bukkit.Bukkit;
 import org.bukkit.Sound;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -16,13 +13,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
@@ -38,6 +29,16 @@ import java.util.*;
 import static me.jadenp.notranks.ConfigOptions.*;
 import static me.jadenp.notranks.LanguageOptions.*;
 
+/**
+ * Migrating files works -
+ * Actions with [command] and [gui] change -
+ * ranks move to rank-slots -
+ * change pages work -
+ * set rank works - all commands -
+ * add warning if there is no rank path for a gui
+ * placeholder changes work -
+ */
+
 public final class NotRanks extends JavaPlugin implements CommandExecutor, Listener {
 
     public File playerdata = new File(this.getDataFolder() + File.separator + "playerdata.yml");
@@ -48,11 +49,9 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
     SimpleDateFormat formatExact = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
     File today = new File(logsFolder + File.separator + format.format(now) + ".txt");
     public ArrayList<String> logs = new ArrayList<>();
-    public HashMap<String, Integer> playerRank = new HashMap<>();
-    public Map<UUID, Long> notifyThroughGUIDelay = new HashMap<>();
+
 
     public static NotRanks instance;
-    public HashMap<UUID, Integer> guiPage = new HashMap<>();
 
 
     public static NotRanks getInstance() {
@@ -63,7 +62,6 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
     public void onEnable() {
         // Plugin startup logic
         instance = this;
-        Bukkit.getLogger().info(ChatColor.BLUE + "Running NotRanks version " + getDescription().getVersion() + ".");
         Objects.requireNonNull(getCommand("ranks")).setExecutor(this);
         Objects.requireNonNull(getCommand("rankup")).setExecutor(this);
         Bukkit.getServer().getPluginManager().registerEvents(this, this);
@@ -73,10 +71,10 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
         //noinspection ResultOfMethodCallIgnored
         logsFolder.mkdir();
         try {
-            if (!today.createNewFile()){
+            if (!today.createNewFile()) {
                 try {
                     Scanner scanner = new Scanner(today);
-                    while (scanner.hasNextLine()){
+                    while (scanner.hasNextLine()) {
                         String data = scanner.nextLine();
                         logs.add(data);
                     }
@@ -89,23 +87,45 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
             throw new RuntimeException(e);
         }
         // creating file to store player's ranks if the file hadn't already been created
-            try {
-                if (playerdata.createNewFile()){
-                    Bukkit.getLogger().info("Creating a new player data file.");
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
+        try {
+            if (playerdata.createNewFile()) {
+                Bukkit.getLogger().info("Creating a new player data file.");
             }
-
-
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
 
         YamlConfiguration configuration = YamlConfiguration.loadConfiguration(playerdata);
-        for (int i = 1; configuration.getString(i + ".uuid") != null; i++) {
-            if (playerRank.containsKey(configuration.getString(i + ".uuid"))) {
-                playerRank.replace(configuration.getString(i + ".uuid"), configuration.getInt(i + ".rank"));
-            } else {
-                playerRank.put(configuration.getString(i + ".uuid"), configuration.getInt(i + ".rank"));
+        if (!configuration.isSet("version")) {
+            // load old config
+            for (int i = 1; configuration.isSet(i + ".uuid"); i++) {
+                List<Integer> completedRanks = new ArrayList<>();
+                int currentRank = configuration.getInt(i + ".rank");
+                for (int j = 0; j < currentRank; j++) {
+                    completedRanks.add(i);
+                }
+                Map<String, List<Integer>> completedRank = new HashMap<>();
+                completedRank.put("default", completedRanks);
+                rankData.put(UUID.fromString(Objects.requireNonNull(configuration.getString(i + ".uuid"))), completedRank);
+            }
+        } else {
+            // load new config
+            if (configuration.isConfigurationSection("data")) {
+                for (String uuid : Objects.requireNonNull(configuration.getConfigurationSection("data")).getKeys(false)) {
+                    Map<String, List<Integer>> playerRankInfo = new HashMap<>();
+                    for (String rankType : Objects.requireNonNull(configuration.getConfigurationSection("data." + uuid)).getKeys(false)) {
+                        String completedRanks = configuration.getString("data." + uuid + "." + rankType);
+                        assert completedRanks != null;
+                        String[] separatedRanks = completedRanks.split(",");
+                        List<Integer> rankList = new ArrayList<>();
+                        for (String separatedRank : separatedRanks) {
+                            rankList.add(Integer.parseInt(separatedRank));
+                        }
+                        playerRankInfo.put(rankType, rankList);
+                    }
+                    rankData.put(UUID.fromString(uuid), playerRankInfo);
+                }
             }
         }
         try {
@@ -124,36 +144,38 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                     e.printStackTrace();
                 }
                 // clean out notifyThroughGUIDelay
-                notifyThroughGUIDelay.entrySet().removeIf(entries -> entries.getValue() < System.currentTimeMillis());
+                GUI.notifyThroughGUIDelay.entrySet().removeIf(entries -> entries.getValue() < System.currentTimeMillis());
             }
         }.runTaskTimer(this, 6000L, 6000L);
 
         // check if they completed a rank requirement
-        new BukkitRunnable(){
+        new BukkitRunnable() {
             @Override
             public void run() {
-                for (Player p : Bukkit.getOnlinePlayers()){
-                    if (ranks.size() > playerRank.get(p.getUniqueId().toString())) {
-                        Rank rank = ranks.get(playerRank.get(p.getUniqueId().toString()));
-                        rank.checkRankCompletion(p);
+                for (Player p : Bukkit.getOnlinePlayers()) {
+                    for (Map.Entry<String, List<Rank>> rankPaths : ranks.entrySet()) {
+                        int rankNum = getRankNum(p, rankPaths.getKey());
+                        if (rankNum < rankPaths.getValue().size() - 1) { // make sure they aren't on the max rank
+                            getRank(rankNum + 1, rankPaths.getKey()).checkRankCompletion(p, rankPaths.getKey()); // check completion on next rank
+                        }
                     }
                 }
             }
         }.runTaskTimer(this, 500L, 60);
-        new BukkitRunnable(){
+        new BukkitRunnable() {
             @Override
             public void run() {
                 log();
             }
-        }.runTaskTimerAsynchronously(this,5000,5000);
-        logs.add("[" +formatExact.format(now) + "] Plugin Loaded!");
+        }.runTaskTimerAsynchronously(this, 5000, 5000);
+        logs.add("[" + formatExact.format(now) + "] Plugin Loaded!");
 
     }
 
     @Override
     public void onDisable() {
         // Plugin shutdown logic
-        logs.add("[" +formatExact.format(now) + "] Plugin disabling.");
+        logs.add("[" + formatExact.format(now) + "] Plugin disabling.");
         try {
             saveRanks();
         } catch (IOException e) {
@@ -162,44 +184,41 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
         log();
     }
 
-    public int getRank(Player p) {
-        if (playerRank.containsKey(p.getUniqueId().toString()))
-            return playerRank.get(p.getUniqueId().toString());
-        return 0;
-    }
 
-    public int getRank(OfflinePlayer p) {
-        if (playerRank.containsKey(p.getUniqueId().toString()))
-            return playerRank.get(p.getUniqueId().toString());
-        return 0;
-    }
-
-    public void rankup(Player p, Rank newRank) {
-        RankupEvent event = new RankupEvent(p, newRank, ranks.get(playerRank.get(p.getUniqueId().toString())), playerRank.get(p.getUniqueId().toString()) + 1);
+    public void rankup(Player p, String rankType, int newRankIndex) {
+        Rank newRank = getRank(newRankIndex, rankType);
+        RankupEvent event = new RankupEvent(p, newRank, getRank(p, rankType), newRankIndex);
         Bukkit.getPluginManager().callEvent(event);
-        if (!event.isCancelled()){
+        if (!event.isCancelled()) {
             if (rankUp.length() > 0) {
                 String text = rankUp;
                 text = text.replaceAll("\\{player}", p.getName());
-                text = text.replaceAll("\\{rank}", ranks.get(playerRank.get(p.getUniqueId().toString())).getName());
+                text = text.replaceAll("\\{rank}", newRank.getName());
 
                 Bukkit.broadcastMessage(prefix + parse(text, p));
             }
             p.playSound(p.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 1, 1);
             newRank.rankup(p);
-            logs.add("[" +formatExact.format(now) + "] " + p.getName() + " ranked up to " + newRank.getName() + ".");
-            playerRank.replace(p.getUniqueId().toString(), playerRank.get(p.getUniqueId().toString()) + 1);
+            logs.add("[" + formatExact.format(now) + "] " + p.getName() + " ranked up to " + newRank.getName() + ".");
+            addRank(p, rankType, newRankIndex);
         }
     }
 
 
     public void saveRanks() throws IOException {
         YamlConfiguration configuration = new YamlConfiguration();
-        int i = 1;
-        for (Map.Entry<String, Integer> stringIntegerEntry : playerRank.entrySet()) {
-            configuration.set(i + ".uuid", stringIntegerEntry.getKey());
-            configuration.set(i + ".rank", stringIntegerEntry.getValue());
-            i++;
+        for (Map.Entry<UUID, Map<String, List<Integer>>> playerEntry : rankData.entrySet()) {
+            String uuid = playerEntry.getKey().toString();
+            for (Map.Entry<String, List<Integer>> rankEntry : playerEntry.getValue().entrySet()) {
+                StringBuilder builder = new StringBuilder();
+                for (int i = 0; i < rankEntry.getValue().size() - 1; i++) {
+                    builder.append(rankEntry.getValue().get(i)).append(",");
+                }
+                if (!rankEntry.getValue().isEmpty()) {
+                    builder.append(rankEntry.getValue().get(rankEntry.getValue().size() - 1));
+                    configuration.set("data." + uuid + "." + rankEntry.getKey(), builder.toString());
+                }
+            }
         }
         configuration.save(playerdata);
     }
@@ -210,178 +229,233 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
         ConfigOptions.loadConfig();
     }
 
-    public void openGUI(Player p, int page) {
-        if (page < 1)
-            page = 1;
-        if (page > maxPages)
-            page = maxPages;
-        Inventory inv = Bukkit.createInventory(p, guiSize, color(guiName));
-        ItemStack[] contents = inv.getContents();
-        for (int i = 0; i < guiSize; i++) {
-            GUItem guItem = guiLayout[i];
-            if (guItem == null)
-                continue;
-            if (!guItem.getActions().isEmpty() && guItem.getActions().get(0).startsWith("rank")){
-                // rank item
-                ItemStack item;
-                try {
-                    int rankNum = Integer.parseInt(guItem.getActions().get(0).substring(5)) - 1 + ((page - 1) * ranksPerPage);
-                    item = ranks.get(rankNum).getItem(p, (playerRank.get(p.getUniqueId().toString()) > rankNum));
-                } catch (NumberFormatException | IndexOutOfBoundsException e){
-                    item = fillItem;
-                    if (debug) {
-                        Bukkit.getLogger().info("[NotRanks] Could not get rank item");
-                        e.printStackTrace();
-                    }
-                }
-                contents[i] = item;
-            } else if ((guItem.getItem().isSimilar(next) || guItem.getActions().contains("[next]")) && replacePageItems) {
-                if (ranks.size() > ranksPerPage * page){
-                    // there are more ranks on the next page
-                    contents[i] = next;
-                } else {
-                    contents[i] = fillItem;
-                }
-            } else if ((guItem.getItem().isSimilar(back) || guItem.getActions().contains("[back]")) && replacePageItems) {
-                if (page > 1){
-                    // there are more ranks on the previous
-                    contents[i] = back;
-                } else {
-                    contents[i] = fillItem;
-                }
-            } else {
-                contents[i] = guItem.getPapiItem(p);
-            }
-        }
-        inv.setContents(contents);
-        p.openInventory(inv);
-        guiPage.put(p.getUniqueId(), page);
-    }
-
-
-
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
         if (command.getName().equalsIgnoreCase("rankup")) {
+            if (!(sender instanceof Player)) {
+                sender.sendMessage(prefix + ChatColor.RED + "Only players can use this command!");
+                return true;
+            }
             if (sender.hasPermission("notranks.default")) {
-                if (args.length == 0) {
-                    if (!(playerRank.get(((Player) sender).getUniqueId().toString()) > ranks.size() - 1)) {
-                        if (ranks.get(playerRank.get(((Player) sender).getUniqueId().toString())).checkRequirements(((Player) sender))) {
-                            rankup(((Player) sender), ranks.get(playerRank.get(((Player) sender).getUniqueId().toString())));
-                        } else {
-                            sender.sendMessage(prefix + parse(rankUpDeny, (Player) sender));
-                            ((Player) sender).playSound(((Player) sender).getLocation(), Sound.ENTITY_VILLAGER_NO, 1, 1);
-                        }
+                String rankType = args.length > 0 ? args[0] : "default";
+                List<Rank> rankPath = ranks.get(rankType);
+                List<Integer> rankProgress = rankData.get(((Player) sender).getUniqueId()).get(rankType);
+                if (rankPath == null) {
+                    // unknown rank path
+                    sender.sendMessage(prefix + parse(unknownRankPath, (Player) sender));
+                    return true;
+                }
+                // 0 if they have no rank, otherwise, 1+ last rank they have gotten
+                int nextRank = rankProgress == null ? 0 : rankProgress.get(rankProgress.size() - 1) + 1;
+                if (rankPath.size() > nextRank) { // check if they are on the max rank
+                    // check requirements
+                    if (rankPath.get(nextRank).checkRequirements((Player) sender, rankType)) {
+                        rankup((Player) sender, rankType, nextRank);
                     } else {
-                        sender.sendMessage(prefix + parse(maxRank, (Player) sender));
+                        // rankup deny
+                        sender.sendMessage(prefix + parse(rankUpDeny, (Player) sender));
+                        ((Player) sender).playSound(((Player) sender).getLocation(), Sound.ENTITY_VILLAGER_NO, 1, 1);
                     }
-
                 } else {
-                    sender.sendMessage(prefix + parse(unknownCommand, (Player) sender));
+                    sender.sendMessage(prefix + parse(maxRank, (Player) sender));
                 }
             } else {
                 sender.sendMessage(prefix + parse(noAccess, (Player) sender));
             }
         } else if (command.getName().equalsIgnoreCase("ranks")) {
-            if (args.length == 0) {
-                if (sender.hasPermission("notranks.default")) {
-                    sender.sendMessage(prefix + parse(guiOpen, (Player) sender));
-                    openGUI((Player) sender, 1);
-                } else {
-                    sender.sendMessage(prefix + parse(noAccess, (Player) sender));
-                }
-            } else if (args[0].equalsIgnoreCase("reload")) {
-                if (sender.hasPermission("notranks.admin")) {
-                    try {
-                        this.loadConfig();
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
+            if (!(sender instanceof Player)) {
+                sender.sendMessage(prefix + ChatColor.RED + "Only players can use this command!");
+                return true;
+            }
+            if (args.length > 0)
+                if (args[0].equalsIgnoreCase("reload")) {
+                    if (sender.hasPermission("notranks.admin")) {
+                        try {
+                            this.loadConfig();
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                        sender.sendMessage(prefix + ChatColor.GREEN + "Reloaded NotRanks version " + this.getDescription().getVersion() + ".");
+                    } else {
+                        sender.sendMessage(prefix + parse(noAccess, (Player) sender));
                     }
-                    sender.sendMessage(prefix + ChatColor.GREEN + "Reloaded NotRanks version " + this.getDescription().getVersion() + ".");
-                } else {
-                    sender.sendMessage(prefix + parse(noAccess, (Player) sender));
-                }
-            } else if (args[0].equalsIgnoreCase("set")) {
-                if (sender.hasPermission("notranks.admin")) {
-                    if (args.length == 3) {
-                        Player player = Bukkit.getPlayer(args[1]);
-                        if (player != null) {
+                    return true;
+                } else if (args[0].equalsIgnoreCase("set")) {
+                    // /ranks set (player) (path) (rank/#)
+                    if (sender.hasPermission("notranks.admin")) {
+                        if (args.length > 2) {
+                            Player player = Bukkit.getPlayer(args[1]);
+                            if (player == null) {
+                                sender.sendMessage(prefix + ChatColor.RED + "Unknown Player.");
+                                return true;
+                            }
+                            String path = args.length == 4 ? args[2] : "default";
+                            if (!ranks.containsKey(path)) {
+                                // no path found
+                                sender.sendMessage(prefix + parse(unknownRankPath, (Player) sender));
+                                return true;
+                            }
+                            List<Rank> validRanks = ranks.get(path);
+                            List<Integer> rankCompletion = getRankCompletion(player, path);
                             int rankNum = -1;
-                            for (Rank rank : ranks){
-                                if (ChatColor.stripColor(rank.getName()).equalsIgnoreCase(args[2])){
-                                    rankNum = ranks.indexOf(rank) + 1;
+                            for (Rank rank : validRanks) {
+                                if (ChatColor.stripColor(rank.getName()).equalsIgnoreCase(args[2])) {
+                                    rankNum = validRanks.indexOf(rank);
                                     break;
                                 }
                             }
-                            if (rankNum == -1 && args[2].equalsIgnoreCase("none")){
-                                rankNum = 0;
-                            }
-                            if (rankNum == -1){
-                                try {
-                                    rankNum = Integer.parseInt(args[2]);
-                                } catch (NumberFormatException ignored){
-                                    sender.sendMessage(prefix + ChatColor.RED + "Unknown Rank");
-                                    return true;
+                            if (rankNum == -1) {
+                                // cannot find rank from string
+                                if (args[2].equalsIgnoreCase("none")) {
+                                    // clear ranks
+                                    rankCompletion.clear();
+                                    sender.sendMessage(prefix + ChatColor.GREEN + "Cleared " + player.getName() + "'s rank progress on " + ChatColor.GRAY + path + ChatColor.GREEN + ".");
+                                } else {
+                                    try {
+                                        rankNum = Integer.parseInt(args[2]);
+                                    } catch (NumberFormatException ignored) {
+                                        // not a number
+                                        sender.sendMessage(prefix + ChatColor.RED + "Unknown Rank");
+                                        return true;
+                                    }
+                                    if (rankNum < 0 || rankNum >= validRanks.size()) {
+                                        // number out of bounds
+                                        sender.sendMessage(prefix + ChatColor.RED + "Unknown Rank");
+                                        return true;
+                                    }
                                 }
-                                if (!(rankNum > -1 && rankNum <= ranks.size())){
-                                    sender.sendMessage(prefix + ChatColor.RED + "Unknown Rank");
-                                    return true;
-                                }
                             }
-                            playerRank.replace(player.getUniqueId().toString(), rankNum);
-                            if (rankNum == 0) {
-                                sender.sendMessage(prefix + ChatColor.GREEN + "Set " + Objects.requireNonNull(Bukkit.getPlayer(args[1])).getName() + "'s rank to " + ChatColor.GRAY + "none" + ChatColor.GREEN + ".");
-                            } else {
-                                sender.sendMessage(prefix + ChatColor.GREEN + "Set " + Objects.requireNonNull(Bukkit.getPlayer(args[1])).getName() + "'s rank to " + ranks.get(rankNum - 1).getName() + ChatColor.GREEN + ".");
+                            if (rankNum != -1) {
+                                // put this rank number at the top of the rank completion list
+                                rankCompletion.remove((Integer) rankNum);
+                                rankCompletion.add(rankNum);
+                                sender.sendMessage(prefix + ChatColor.GREEN + "Set " + player.getName() + "'s rank to " + validRanks.get(rankNum).getName() + ChatColor.GREEN + ".");
                             }
+                            setRankCompletion(player, path, rankCompletion);
                         } else {
-                            sender.sendMessage(prefix + ChatColor.RED + "Unknown Player.");
+                            sender.sendMessage(prefix + ChatColor.GOLD + "" + ChatColor.BOLD + "Usage: " + ChatColor.YELLOW + "/ranks set (player) <path> (#/rank)");
                         }
                     } else {
-                        sender.sendMessage(prefix + ChatColor.GOLD + "" + ChatColor.BOLD + "Usage: " + ChatColor.YELLOW + "/ranks set (player) (#/rank)");
+                        sender.sendMessage(prefix + parse(noAccess, (Player) sender));
                     }
+                    return true;
+                } else if (args[0].equalsIgnoreCase("help")) {
+                    sender.sendMessage(prefix + ChatColor.YELLOW + "/ranks <path>" + ChatColor.GOLD + "  Opens the rank gui");
+                    sender.sendMessage(prefix + ChatColor.YELLOW + "/rankup <path>" + ChatColor.GOLD + "  Ranks yourself up");
+                    if (sender.hasPermission("notranks.admin")) {
+                        sender.sendMessage(prefix + ChatColor.RED + "/ranks reload" + ChatColor.DARK_RED + "  Reloads the plugin");
+                        sender.sendMessage(prefix + ChatColor.RED + "/ranks set (player) <path> (#/rank)" + ChatColor.DARK_RED + "  Sets the player's rank");
+                        sender.sendMessage(prefix + ChatColor.RED + "/ranks remove (player) <path> (#/rank)" + ChatColor.DARK_RED + "  Removes a player's rank");
+
+                    }
+                    sender.sendMessage(prefix + ChatColor.RED + "/ranks help" + ChatColor.DARK_RED + "  What you just typed in");
+                    return true;
+                } else if (args[0].equalsIgnoreCase("debug") && sender.hasPermission("notranks.admin")) {
+                    debug = !debug;
+                    sender.sendMessage(prefix + ChatColor.YELLOW + "Debug mode is now set to: " + debug);
+                    return true;
+                } else if (args[0].equalsIgnoreCase("remove")) {
+                    // /rank remove (player) <path> <rank/#>
+                    if (sender.hasPermission("notranks.admin")) {
+                        if (args.length > 2) {
+                            Player player = Bukkit.getPlayer(args[1]);
+                            if (player == null) {
+                                sender.sendMessage(prefix + ChatColor.RED + "Unknown Player.");
+                                return true;
+                            }
+                            String path = args.length == 4 ? args[2] : "default";
+                            if (!ranks.containsKey(path)) {
+                                // no path found
+                                sender.sendMessage(prefix + parse(unknownRankPath, (Player) sender));
+                                return true;
+                            }
+                            List<Rank> validRanks = ranks.get(path);
+                            List<Integer> rankCompletion = getRankCompletion(player, path);
+                            int rankNum = -1;
+                            for (Rank rank : validRanks) {
+                                if (ChatColor.stripColor(rank.getName()).equalsIgnoreCase(args[2])) {
+                                    rankNum = validRanks.indexOf(rank);
+                                    break;
+                                }
+                            }
+                            if (rankNum == -1) {
+                                // cannot find rank from string
+                                try {
+                                    rankNum = Integer.parseInt(args[2]);
+                                } catch (NumberFormatException ignored) {
+                                    // not a number
+                                    sender.sendMessage(prefix + ChatColor.RED + "Unknown Rank");
+                                    return true;
+                                }
+                                if (rankNum < 0 || rankNum >= validRanks.size()) {
+                                    // number out of bounds
+                                    sender.sendMessage(prefix + ChatColor.RED + "Unknown Rank");
+                                    return true;
+                                }
+                            }
+
+                            if (rankCompletion.remove((Integer) rankNum)) {
+                                sender.sendMessage(prefix + ChatColor.GREEN + "Removed " + player.getName() + "'s rank of " + validRanks.get(rankNum).getName() + ChatColor.GREEN + " on " + ChatColor.GRAY + path + ChatColor.GREEN + ".");
+                                setRankCompletion(player, path, rankCompletion);
+                            } else {
+                                sender.sendMessage(prefix + ChatColor.RED + player.getName() + " does not have the rank of " + validRanks.get(rankNum).getName() + ChatColor.RED + ".");
+                            }
+                        } else {
+                            sender.sendMessage(prefix + ChatColor.GOLD + "" + ChatColor.BOLD + "Usage: " + ChatColor.YELLOW + "/ranks set (player) <path> (#/rank)");
+                        }
+                    } else {
+                        sender.sendMessage(prefix + parse(noAccess, (Player) sender));
+                    }
+                }
+            // open gui
+            String rankType = args.length > 0 ? args[0].toLowerCase() : "default";
+            if (sender.hasPermission("notranks.default")) {
+                if (ranks.containsKey(rankType)) {
+                    GUI.openGUI((Player) sender, rankType, 1);
+                    sender.sendMessage(prefix + parse(guiOpen, (Player) sender));
                 } else {
-                    sender.sendMessage(prefix + parse(noAccess, (Player) sender));
+                    // no rank path found
+                    sender.sendMessage(prefix + parse(unknownRankPath, (Player) sender));
                 }
-            } else if (args[0].equalsIgnoreCase("help")) {
-                sender.sendMessage(prefix + ChatColor.YELLOW + "/ranks" + ChatColor.GOLD + "  Opens the rank gui");
-                sender.sendMessage(prefix + ChatColor.YELLOW + "/rankup" + ChatColor.GOLD + "  Ranks yourself up");
-                if (sender.hasPermission("notranks.admin")) {
-                    sender.sendMessage(prefix + ChatColor.RED + "/ranks reload" + ChatColor.DARK_RED + "  Reloads the plugin");
-                    sender.sendMessage(prefix + ChatColor.RED + "/ranks set (player) (#/rank)" + ChatColor.DARK_RED + "  Sets the player's rank");
-
-                }
-                sender.sendMessage(prefix + ChatColor.RED + "/ranks help" + ChatColor.DARK_RED + "  What you just typed in");
-            } else if (args[0].equalsIgnoreCase("debug") && sender.hasPermission("notranks.admin")) {
-                debug = !debug;
-                sender.sendMessage(prefix + ChatColor.YELLOW + "Debug mode is now set to: " + debug);
-
             } else {
-                sender.sendMessage(prefix + parse(unknownCommand, (Player) sender));
+                // no permission
+                sender.sendMessage(prefix + parse(noAccess, (Player) sender));
             }
+
         } else if (command.getName().equalsIgnoreCase("rankinfo")) {
-            if (!(playerRank.get(((Player) sender).getUniqueId().toString()) > ranks.size() - 1)) {
-                if (sender.hasPermission("notranks.default")) {
-                    Rank rank = ranks.get(getRank((Player) sender));
+            if (sender.hasPermission("notranks.default")) {
+                String rankType = args.length > 0 ? args[0] : "default";
+                List<Rank> rankPath = ranks.get(rankType);
+                List<Integer> rankProgress = rankData.get(((Player) sender).getUniqueId()).get(rankType);
+                if (rankPath == null) {
+                    // unknown rank path
+                    sender.sendMessage(prefix + parse(unknownRankPath, (Player) sender));
+                    return true;
+                }
+                // 0 if they have no rank, otherwise, 1+ last rank they have gotten
+                int nextRank = rankProgress == null ? 0 : rankProgress.get(rankProgress.size() - 1) + 1;
+                if (rankPath.size() > nextRank) { // check if they are on the max rank
+                    // display the next rank
+                    Rank rank = rankPath.get(nextRank);
                     List<String> chat = rank.getLore((Player) sender, false);
-                    String name = ChatColor.translateAlternateColorCodes('&',rank.getName());
+                    String name = ChatColor.translateAlternateColorCodes('&', rank.getName());
                     sender.sendMessage(ChatColor.GRAY + "" + ChatColor.STRIKETHROUGH + "            " + ChatColor.RESET + " " + name + ChatColor.RESET + " " + ChatColor.GRAY + "" + ChatColor.STRIKETHROUGH + "            ");
 
-                    for (String str : chat){
+                    for (String str : chat) {
                         sender.sendMessage(str);
                     }
                     StringBuilder str = new StringBuilder("                        ");
                     int multiplier = name.contains("&l") ? 2 : 1;
-                    for (int i = 0; i < ChatColor.stripColor(name).length() * multiplier; i++){
+                    for (int i = 0; i < ChatColor.stripColor(name).length() * multiplier; i++) {
                         str.append(" ");
                     }
                     sender.sendMessage(ChatColor.GRAY + "" + ChatColor.STRIKETHROUGH + str);
                 } else {
-                    sender.sendMessage(prefix + parse(noAccess, (Player) sender));
+                    sender.sendMessage(prefix + parse(maxRank, (Player) sender));
                 }
             } else {
-                sender.sendMessage(prefix + parse(maxRank, (Player) sender));
+                sender.sendMessage(prefix + parse(noAccess, (Player) sender));
             }
         }
         return true;
@@ -390,170 +464,72 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
     @Nullable
     @Override
     public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, @NotNull String[] args) {
-        if (command.getName().equalsIgnoreCase("ranks")){
-            if (sender.hasPermission("notranks.admin")){
-                List<String> tab = new ArrayList<>();
-                if (args.length == 1){
+        if (command.getName().equalsIgnoreCase("ranks")) {
+
+            List<String> tab = new ArrayList<>();
+            if (args.length == 1) {
+                if (sender.hasPermission("notranks.admin")) {
                     tab.add("reload");
                     tab.add("set");
+                    tab.add("remove");
+                }
+                if (sender.hasPermission("notranks.default")) {
                     tab.add("help");
-                } else if (args.length == 2){
-                    if (args[0].equalsIgnoreCase("set")){
-                        for (Player player : Bukkit.getOnlinePlayers()){
-                            tab.add(player.getName());
-                        }
-                    }
-                } else if (args.length == 3){
-                    if (args[0].equalsIgnoreCase("set")){
-                        for (Rank rank : ranks){
-                            tab.add(ChatColor.stripColor(rank.getName()));
-                        }
-                        tab.add("none");
+                    for (Map.Entry<String, List<Rank>> entry : ranks.entrySet()) {
+                        tab.add(entry.getKey());
                     }
                 }
-                String typed = args[args.length-1];
-                tab.removeIf(test -> test.toLowerCase(Locale.ROOT).indexOf(typed.toLowerCase(Locale.ROOT)) != 0);
-                Collections.sort(tab);
-                return tab;
+            } else if (args.length == 2) {
+                if ((args[0].equalsIgnoreCase("set") || args[0].equalsIgnoreCase("remove")) && sender.hasPermission("notranks.admin")) {
+                    for (Player player : Bukkit.getOnlinePlayers()) {
+                        tab.add(player.getName());
+                    }
+                }
+            } else if (args.length == 3) {
+                if ((args[0].equalsIgnoreCase("set") || args[0].equalsIgnoreCase("remove")) && sender.hasPermission("notranks.admin")) {
+                    for (Map.Entry<String, List<Rank>> entry : ranks.entrySet()) {
+                        tab.add(entry.getKey());
+                    }
+                    if (ranks.containsKey("default"))
+                        for (Rank rank : ranks.get("default")) {
+                            tab.add(ChatColor.stripColor(rank.getName()));
+                        }
+                    tab.add("none");
+                }
+            } else if (args.length == 4) {
+                if ((args[0].equalsIgnoreCase("set") || args[0].equalsIgnoreCase("remove")) && sender.hasPermission("notranks.admin")) {
+                    if (ranks.containsKey(args[2]))
+                        for (Rank rank : ranks.get(args[2])) {
+                            tab.add(ChatColor.stripColor(rank.getName()));
+                        }
+                    tab.add("none");
+                }
             }
+            String typed = args[args.length - 1];
+            tab.removeIf(test -> test.toLowerCase(Locale.ROOT).indexOf(typed.toLowerCase(Locale.ROOT)) != 0);
+            Collections.sort(tab);
+            return tab;
+
         }
 
         return super.onTabComplete(sender, command, alias, args);
     }
 
-    @EventHandler
-    public void onJoin(PlayerJoinEvent event) {
-        if (!playerRank.containsKey(event.getPlayer().getUniqueId().toString()))
-            playerRank.put(event.getPlayer().getUniqueId().toString(), 0);
-    }
 
-    @EventHandler
-    public void onInventoryInteract(InventoryClickEvent event) {
-        if (!event.getView().getTitle().equals(color(guiName)))
-            return;
-        if (!guiPage.containsKey(event.getWhoClicked().getUniqueId()))
-            guiPage.put(event.getWhoClicked().getUniqueId(), 1);
-        event.setCancelled(true);
-        if (event.getSlot() > event.getView().getTopInventory().getSize())
-            return;
-        ItemStack current = event.getCurrentItem();
-        if (current == null)
-            return;
-        if (current.isSimilar(fillItem))
-            return;
-        if (current.isSimilar(exit)) {
-            event.getView().close();
-        }
-        if (current.isSimilar(next)){
-            openGUI((Player) event.getWhoClicked(), guiPage.get(event.getWhoClicked().getUniqueId()) + 1);
-        }
-        if (current.isSimilar(back)){
-            openGUI((Player) event.getWhoClicked(), guiPage.get(event.getWhoClicked().getUniqueId()) - 1);
-        }
-        GUItem guItem = guiLayout[event.getSlot()];
-        for (String action : guItem.getActions()){
-            if (action.startsWith("[gui]")){
-                int page = 1;
-                try {
-                    page = Integer.parseInt(action.substring(6));
-                } catch (NumberFormatException e){
-                    Bukkit.getLogger().warning("Error getting gui page number: " + action);
-                }
-                openGUI((Player) event.getWhoClicked(), page);
-            } else if (action.startsWith("[exit]")){
-                event.getView().close();
-            } else if (action.startsWith("[next]")){
-                openGUI((Player) event.getWhoClicked(), guiPage.get(event.getWhoClicked().getUniqueId()) + 1);
-            } else if (action.startsWith("[back]")){
-                openGUI((Player) event.getWhoClicked(), guiPage.get(event.getWhoClicked().getUniqueId()) - 1);
-            } else if (action.startsWith("[command]")){
-                String text = action.substring(10);
-                text = text.replaceAll("\\{player}", event.getWhoClicked().getName());
-                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), text);
-            } else if (action.startsWith("rank")){
-                int rank = Integer.parseInt(action.substring(5)) + ((guiPage.get(event.getWhoClicked().getUniqueId()) - 1) * ranksPerPage);
-                int currentRank = getRank((Player) event.getWhoClicked());
-                if (rank <= currentRank || rank > currentRank + 1){
-                    // not on this rank
-                    notifyThroughGUI(event, parse(notOnRank, (Player) event.getWhoClicked()));
-                    continue;
-                }
-                if (ranks.get(playerRank.get(event.getWhoClicked().getUniqueId().toString())).checkRequirements(((Player) event.getWhoClicked()))) {
-                    rankup(((Player) event.getWhoClicked()), ranks.get(playerRank.get(event.getWhoClicked().getUniqueId().toString())));
-                    event.getView().close();
-                } else {
-                    notifyThroughGUI(event, parse(rankUpDeny, (Player) event.getWhoClicked()));
-                }
-            }
-        }
-        ((Player) event.getWhoClicked()).updateInventory();
-    }
-
-    @EventHandler
-    public void onInventoryClose(InventoryCloseEvent event){
-        guiPage.remove(event.getPlayer().getUniqueId());
-    }
-
-    public void notifyThroughGUI(InventoryClickEvent event, String message){
-        // check the delay time
-        if (notifyThroughGUIDelay.containsKey(event.getWhoClicked().getUniqueId()) && notifyThroughGUIDelay.get(event.getWhoClicked().getUniqueId()) > System.currentTimeMillis())
-            return;
-        notifyThroughGUIDelay.put(event.getWhoClicked().getUniqueId(), System.currentTimeMillis() + 1000);
-        if (denyClickItem.equals("DISABLE")) {
-            event.getWhoClicked().sendMessage(prefix + message);
-        } else if (denyClickItem.equals("RANK")){
-            ItemStack[] contents = event.getInventory().getContents();
-            ItemStack item = contents[event.getSlot()];
-            ItemMeta meta = item.getItemMeta();
-            assert meta != null;
-            meta.setDisplayName(message);
-            item.setItemMeta(meta);
-            contents[event.getSlot()] = item;
-            event.getInventory().setContents(contents);
-            new BukkitRunnable(){
-                @Override
-                public void run() {
-                    if (guiPage.containsKey(event.getWhoClicked().getUniqueId())){
-                        openGUI((Player) event.getWhoClicked(), guiPage.get(event.getWhoClicked().getUniqueId()));
-                    }
-                }
-            }.runTaskLater(this, 20);
-        } else {
-            ItemStack[] contents = event.getInventory().getContents();
-            ItemStack item = new ItemStack(Material.valueOf(denyClickItem));
-            ItemMeta meta = item.getItemMeta();
-            assert meta != null;
-            meta.setDisplayName(message);
-            item.setItemMeta(meta);
-            contents[event.getSlot()] = item;
-            event.getInventory().setContents(contents);new BukkitRunnable(){
-                @Override
-                public void run() {
-                    if (guiPage.containsKey(event.getWhoClicked().getUniqueId())){
-                        openGUI((Player) event.getWhoClicked(), guiPage.get(event.getWhoClicked().getUniqueId()));
-                    }
-                }
-            }.runTaskLater(this, 20);
-        }
-    }
-
-    public String parse (String text, OfflinePlayer player){
-        return PlaceholderAPI.setPlaceholders(player, color(text));
-    }
-
+    // control chat if enabled
     @EventHandler(priority = EventPriority.HIGH)
-    public void onPlayerChat(AsyncPlayerChatEvent event){
+    public void onPlayerChat(AsyncPlayerChatEvent event) {
         if (!addPrefix)
             return;
         String parsedPrefix = prefixFormat;
-        int rank = getRank(event.getPlayer()) - 1;
-        String rankName = rank != -1 ? ranks.get(rank).getName() : noRank;
+        Rank rank = getRank(event.getPlayer(), "default");
+        String rankName = rank != null ? rank.getName() : noRank;
         parsedPrefix = parsedPrefix.replaceAll("\\{prefix}", rankName);
         parsedPrefix = parsedPrefix.replaceAll("\\{name}", "%s");
         if (overwritePrefix)
-            parsedPrefix+= "%s";
+            parsedPrefix += "%s";
         parsedPrefix = parse(parsedPrefix, event.getPlayer());
-        if (overwritePrefix){
+        if (overwritePrefix) {
             event.setFormat(parsedPrefix);
         } else {
             event.setFormat(parsedPrefix + event.getFormat());
@@ -561,11 +537,10 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
     }
 
 
-
-    public void log(){
-        try{
+    public void log() {
+        try {
             PrintWriter writer = new PrintWriter(today.getPath(), "UTF-8");
-            for (String s : logs){
+            for (String s : logs) {
                 writer.println(s);
             }
             writer.close();
@@ -574,7 +549,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
         }
     }
 
-    public void writeLog(String text){
-        logs.add("[" +formatExact.format(now) + "] " + text);
+    public void writeLog(String text) {
+        logs.add("[" + formatExact.format(now) + "] " + text);
     }
 }
