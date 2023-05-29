@@ -160,13 +160,16 @@ public class ConfigOptions {
             ranks.put(key, rankPath);
         }
 
-        // migrate old config to separated files
+        // migrate gui
         YamlConfiguration guiConfig = YamlConfiguration.loadConfiguration(guiFile);
         if (plugin.getConfig().isConfigurationSection("gui")){
             guiConfig.set("default.auto-size", plugin.getConfig().getBoolean("gui.auto-size"));
             guiConfig.set("default.remove-page-items", plugin.getConfig().getBoolean("gui.replace-page-items"));
             guiConfig.set("default.size", plugin.getConfig().getInt("gui.size"));
-            guiConfig.set("default.deny-click-item", plugin.getConfig().getString("gui.deny-click-item"));
+            if (plugin.getConfig().isSet("gui.deny-click-item"))
+                guiConfig.set("default.deny-click-item", plugin.getConfig().getString("gui.deny-click-item"));
+            else
+                guiConfig.set("default.deny-click-item", "STRUCTURE_VOID");
             guiConfig.set("custom-items.fill.material", plugin.getConfig().getString("gui.fill-item"));
             File language = new File(NotRanks.getInstance().getDataFolder() + File.separator + "language.yml");
             YamlConfiguration languageConfig = YamlConfiguration.loadConfiguration(language);
@@ -263,6 +266,8 @@ public class ConfigOptions {
         // read customGUIs
         GUI.clearGUIs();
         for (String key : guiConfig.getKeys(false)){
+            if (key.equals("custom-items"))
+                continue;
             GUIOptions guiOptions = new GUIOptions(Objects.requireNonNull(guiConfig.getConfigurationSection(key)));
             GUI.addGUI(guiOptions, key);
         }

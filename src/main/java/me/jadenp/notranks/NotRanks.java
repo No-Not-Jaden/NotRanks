@@ -65,6 +65,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
         Objects.requireNonNull(getCommand("ranks")).setExecutor(this);
         Objects.requireNonNull(getCommand("rankup")).setExecutor(this);
         Bukkit.getServer().getPluginManager().registerEvents(this, this);
+        Bukkit.getServer().getPluginManager().registerEvents(new GUI(), this);
         new RankPlaceholder(this).register();
         saveDefaultConfig();
         // create logs stuff
@@ -425,16 +426,16 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
 
         } else if (command.getName().equalsIgnoreCase("rankinfo")) {
             if (sender.hasPermission("notranks.default")) {
-                String rankType = args.length > 0 ? args[0] : "default";
+                String rankType = args.length > 0 ? args[0].toLowerCase() : "default";
                 List<Rank> rankPath = ranks.get(rankType);
-                List<Integer> rankProgress = rankData.get(((Player) sender).getUniqueId()).get(rankType);
+                List<Integer> rankProgress = getRankCompletion((Player) sender, rankType);
                 if (rankPath == null) {
                     // unknown rank path
                     sender.sendMessage(prefix + parse(unknownRankPath, (Player) sender));
                     return true;
                 }
                 // 0 if they have no rank, otherwise, 1+ last rank they have gotten
-                int nextRank = rankProgress == null ? 0 : rankProgress.get(rankProgress.size() - 1) + 1;
+                int nextRank = rankProgress == null || rankProgress.isEmpty() ? 0 : rankProgress.get(rankProgress.size() - 1) + 1;
                 if (rankPath.size() > nextRank) { // check if they are on the max rank
                     // display the next rank
                     Rank rank = rankPath.get(nextRank);
