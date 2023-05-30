@@ -35,8 +35,9 @@ import static me.jadenp.notranks.LanguageOptions.*;
  * ranks move to rank-slots -
  * change pages work -
  * set rank works - all commands -
- * add warning if there is no rank path for a gui
+ * add warning if there is no rank path for a gui -
  * placeholder changes work -
+ * confirmation gui -
  */
 
 public final class NotRanks extends JavaPlugin implements CommandExecutor, Listener {

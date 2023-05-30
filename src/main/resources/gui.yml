@@ -26,6 +26,49 @@ custom-items:
     # {player} will be replaced with the name of the player who clicked
     # {slot<x>} will be replaced with the name of the owner of the skull in that slot, or if there is no skull, it will be replaced with the item name
     commands: [ ]
+  custom-item-example:
+    item:
+      material: SUNFLOWER
+      amount: 1
+      enchanted: true
+      hide-nbt: true
+      name: '&e&lRank Menu'
+      lore:
+        - ''
+        - '&6Complete requirements to'
+        - '&6unlock special rewards'
+        - ''
+  exit:
+    material: BARRIER
+    amount: 1
+    name: '&c&lExit'
+    commands:
+      - '[close]'
+  next:
+    material: ARROW
+    amount: 1
+    name: '&7Next Page'
+    commands:
+      - '[next]'
+  back:
+    material: ARROW
+    amount: 1
+    name: '&7Previous Page'
+    commands:
+      - '[back]'
+  yes:
+    material: LIME_STAINED_GLASS_PANE
+    amount: 1
+    name: '&a&lYes'
+    commands:
+      - '[p] rankup'
+      - '[close]'
+  no:
+    material: RED_STAINED_GLASS_PANE
+    amount: 1
+    name: '&c&lNo'
+    commands:
+      - '[p] rank'
 default:
   # name of the gui that opens when you do /ranks
   gui-name: '&cRanks'
@@ -44,6 +87,8 @@ default:
   size: 27
   # whether the players have to go through the ranks in order
   orderly-progression: true
+  rank-slots:
+    - '10-16'
   layout:
     1:
       # which slots will be filled - <x> or <x>-<y> where x < y
@@ -53,26 +98,7 @@ default:
       item: fill
     2:
       slot: 0
-      # actions that can be run when the item is clicked
-      # [gui] <x> - goes to the <x> page of ranks
-      # [exit] - closes the gui
-      # [next] - opens the next page of ranks if available
-      # [back] - opens the previous page of ranks if available
-      # [command] - runs a command, {player} can be used
-      actions:
-        - '[gui] 1'
-      # in this case, a new item is being created
-      item:
-        material: SUNFLOWER
-        amount: 1
-        enchanted: true
-        hide-nbt: true
-        name: '&e&lRank Menu'
-        lore:
-          - ''
-          - '&6Complete requirements to'
-          - '&6unlock special rewards'
-          - ''
+      item: custom-item-example
     3:
       slot: 18
       item: back
@@ -82,6 +108,27 @@ default:
     5:
       slot: 22
       item: exit
-    6:
-      slot: 10-16
-      item: rank
+# the menu that will open when a player clicks on a rank (if confirmation is enabled in the config)
+confirmation:
+  gui-name: '&6&lAre you sure?'
+  add-page: false
+  auto-size: false
+  remove-page-items: true
+  deny-click-item: DISABLE
+  size: 36
+  orderly-progression: true
+  rank-slots:
+    - '13'
+  layout:
+    1:
+      slot: 0-35
+      item: fill
+    2:
+      slot: 31
+      item: exit
+    3:
+      slot: 20
+      item: no
+    4:
+      slot: 24
+      item: yes

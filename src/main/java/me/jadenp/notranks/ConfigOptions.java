@@ -45,6 +45,7 @@ public class ConfigOptions {
     public static boolean debug = false;
     public static File guiFile;
     public static File ranksFile;
+    public static boolean confirmation;
 
     public static void loadConfig() throws IOException {
         // close everyone out of gui
@@ -115,6 +116,8 @@ public class ConfigOptions {
             plugin.getConfig().set("number-formatting.divisions.decimals", 2);
             plugin.getConfig().set("number-formatting.divisions.1000", "K");
         }
+        if (!plugin.getConfig().isSet("confirmation"))
+            plugin.getConfig().set("confirmation", false);
 
         if (!guiFile.exists())
             plugin.saveResource("gui.yml", false);
@@ -268,6 +271,9 @@ public class ConfigOptions {
         for (String key : guiConfig.getKeys(false)){
             if (key.equals("custom-items"))
                 continue;
+            if (!ranks.containsKey(key) && !key.equals("confirmation")){
+                Bukkit.getLogger().warning("Found a GUI for " + key + ", but did not find a rank path to match it.");
+            }
             GUIOptions guiOptions = new GUIOptions(Objects.requireNonNull(guiConfig.getConfigurationSection(key)));
             GUI.addGUI(guiOptions, key);
         }
@@ -291,6 +297,7 @@ public class ConfigOptions {
         completionAfter = plugin.getConfig().getString("requirement-completion.after");
         completionPrefix = plugin.getConfig().getString("requirement-completion.prefix");
         completionSuffix = plugin.getConfig().getString("requirement-completion.suffix");
+        confirmation = plugin.getConfig().getBoolean("confirmation");
 
 
         nfDivisions.clear();

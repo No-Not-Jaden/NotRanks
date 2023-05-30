@@ -20,6 +20,8 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
+import static me.jadenp.notranks.ConfigOptions.confirmation;
+
 public class GUI implements Listener {
 
     public static final Map<UUID, Integer> playerPages = new HashMap<>();
@@ -167,7 +169,11 @@ public class GUI implements Listener {
                 gui.notifyThroughGUI(event, LanguageOptions.parse(LanguageOptions.rankUpDeny, (Player) event.getWhoClicked()));
                 return;
             }
-            NotRanks.getInstance().rankup((Player) event.getWhoClicked(), gui.getType(), rankNum);
+            if (confirmation){
+                openGUI((Player) event.getWhoClicked(), "confirmation", 1);
+            } else {
+                NotRanks.getInstance().rankup((Player) event.getWhoClicked(), gui.getType(), rankNum);
+            }
             event.getView().close();
         } else {
             CustomItem customItem = gui.getCustomItems()[event.getSlot()];

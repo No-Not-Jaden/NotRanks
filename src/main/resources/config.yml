@@ -1,3 +1,5 @@
+# whether the player needs to confirm to rankup
+confirmation: true
 # this is used with the cost feature
 currency:
   # accepts a spigot material or a placeholder - ex: '%vault_eco_balance%'
