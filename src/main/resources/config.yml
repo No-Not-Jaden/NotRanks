@@ -17,7 +17,7 @@ head:
   # set this to true if you want to be able to use heads as ranks in the gui
   enabled: true
   # What head will the ranks change to when they are completed - HeadDataBase index or Base64
-  completed: 6269
+  completed: 21771
 # what you want to add to the requirement line when it is completed
 requirement-completion:
   # beginning of line

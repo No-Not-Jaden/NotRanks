@@ -15,7 +15,6 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.inventory.meta.SkullMeta;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -182,20 +181,14 @@ public class GUI implements Listener {
             for (String command : customItem.getCommands()){
                 command = command.replaceAll("\\{player}", event.getWhoClicked().getName());
                 while (command.contains("{slot") && command.substring(command.indexOf("{slot")).contains("}")){
-                    String replacement = "";
+                    String replacement = guiType;
                     try {
                         int slot = Integer.parseInt(command.substring(command.indexOf("{slot") + 5, command.substring(command.indexOf("{slot")).indexOf("}") + command.substring(0, command.indexOf("{slot")).length()));
                         ItemStack item = event.getInventory().getContents()[slot];
                         if (item != null) {
-                            if (item.getType() == Material.PLAYER_HEAD) {
-                                SkullMeta meta = (SkullMeta) item.getItemMeta();
-                                assert meta != null;
-                                OfflinePlayer player = meta.getOwningPlayer();
-                                if (player != null && player.getName() != null) {
-                                    replacement = meta.getOwningPlayer().getName();
-                                } else {
-                                    Bukkit.getLogger().warning("Invalid player for slot " + slot);
-                                }
+                            if (gui.getRankSlots().contains(slot)){
+                                int rankNum = (playerPages.get(event.getWhoClicked().getUniqueId()) - 1) * gui.getRankSlots().size() + gui.getRankSlots().indexOf(slot);
+                                replacement+= " " + rankNum;
                             }
                             if (replacement == null)
                                 replacement = "";

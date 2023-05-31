@@ -43,8 +43,8 @@ import static me.jadenp.notranks.LanguageOptions.*;
  * page replacements are the correct item - x
  * cannot switch page when there is no next page - x
  * set rank works - x
- * /rankup (path) (rank/#)
- * {slot<x>}
+ * /rankup (path) (rank/#) -
+ * {slot<x>} -
  */
 
 public final class NotRanks extends JavaPlugin implements CommandExecutor, Listener {
@@ -257,7 +257,20 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                     return true;
                 }
                 // 0 if they have no rank, otherwise, 1+ last rank they have gotten
-                int nextRank = rankProgress == null || rankProgress.isEmpty() ? 0 : rankProgress.get(rankProgress.size() - 1) + 1;
+                int nextRank;
+                if (args.length > 1){
+                    try {
+                        nextRank = Integer.parseInt(args[1]);
+                    } catch (NumberFormatException e){
+                        // unknown rank number
+                        sender.sendMessage(prefix + parse(unknownRankPath, (Player) sender));
+                        return true;
+                    }
+                } else {
+                    nextRank = rankProgress == null || rankProgress.isEmpty() ? 0 : rankProgress.get(rankProgress.size() - 1) + 1;
+                }
+
+
                 if (rankPath.size() > nextRank) { // check if they are on the max rank
                     // check requirements
                     if (rankPath.get(nextRank).checkRequirements((Player) sender, rankType)) {

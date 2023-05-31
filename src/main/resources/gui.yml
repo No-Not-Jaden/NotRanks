@@ -132,3 +132,21 @@ confirmation:
     4:
       slot: 24
       item: confirm
+example-path:
+  gui-name: '&c&lPlayer Ranks'
+  add-page: false
+  auto-size: false
+  remove-page-items: true
+  deny-click-item: STRUCTURE_VOID
+  size: 36
+  orderly-progression: true
+  rank-slots:
+    - '10-16'
+    - '22'
+  layout:
+    1:
+      slot: 0-35
+      item: fill
+    2:
+      slot: 27
+      item: exit

@@ -41,3 +41,238 @@ default:
       # does not need a '/' in front of the command
       - 'broadcast &e&lCongrats to &a{player} &e&lfor ranking up to &9&lStarter'
       #- 'lp user {player} promote playerranks'
+example-path:
+  1:
+    name: '&8&lWanderer'
+    hdb: 193
+    item: STONE
+    lore:
+      - '&e<△> &c&lREWARDS &e<△>'
+      - '&7￫ &fPrefix: &7[&8&lWanderer&7] '
+      - '&e<△> &c&lREQUIREMENTS &e<△>'
+      - '&7￫ &fPrice: {cost}'
+      - '&7￫ &fPlaytime: {req1}'
+      - '&7￫ &fMob Kills: {req2}'
+      - '&7￫ &fStone Broken: {req3}'
+    requirements:
+      - '%statistic_hours_played% >= 1'
+      - '%statistic_mob_kills% >= 100'
+      - '%statistic_mine_block:STONE% >= 500'
+    cost: 5
+    hide-nbt: true
+    completion-lore:
+      enabled: true
+      lore:
+        - '&7*&m                &7*'
+        - '&a&l&nRank Completed'
+        - '&2&nCongratulations on'
+        - '&2&nyour first rank!'
+        - '&7*&m                &7*'
+    commands:
+      - 'broadcast &e&lCongrats to &a{player} &e&lfor ranking up to &8&lWanderer'
+  2:
+    name: '&a&lCitizen'
+    hdb: 194
+    item: BRICKS
+    lore:
+      - '&e<△> &c&lREWARDS &e<△>'
+      - '&7￫ &fPrefix: &7[&a&lCitizen&7] '
+      - '&e<△> &c&lREQUIREMENTS &e<△>'
+      - '&7￫ &fPrice: {cost}'
+      - '&7￫ &fPlaytime: {req1}'
+      - '&7￫ &fAnimals Bred: {req2}'
+      - '&7￫ &fSkeletons Killed: {req3}'
+    requirements:
+      - '%statistic_hours_played% >= 3'
+      - '%statistic_animals_bred% >= 10'
+      - '%statistic_kill_entity:SKELETON% >= 25'
+    cost: 15
+    hide-nbt: true
+    completion-lore:
+      enabled: true
+      lore:
+        - '&7*&m                &7*'
+        - '&a&l&nRank Completed'
+        - '&2&nDid you know?'
+        - '&2&nThere is a 1% chance'
+        - '&2&nfor a spider jockey'
+        - '&2&nto spawn'
+        - '&7*&m                &7*'
+    commands:
+      - 'broadcast &e&lCongrats to &a{player} &e&lfor ranking up to &a&lCitizen'
+  3:
+    name: '&2&lApprentice'
+    hdb: 195
+    item: ANVIL
+    lore:
+      - '&e<△> &c&lREWARDS &e<△>'
+      - '&7￫ &fPrefix: &7[&2&lApprentice&7] '
+      - '&e<△> &c&lREQUIREMENTS &e<△>'
+      - '&7￫ &fPrice: {cost}'
+      - '&7￫ &fPlaytime: {req1}'
+      - '&7￫ &fChests Opened: {req2}'
+      - '&7￫ &fDistance Climbed (cm): {req3}'
+    requirements:
+      - '%statistic_hours_played% >= 8'
+      - '%statistic_chest_opened% >= 100'
+      - '%statistic_climb_one_cm% >= 1000'
+    cost: 30
+    hide-nbt: true
+    completion-lore:
+      enabled: true
+      lore:
+        - '&7*&m                &7*'
+        - '&a&l&nRank Completed'
+        - '&2&nTip: You do not get'
+        - '&2&nslowed down while'
+        - '&2&neating and climbing'
+        - '&7*&m                &7*'
+    commands:
+      - 'broadcast &e&lCongrats to &a{player} &e&lfor ranking up to &2&lApprentice'
+  4:
+    name: '&d&lMerchant'
+    hdb: 196
+    item: GOLD_BLOCK
+    lore:
+      - '&e<△> &c&lREWARDS &e<△>'
+      - '&7￫ &fPrefix: &7[&d&lMerchant&7] '
+      - '&e<△> &c&lREQUIREMENTS &e<△>'
+      - '&7￫ &fPrice: {cost}'
+      - '&7￫ &fPlaytime: {req1}'
+      - '&7￫ &fDamage Dealt: {req2}'
+      - '&7￫ &fGuardians Killed: {req3}'
+    requirements:
+      - '%statistic_hours_played% >= 16'
+      - '%statistic_damage_dealt% >= 1000'
+      - '%statistic_kill_entity:GUARDIAN% >= 500'
+    cost: 64
+    hide-nbt: true
+    completion-lore:
+      enabled: true
+      lore:
+        - '&7*&m                &7*'
+        - '&a&l&nRank Completed'
+        - '&2&nDid you know?'
+        - '&2&nSquids are'
+        - '&2&nGuardians'' archenemy'
+        - '&7*&m                &7*'
+    commands:
+      - 'broadcast &e&lCongrats to &a{player} &e&lfor ranking up to &d&lMerchant'
+  5:
+    name: '&6&lMaster'
+    hdb: 197
+    item: DIAMOND_SWORD
+    lore:
+      - '&e<△> &c&lREWARDS &e<△>'
+      - '&7￫ &fPrefix: &7[&6&lMaster&7] '
+      - '&e<△> &c&lREQUIREMENTS &e<△>'
+      - '&7￫ &fPrice: {cost}'
+      - '&7￫ &fPlaytime: {req1}'
+      - '&7￫ &fFish Caught: {req2}'
+      - '&7￫ &fPig Travel (cm): {req3}'
+    requirements:
+      - '%statistic_hours_played% >= 30'
+      - '%statistic_fish_caught% >= 50'
+      - '%statistic_pig_one_cm% >= 1000'
+    cost: 72
+    hide-nbt: true
+    completion-lore:
+      enabled: true
+      lore:
+        - '&7*&m                &7*'
+        - '&a&l&nRank Completed'
+        - '&2&nYou''ll complete this'
+        - '&2&n rank path when'
+        - '&2&npigs fly'
+        - '&7*&m                &7*'
+    commands:
+      - 'broadcast &e&lCongrats to &a{player} &e&lfor ranking up to &6&lMaster'
+  6:
+    name: '&e&lElder'
+    hdb: 198
+    item: EXPERIENCE_BOTTLE
+    lore:
+      - '&e<△> &c&lREWARDS &e<△>'
+      - '&7￫ &fPrefix: &7[&e&lElder&7] '
+      - '&e<△> &c&lREQUIREMENTS &e<△>'
+      - '&7￫ &fPrice: {cost}'
+      - '&7￫ &fPlaytime: {req1}'
+      - '&7￫ &fNights Slept: {req2}'
+      - '&7￫ &fWithers Killed: {req3}'
+    requirements:
+      - '%statistic_hours_played% >= 50'
+      - '%statistic_sleep_in_bed% >= 50'
+      - '%statistic_kill_entity:WITHER%>= 1'
+    cost: 128
+    hide-nbt: true
+    completion-lore:
+      enabled: true
+      lore:
+        - '&7*&m                &7*'
+        - '&a&l&nRank Completed'
+        - '&2&nDid you know?'
+        - '&2&nWithers can'
+        - '&2&nbreak obsidian'
+        - '&7*&m                &7*'
+    commands:
+      - 'broadcast &e&lCongrats to &a{player} &e&lfor ranking up to &e&lElder'
+  7:
+    name: '&4&lChief'
+    hdb: 199
+    item: BELL
+    lore:
+      - '&e<△> &c&lREWARDS &e<△>'
+      - '&7￫ &fPrefix: &7[&4&lChief&7] '
+      - '&e<△> &c&lREQUIREMENTS &e<△>'
+      - '&7￫ &fPrice: {cost}'
+      - '&7￫ &fPlaytime: {req1}'
+      - '&7￫ &fVillager Trades: {req2}'
+      - '&7￫ &fBeacons Interacted: {req3}'
+      - '&7￫ &fCauldrons Filled: {req4}'
+    requirements:
+      - '%statistic_hours_played% >= 60'
+      - '%statistic_traded_with_villager% >= 30'
+      - '%statistic_beacon_interacted% >= 1'
+      - '%statistic_cauldron_filled% >= 5'
+    cost: 200
+    hide-nbt: true
+    completion-lore:
+      enabled: true
+      lore:
+        - '&7*&m                &7*'
+        - '&a&l&nRank Completed'
+        - '&2&nTip: It takes 164'
+        - '&2&nblocks to construct'
+        - '&2&na max level beacon'
+        - '&7*&m                &7*'
+    commands:
+      - 'broadcast &e&lCongrats to &a{player} &e&lfor ranking up to &4&lChief'
+  8:
+    name: '&b&lC&3&lh&b&la&3&lm&b&lp&3&li&b&lo&3&ln'
+    hdb: 200
+    item: NETHERITE_CHESTPLATE
+    lore:
+      - '&e<△> &c&lREWARDS &e<△>'
+      - '&7￫ &fPrefix: &7[&b&lC&3&lh&b&la&3&lm&b&lp&3&li&b&lo&3&ln&7] '
+      - '&e<△> &c&lREQUIREMENTS &e<△>'
+      - '&7￫ &fPrice: {cost}'
+      - '&7￫ &fPlaytime: {req1}'
+      - '&7￫ &fCake Slices Eaten: {req2}'
+      - '&7￫ &fWardens Killed: {req3}'
+      - '&7￫ &fAncient Debris Mined: {req4}'
+    requirements:
+      - '%statistic_hours_played% >= 72'
+      - '%statistic_cake_slices_eaten% >= 13'
+      - '%statistic_kill_entity:WARDEN% >= 1'
+      - '%statistic_mine_block:ANCIENT_DEBRIS >= 24%'
+    cost: 500
+    hide-nbt: true
+    completion-lore:
+      enabled: true
+      lore:
+        - '&7*&m                &7*'
+        - '&a&l&nRank Completed'
+        - '&2&nThanks for playing!'
+        - '&7*&m                &7*'
+    commands:
+      - 'broadcast &e&lCongrats to &a{player} &e&lfor ranking up to &b&lC&3&lh&b&la&3&lm&b&lp&3&li&b&lo&3&ln'
