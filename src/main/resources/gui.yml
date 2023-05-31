@@ -24,10 +24,9 @@ custom-items:
     #   ex: '@notbounties.admin [next]' will only go to the next page if the player clicking the item has notbounties.admin
     #   '!@essentials.fly [p] top' will run the command /top as the player if the player doesn't have essentials.fly
     # {player} will be replaced with the name of the player who clicked
-    # {slot<x>} will be replaced with the name of the owner of the skull in that slot, or if there is no skull, it will be replaced with the item name
+    # {slot<x>} will be replaced with the rank path and the rank number
     commands: [ ]
   custom-item-example:
-    item:
       material: SUNFLOWER
       amount: 1
       enchanted: true
@@ -38,6 +37,8 @@ custom-items:
         - '&6Complete requirements to'
         - '&6unlock special rewards'
         - ''
+      commands:
+        - '[gui] default 1'
   exit:
     material: BARRIER
     amount: 1
@@ -56,17 +57,17 @@ custom-items:
     name: '&7Previous Page'
     commands:
       - '[back]'
-  yes:
+  confirm:
     material: LIME_STAINED_GLASS_PANE
     amount: 1
-    name: '&a&lYes'
+    name: '&a&lConfirm'
     commands:
-      - '[p] rankup'
+      - '[p] rankup {slot13}'
       - '[close]'
-  no:
+  cancel:
     material: RED_STAINED_GLASS_PANE
     amount: 1
-    name: '&c&lNo'
+    name: '&c&lCancel'
     commands:
       - '[p] rank'
 default:
@@ -93,8 +94,7 @@ default:
     1:
       # which slots will be filled - <x> or <x>-<y> where x < y
       slot: 0-26
-      # item can either be an item from custom-items, or a rank item
-      # rank <x> - <x> is optional, only if you want to make your ranks not go from left to right, top to bottom
+      # item is an item from custom-items
       item: fill
     2:
       slot: 0
@@ -128,7 +128,7 @@ confirmation:
       item: exit
     3:
       slot: 20
-      item: no
+      item: cancel
     4:
       slot: 24
-      item: yes
+      item: confirm

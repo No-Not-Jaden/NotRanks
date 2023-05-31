@@ -66,8 +66,8 @@ public class GUIOptions {
             customItems[customItems.length-5] = exit;
             customItems[customItems.length-1] = next;
             customItems[customItems.length-9] = back;
-            pageReplacements.add(fill);
-            pageReplacements.add(fill);
+            pageReplacements.add(GUI.getCustomItem("fill"));
+            pageReplacements.add(GUI.getCustomItem("fill"));
         } else {
             size = settings.getInt("size");
             List<String> slotNames = settings.getStringList("rank-slots");
@@ -129,9 +129,13 @@ public class GUIOptions {
      * @param page Page of gui - This will change the items in player slots and page items if enabled
      * @return Custom GUI Inventory
      */
-    public Inventory createInventory(Player player, int page){
+    public Inventory createInventory(Player player, int page, Rank... displayRanks){
         if (page < 1) {
             page = 1;
+        }
+        if ((page-1) * rankSlots.size() >= getRanks().size() && page != 1){
+            playerPages.put(player.getUniqueId(), page-1);
+            return createInventory(player, page-1);
         }
         String name = addPage ? this.name + " " + page : this.name;
         Inventory inventory = Bukkit.createInventory(player, size, name);
@@ -158,6 +162,12 @@ public class GUIOptions {
             }
             contents[i] = customItems[i].getFormattedItem(player);
         }
+        // single case for confirmation gui
+        if (type.equalsIgnoreCase("confirmation")){
+            for (Integer rankSlot : rankSlots) {
+                contents[rankSlot] = displayRanks[0].getItem(player, false);
+            }
+        }
         // set up player slots - i = index of rank in rank list
         for (int i = (page-1) * rankSlots.size(); i < Math.min(page * rankSlots.size(), getRanks().size()); i++){
             contents[rankSlots.get(i % rankSlots.size())] = getRanks().get(i).getItem(player, isRankUnlocked(player, type, i));
@@ -171,6 +181,8 @@ public class GUIOptions {
     }
 
     public List<Rank> getRanks(){
+        if (type.equalsIgnoreCase("confirmation"))
+            return new ArrayList<>();
         return ranks.get(type);
     }
 

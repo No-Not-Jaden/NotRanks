@@ -56,7 +56,7 @@ public class RankPlaceholder extends PlaceholderExpansion {
             } catch (IndexOutOfBoundsException e){
                 return "-1";
             }
-        } else if (identifier.startsWith("rank")){
+        } else if (identifier.startsWith("rank") && !identifier.startsWith("rank_progress") && !identifier.startsWith("rank_cost")){
             if (identifier.equalsIgnoreCase("rank")) {
                 Rank rank = getRank(player, "default");
                 if (rank == null)
@@ -84,46 +84,44 @@ public class RankPlaceholder extends PlaceholderExpansion {
                     reqNum = Integer.parseInt(parameters);
                     path = "default";
                 }
-                int nextRank = getRankNum(player, path);
-                try {
+                int nextRank = getRankNum(player, path) + 1;
                     Rank rank = getRank(nextRank, path);
                     if (rank == null)
                         return "";
                     return LanguageOptions.parse(rank.getRequirementProgress(reqNum, player, false), player);
-                } catch (IndexOutOfBoundsException | NumberFormatException e){
-                    return "";
-                }
             } catch (NumberFormatException | IndexOutOfBoundsException e){
                 return "";
             }
         } else if (identifier.startsWith("rank_progress")){
-            Rank rank;
-            if (identifier.equalsIgnoreCase("rank_progress")) {
-                rank = getRank(player, "default");
-            } else {
-                try {
-                    rank = getRank(player, identifier.substring(identifier.lastIndexOf("_") + 1));
-                } catch (IndexOutOfBoundsException e) {
-                    return "";
-                }
-            }
-            if (rank == null)
-                return "";
-            return (rank.getCompletionPercent(player) * 100) + "";
-        } else if (identifier.startsWith("rank_cost")){
-            Rank rank;
-            if (identifier.equalsIgnoreCase("rank_cost")) {
-                rank = getRank(player, "default");
-            } else {
-                try {
-                    rank = getRank(player, identifier.substring(identifier.lastIndexOf("_") + 1));
-                } catch (IndexOutOfBoundsException e) {
-                    return "";
-                }
-            }
-            if (rank == null)
-                return "";
             try {
+                String path;
+                if (identifier.length() > 14){
+                    // has path
+                    path = identifier.substring(identifier.lastIndexOf("_") + 1);
+                } else {
+                    path = "default";
+                }
+                int nextRank = getRankNum(player, path) + 1;
+                    Rank rank = getRank(nextRank, path);
+                    if (rank == null)
+                        return "";
+                    return (Math.round(rank.getCompletionPercent(player) * 100)) + "";
+            } catch (NumberFormatException | IndexOutOfBoundsException e){
+                return "";
+            }
+        } else if (identifier.startsWith("rank_cost")){
+            try {
+                String path;
+                if (identifier.length() > 14){
+                    // has path
+                    path = identifier.substring(identifier.lastIndexOf("_") + 1);
+                } else {
+                    path = "default";
+                }
+                int nextRank = getRankNum(player, path) + 1;
+                Rank rank = getRank(nextRank, path);
+                if (rank == null)
+                    return "";
                 String strAmount = (rank.getCost() * Math.pow(10, decimals)) / Math.pow(10, decimals) + "";
                 if (decimals == 0) {
                     if (strAmount.contains("."))

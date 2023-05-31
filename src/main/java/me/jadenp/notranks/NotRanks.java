@@ -30,14 +30,21 @@ import static me.jadenp.notranks.ConfigOptions.*;
 import static me.jadenp.notranks.LanguageOptions.*;
 
 /**
- * Migrating files works -
- * Actions with [command] and [gui] change -
- * ranks move to rank-slots -
- * change pages work -
+ * Migrating files works - x
+ * fill item changed - x
+ * Actions with [command] and [gui] change - x
+ * ranks move to rank-slots - x
+ * change pages work - x
  * set rank works - all commands -
  * add warning if there is no rank path for a gui -
- * placeholder changes work -
+ * placeholder changes work - rank progress, rank cost - x
  * confirmation gui -
+ * saving new ranks works - x
+ * page replacements are the correct item - x
+ * cannot switch page when there is no next page - x
+ * set rank works - x
+ * /rankup (path) (rank/#)
+ * {slot<x>}
  */
 
 public final class NotRanks extends JavaPlugin implements CommandExecutor, Listener {
@@ -209,6 +216,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
 
     public void saveRanks() throws IOException {
         YamlConfiguration configuration = new YamlConfiguration();
+        configuration.set("version", 1);
         for (Map.Entry<UUID, Map<String, List<Integer>>> playerEntry : rankData.entrySet()) {
             String uuid = playerEntry.getKey().toString();
             for (Map.Entry<String, List<Integer>> rankEntry : playerEntry.getValue().entrySet()) {
@@ -242,14 +250,14 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
             if (sender.hasPermission("notranks.default")) {
                 String rankType = args.length > 0 ? args[0] : "default";
                 List<Rank> rankPath = ranks.get(rankType);
-                List<Integer> rankProgress = rankData.get(((Player) sender).getUniqueId()).get(rankType);
+                List<Integer> rankProgress = getRankCompletion((Player) sender, rankType);
                 if (rankPath == null) {
                     // unknown rank path
                     sender.sendMessage(prefix + parse(unknownRankPath, (Player) sender));
                     return true;
                 }
                 // 0 if they have no rank, otherwise, 1+ last rank they have gotten
-                int nextRank = rankProgress == null ? 0 : rankProgress.get(rankProgress.size() - 1) + 1;
+                int nextRank = rankProgress == null || rankProgress.isEmpty() ? 0 : rankProgress.get(rankProgress.size() - 1) + 1;
                 if (rankPath.size() > nextRank) { // check if they are on the max rank
                     // check requirements
                     if (rankPath.get(nextRank).checkRequirements((Player) sender, rankType)) {
@@ -293,6 +301,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                                 return true;
                             }
                             String path = args.length == 4 ? args[2] : "default";
+                            String rankArg = args.length == 4 ? args[3] : args[2];
                             if (!ranks.containsKey(path)) {
                                 // no path found
                                 sender.sendMessage(prefix + parse(unknownRankPath, (Player) sender));
@@ -302,20 +311,20 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                             List<Integer> rankCompletion = getRankCompletion(player, path);
                             int rankNum = -1;
                             for (Rank rank : validRanks) {
-                                if (ChatColor.stripColor(rank.getName()).equalsIgnoreCase(args[2])) {
+                                if (ChatColor.stripColor(rank.getName()).equalsIgnoreCase(rankArg)) {
                                     rankNum = validRanks.indexOf(rank);
                                     break;
                                 }
                             }
                             if (rankNum == -1) {
                                 // cannot find rank from string
-                                if (args[2].equalsIgnoreCase("none")) {
+                                if (rankArg.equalsIgnoreCase("none") || rankArg.equalsIgnoreCase("0")) {
                                     // clear ranks
                                     rankCompletion.clear();
                                     sender.sendMessage(prefix + ChatColor.GREEN + "Cleared " + player.getName() + "'s rank progress on " + ChatColor.GRAY + path + ChatColor.GREEN + ".");
                                 } else {
                                     try {
-                                        rankNum = Integer.parseInt(args[2]);
+                                        rankNum = Integer.parseInt(rankArg) - 1;
                                     } catch (NumberFormatException ignored) {
                                         // not a number
                                         sender.sendMessage(prefix + ChatColor.RED + "Unknown Rank");

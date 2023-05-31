@@ -182,7 +182,7 @@ public class ConfigOptions {
                 languageConfig.save(language);
             }
             List<String> rankSlots = new ArrayList<>();
-            for (int i = 1; plugin.getConfig().isSet("gui." + i + "slot"); i++) {
+            for (int i = 1; plugin.getConfig().isSet("gui." + i + ".slot"); i++) {
                 if (plugin.getConfig().isSet("gui." + i + ".item.material")){
                     // create new custom item
                     int itemNum = 1;
@@ -343,7 +343,7 @@ public class ConfigOptions {
 
     public static @Nullable Rank getRank(OfflinePlayer p, String rankType) {
         int rankNum = getRankNum(p, rankType);
-        if (rankNum != 0)
+        if (rankNum != -1)
             return getRank(rankNum, rankType);
         return null;
     }

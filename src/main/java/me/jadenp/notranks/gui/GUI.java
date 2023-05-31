@@ -75,13 +75,13 @@ public class GUI implements Listener {
     }
 
 
-    public static void openGUI(Player player, String name, int page) {
+    public static void openGUI(Player player, String name, int page, Rank... displayRanks) {
         if (!customGuis.containsKey(name))
             return;
         GUIOptions gui = customGuis.get(name);
         if (page < 1)
             page = 1;
-        player.openInventory(gui.createInventory(player, page));
+        player.openInventory(gui.createInventory(player, page, displayRanks));
         playerPages.put(player.getUniqueId(), page);
     }
 
@@ -147,7 +147,7 @@ public class GUI implements Listener {
         if (event.getCurrentItem() == null)
             return;
         // check if it is a rank slot
-        if (gui.getRankSlots().contains(event.getSlot())){
+        if (gui.getRankSlots().contains(event.getSlot()) && !gui.getType().equalsIgnoreCase("confirmation")){
             int rankNum = gui.getRankSlots().indexOf(event.getSlot()) + (playerPages.get(event.getWhoClicked().getUniqueId()) - 1) * gui.getRankSlots().size();
             Rank rank = ConfigOptions.getRank(rankNum, gui.getType());
             if (ConfigOptions.isRankUnlocked((OfflinePlayer) event.getWhoClicked(), guiType, rankNum)) {
@@ -170,11 +170,11 @@ public class GUI implements Listener {
                 return;
             }
             if (confirmation){
-                openGUI((Player) event.getWhoClicked(), "confirmation", 1);
+                openGUI((Player) event.getWhoClicked(), "confirmation", 1, rank);
             } else {
                 NotRanks.getInstance().rankup((Player) event.getWhoClicked(), gui.getType(), rankNum);
+                event.getView().close();
             }
-            event.getView().close();
         } else {
             CustomItem customItem = gui.getCustomItems()[event.getSlot()];
             if (customItem == null)
