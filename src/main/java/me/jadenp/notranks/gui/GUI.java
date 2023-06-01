@@ -153,21 +153,21 @@ public class GUI implements Listener {
             Rank rank = ConfigOptions.getRank(rankNum, gui.getType());
             if (ConfigOptions.isRankUnlocked((OfflinePlayer) event.getWhoClicked(), guiType, rankNum)) {
                 // rank already unlocked
-                gui.notifyThroughGUI(event, LanguageOptions.parse(LanguageOptions.notOnRank, (Player) event.getWhoClicked()));
+                gui.notifyThroughGUI(event, LanguageOptions.parse(LanguageOptions.alreadyCompleted, (Player) event.getWhoClicked()), true);
                 return;
             }
             if (gui.isOrderlyProgression()){
                 // check if it is the next rank
                 if (ConfigOptions.getRankNum((Player) event.getWhoClicked(), guiType) != rankNum - 1){
                     // not the next rank
-                    gui.notifyThroughGUI(event, LanguageOptions.parse(LanguageOptions.notOnRank, (Player) event.getWhoClicked()));
+                    gui.notifyThroughGUI(event, LanguageOptions.parse(LanguageOptions.notOnRank, (Player) event.getWhoClicked()), false);
                     return;
                 }
             }
             // check for completion
             if (!rank.checkRequirements((Player) event.getWhoClicked(), guiType)) {
                 // incomplete
-                gui.notifyThroughGUI(event, LanguageOptions.parse(LanguageOptions.rankUpDeny, (Player) event.getWhoClicked()));
+                gui.notifyThroughGUI(event, LanguageOptions.parse(LanguageOptions.rankUpDeny, (Player) event.getWhoClicked()), false);
                 return;
             }
             if (confirmation){

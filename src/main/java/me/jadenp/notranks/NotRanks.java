@@ -17,7 +17,6 @@ import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -30,26 +29,8 @@ import static me.jadenp.notranks.ConfigOptions.*;
 import static me.jadenp.notranks.LanguageOptions.*;
 
 /**
- * Migrating files works - x
- * fill item changed - x
- * Actions with [command] and [gui] change - x
- * ranks move to rank-slots - x
- * change pages work - x
- * set rank works - all commands -
- * add warning if there is no rank path for a gui -
- * placeholder changes work - rank progress, rank cost - x
- * confirmation gui - x
- * saving new ranks works - x
- * page replacements are the correct item - x
- * cannot switch page when there is no next page - x
- * set rank works - x
- * /rankup (path) (rank/#) --confirm - x
- * /rankinfo (path) (rank/#) - x
- * {slot<x>} - x
- * easier to find requirement typos x
- * rankup doesn't check rank order - x
- * tab-complete is right for remove - x
- * remove returns correctly - x
+ * Already completed text
+ * Different item for completed rank
  */
 
 public final class NotRanks extends JavaPlugin implements CommandExecutor, Listener {
@@ -280,6 +261,11 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                 if (nextRank == -1)
                     nextRank = rankProgress == null || rankProgress.isEmpty() ? 0 : rankProgress.get(rankProgress.size() - 1) + 1;
 
+                if (ConfigOptions.isRankUnlocked((Player) sender, rankType, nextRank)) {
+                    // rank already unlocked
+                    sender.sendMessage(prefix + LanguageOptions.parse(LanguageOptions.alreadyCompleted, (Player) sender));
+                    return true;
+                }
                 if (rankPath.size() <= nextRank) { // check if they are on the max rank
                     sender.sendMessage(prefix + parse(maxRank, (Player) sender));
                     return true;

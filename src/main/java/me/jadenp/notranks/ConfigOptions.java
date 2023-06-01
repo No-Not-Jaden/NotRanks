@@ -218,7 +218,6 @@ public class ConfigOptions {
             guiConfig.set("default.rank-slots", rankSlots);
 
             plugin.getConfig().set("gui", null);
-            guiConfig.save(guiFile);
         }
 
         // read custom items
@@ -271,12 +270,16 @@ public class ConfigOptions {
         for (String key : guiConfig.getKeys(false)){
             if (key.equals("custom-items"))
                 continue;
+            // add newer features here
+            if (guiConfig.isSet(key + ".completed-deny-click-item"))
+                guiConfig.set(key + ".completed-deny-click-item", "DISABLE");
             if (!ranks.containsKey(key) && !key.equals("confirmation")){
                 Bukkit.getLogger().warning("Found a GUI for " + key + ", but did not find a rank path to match it.");
             }
             GUIOptions guiOptions = new GUIOptions(Objects.requireNonNull(guiConfig.getConfigurationSection(key)));
             GUI.addGUI(guiOptions, key);
         }
+        guiConfig.save(guiFile);
 
         // read config
         currency = plugin.getConfig().getString("currency.unit");

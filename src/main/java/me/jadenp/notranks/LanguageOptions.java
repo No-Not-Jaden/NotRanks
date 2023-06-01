@@ -24,6 +24,7 @@ public class LanguageOptions {
     public static String prefix;
     public static String maxRank;
     public static String unknownRankPath;
+    public static String alreadyCompleted;
 
     public static void loadConfig() throws IOException {
         File language = new File(NotRanks.getInstance().getDataFolder() + File.separator + "language.yml");
@@ -55,36 +56,34 @@ public class LanguageOptions {
             langConf.set("max-rank", "&cYou are already at the max rank!");
         if (!langConf.isSet("unknown-rank-path"))
             langConf.set("unknown-rank-path", "&cUnknown rank path!");
+        if (!langConf.isSet("already-completed"))
+            langConf.set("already-completed", "&aYou have already completed this rank!");
 
         langConf.save(language);
 
-
-        // 0
-
-        // 1
         rankUp = langConf.getString("rankup");
-        // 2
+
         rankUpDeny = langConf.getString("rankup-deny");
-        // 3
+
         unknownCommand = langConf.getString("unknown-command");
-        // 4
+
         noAccess = langConf.getString("no-access");
-        // 5
+
         guiOpen = langConf.getString("open-gui");
-        // 6
+
         notOnRank = langConf.getString("not-on-rank");
-        // 7
+
         completeRequirement = langConf.getString("complete-requirement");
-        // 8
+
         completeRank = langConf.getString("complete-rank");
-        // 9
+
         prefix = color(langConf.getString("prefix"));
-        //10
+
         maxRank = langConf.getString("max-rank");
 
         unknownRankPath = langConf.getString("unknown-rank-path");
 
-
+        alreadyCompleted = langConf.getString("already-completed");
     }
 
     public static String parse(String str, OfflinePlayer player){

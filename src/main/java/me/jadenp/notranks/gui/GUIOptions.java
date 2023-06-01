@@ -34,6 +34,7 @@ public class GUIOptions {
     private final String denyClickItem;
     private final List<Integer> rankSlots = new ArrayList<>();
     private final boolean orderlyProgression;
+    private final String completedDenyClickItem;
 
     public GUIOptions(ConfigurationSection settings){
         String denyClickItem1;
@@ -110,6 +111,15 @@ public class GUIOptions {
                 denyClickItem1 = "DISABLE";
             }
         denyClickItem = denyClickItem1;
+        denyClickItem1 = Objects.requireNonNull(settings.getString("completed-deny-click-item")).toUpperCase();
+        if (!denyClickItem1.equals("DISABLE") && !denyClickItem1.equals("RANK"))
+            try {
+                Material.valueOf(denyClickItem1);
+            } catch (IllegalArgumentException e){
+                Bukkit.getLogger().warning("Could not get a material from \"" + denyClickItem1 + "\" for completed deny click item.");
+                denyClickItem1 = "DISABLE";
+            }
+        completedDenyClickItem = denyClickItem1;
 
 
         if (rankSlots.size() == 0){
@@ -246,14 +256,16 @@ public class GUIOptions {
         return type;
     }
 
-    public void notifyThroughGUI(InventoryClickEvent event, String message){
+    public void notifyThroughGUI(InventoryClickEvent event, String message, boolean completed){
         // check the delay time
         if (notifyThroughGUIDelay.containsKey(event.getWhoClicked().getUniqueId()) && notifyThroughGUIDelay.get(event.getWhoClicked().getUniqueId()) > System.currentTimeMillis())
             return;
         notifyThroughGUIDelay.put(event.getWhoClicked().getUniqueId(), System.currentTimeMillis() + 1000);
-        if (denyClickItem.equals("DISABLE")) {
+
+        String notifyItem = completed ? completedDenyClickItem : denyClickItem;
+        if (notifyItem.equals("DISABLE")) {
             event.getWhoClicked().sendMessage(prefix + message);
-        } else if (denyClickItem.equals("RANK")){
+        } else if (notifyItem.equals("RANK")){
             ItemStack[] contents = event.getInventory().getContents();
             ItemStack item = contents[event.getSlot()];
             ItemMeta meta = item.getItemMeta();
@@ -272,7 +284,7 @@ public class GUIOptions {
             }.runTaskLater(NotRanks.getInstance(), 20);
         } else {
             ItemStack[] contents = event.getInventory().getContents();
-            ItemStack item = new ItemStack(Material.valueOf(denyClickItem));
+            ItemStack item = new ItemStack(Material.valueOf(notifyItem));
             ItemMeta meta = item.getItemMeta();
             assert meta != null;
             meta.setDisplayName(message);

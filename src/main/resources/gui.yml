@@ -83,6 +83,8 @@ default:
   # set to DISABLE to send a chat message
   # set to RANK to only change the item name
   deny-click-item: STRUCTURE_VOID
+  # this item is for when the rank is completed
+  completed-deny-click-item: LIGHT
   # if auto-size is enabled, then the next gui-options won't do anything
   # size of gui
   size: 27
@@ -115,6 +117,7 @@ confirmation:
   auto-size: false
   remove-page-items: true
   deny-click-item: DISABLE
+  completed-deny-click-item: DISABLE
   size: 36
   orderly-progression: true
   rank-slots:
@@ -138,6 +141,7 @@ example-path:
   auto-size: false
   remove-page-items: true
   deny-click-item: STRUCTURE_VOID
+  completed-deny-click-item: LIGHT
   size: 36
   orderly-progression: true
   rank-slots:
