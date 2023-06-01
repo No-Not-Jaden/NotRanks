@@ -1,6 +1,7 @@
 # gui that opens with no path specified
 default:
   1:
+    # I advise not to use spaces in the name, otherwise players will have to use rank numbers instead of names in commands
     name: '&9&lStarter'
     # If HeadDataBase is installed, this will try and get a head ID, otherwise Base64
     head: 193
@@ -22,9 +23,9 @@ default:
     completion-lore:
       enabled: false
       lore:
-        - '&7*--------------*'
+        - '&7<&m                      &7>'
         - '&a&l&nRank Completed'
-        - '&7*--------------*'
+        - '&7<&m                      &7>'
     hide-nbt: true
     requirements:
       #                        vv operator - can be "<=" ">=" "!=" "=" ">" "<" ||| true/false & text can only use "!=" & "="
@@ -44,7 +45,7 @@ default:
 example-path:
   1:
     name: '&8&lWanderer'
-    hdb: 193
+    head: 193
     item: STONE
     lore:
       - '&e<△> &c&lREWARDS &e<△>'
@@ -63,16 +64,16 @@ example-path:
     completion-lore:
       enabled: true
       lore:
-        - '&7*&m                &7*'
+        - '&7<&m                      &7>'
         - '&a&l&nRank Completed'
-        - '&2&nCongratulations on'
-        - '&2&nyour first rank!'
-        - '&7*&m                &7*'
+        - '&2&oCongratulations on'
+        - '&2&oyour first rank!'
+        - '&7<&m                      &7>'
     commands:
       - 'broadcast &e&lCongrats to &a{player} &e&lfor ranking up to &8&lWanderer'
   2:
     name: '&a&lCitizen'
-    hdb: 194
+    head: 194
     item: BRICKS
     lore:
       - '&e<△> &c&lREWARDS &e<△>'
@@ -91,18 +92,18 @@ example-path:
     completion-lore:
       enabled: true
       lore:
-        - '&7*&m                &7*'
+        - '&7<&m                      &7>'
         - '&a&l&nRank Completed'
-        - '&2&nDid you know?'
-        - '&2&nThere is a 1% chance'
-        - '&2&nfor a spider jockey'
-        - '&2&nto spawn'
-        - '&7*&m                &7*'
+        - '&2&oDid you know?'
+        - '&2&oThere is a 1% chance'
+        - '&2&ofor a spider jockey'
+        - '&2&oto spawn'
+        - '&7<&m                      &7>'
     commands:
       - 'broadcast &e&lCongrats to &a{player} &e&lfor ranking up to &a&lCitizen'
   3:
     name: '&2&lApprentice'
-    hdb: 195
+    head: 195
     item: ANVIL
     lore:
       - '&e<△> &c&lREWARDS &e<△>'
@@ -121,17 +122,17 @@ example-path:
     completion-lore:
       enabled: true
       lore:
-        - '&7*&m                &7*'
+        - '&7<&m                      &7>'
         - '&a&l&nRank Completed'
-        - '&2&nTip: You do not get'
-        - '&2&nslowed down while'
-        - '&2&neating and climbing'
-        - '&7*&m                &7*'
+        - '&2&oTip: You do not get'
+        - '&2&oslowed down while'
+        - '&2&oeating and climbing'
+        - '&7<&m                      &7>'
     commands:
       - 'broadcast &e&lCongrats to &a{player} &e&lfor ranking up to &2&lApprentice'
   4:
     name: '&d&lMerchant'
-    hdb: 196
+    head: 196
     item: GOLD_BLOCK
     lore:
       - '&e<△> &c&lREWARDS &e<△>'
@@ -150,17 +151,17 @@ example-path:
     completion-lore:
       enabled: true
       lore:
-        - '&7*&m                &7*'
+        - '&7<&m                      &7>'
         - '&a&l&nRank Completed'
-        - '&2&nDid you know?'
-        - '&2&nSquids are'
-        - '&2&nGuardians'' archenemy'
-        - '&7*&m                &7*'
+        - '&2&oDid you know?'
+        - '&2&oSquids are'
+        - '&2&oGuardians'' archenemy'
+        - '&7<&m                      &7>'
     commands:
       - 'broadcast &e&lCongrats to &a{player} &e&lfor ranking up to &d&lMerchant'
   5:
     name: '&6&lMaster'
-    hdb: 197
+    head: 197
     item: DIAMOND_SWORD
     lore:
       - '&e<△> &c&lREWARDS &e<△>'
@@ -179,17 +180,17 @@ example-path:
     completion-lore:
       enabled: true
       lore:
-        - '&7*&m                &7*'
+        - '&7<&m                      &7>'
         - '&a&l&nRank Completed'
-        - '&2&nYou''ll complete this'
-        - '&2&n rank path when'
-        - '&2&npigs fly'
-        - '&7*&m                &7*'
+        - '&2&oYou''ll complete this'
+        - '&2&o rank path when'
+        - '&2&opigs fly'
+        - '&7<&m                      &7>'
     commands:
       - 'broadcast &e&lCongrats to &a{player} &e&lfor ranking up to &6&lMaster'
   6:
     name: '&e&lElder'
-    hdb: 198
+    head: 198
     item: EXPERIENCE_BOTTLE
     lore:
       - '&e<△> &c&lREWARDS &e<△>'
@@ -202,23 +203,23 @@ example-path:
     requirements:
       - '%statistic_hours_played% >= 50'
       - '%statistic_sleep_in_bed% >= 50'
-      - '%statistic_kill_entity:WITHER%>= 1'
+      - '%statistic_kill_entity:WITHER% >= 1'
     cost: 128
     hide-nbt: true
     completion-lore:
       enabled: true
       lore:
-        - '&7*&m                &7*'
+        - '&7<&m                      &7>'
         - '&a&l&nRank Completed'
-        - '&2&nDid you know?'
-        - '&2&nWithers can'
-        - '&2&nbreak obsidian'
-        - '&7*&m                &7*'
+        - '&2&oDid you know?'
+        - '&2&oWithers can'
+        - '&2&obreak obsidian'
+        - '&7<&m                      &7>'
     commands:
       - 'broadcast &e&lCongrats to &a{player} &e&lfor ranking up to &e&lElder'
   7:
     name: '&4&lChief'
-    hdb: 199
+    head: 199
     item: BELL
     lore:
       - '&e<△> &c&lREWARDS &e<△>'
@@ -227,29 +228,29 @@ example-path:
       - '&7￫ &fPrice: {cost}'
       - '&7￫ &fPlaytime: {req1}'
       - '&7￫ &fVillager Trades: {req2}'
-      - '&7￫ &fBeacons Interacted: {req3}'
+      - '&7￫ &fBeacons Crafted: {req3}'
       - '&7￫ &fCauldrons Filled: {req4}'
     requirements:
       - '%statistic_hours_played% >= 60'
       - '%statistic_traded_with_villager% >= 30'
-      - '%statistic_beacon_interacted% >= 1'
+      - '%statistic_craft_item:BEACON% >= 1'
       - '%statistic_cauldron_filled% >= 5'
     cost: 200
     hide-nbt: true
     completion-lore:
       enabled: true
       lore:
-        - '&7*&m                &7*'
+        - '&7<&m                      &7>'
         - '&a&l&nRank Completed'
-        - '&2&nTip: It takes 164'
-        - '&2&nblocks to construct'
-        - '&2&na max level beacon'
-        - '&7*&m                &7*'
+        - '&2&oTip: It takes 164'
+        - '&2&oblocks to construct'
+        - '&2&oa max level beacon'
+        - '&7<&m                      &7>'
     commands:
       - 'broadcast &e&lCongrats to &a{player} &e&lfor ranking up to &4&lChief'
   8:
     name: '&b&lC&3&lh&b&la&3&lm&b&lp&3&li&b&lo&3&ln'
-    hdb: 200
+    head: 200
     item: NETHERITE_CHESTPLATE
     lore:
       - '&e<△> &c&lREWARDS &e<△>'
@@ -270,9 +271,9 @@ example-path:
     completion-lore:
       enabled: true
       lore:
-        - '&7*&m                &7*'
+        - '&7<&m                      &7>'
         - '&a&l&nRank Completed'
-        - '&2&nThanks for playing!'
-        - '&7*&m                &7*'
+        - '&2&oThanks for playing!'
+        - '&7<&m                      &7>'
     commands:
       - 'broadcast &e&lCongrats to &a{player} &e&lfor ranking up to &b&lC&3&lh&b&la&3&lm&b&lp&3&li&b&lo&3&ln'

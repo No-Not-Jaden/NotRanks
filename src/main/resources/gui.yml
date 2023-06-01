@@ -62,14 +62,14 @@ custom-items:
     amount: 1
     name: '&a&lConfirm'
     commands:
-      - '[p] rankup {slot13}'
+      - '[p] rankup {slot13} --confirm'
       - '[close]'
   cancel:
     material: RED_STAINED_GLASS_PANE
     amount: 1
     name: '&c&lCancel'
     commands:
-      - '[p] rank'
+      - '[close]'
 default:
   # name of the gui that opens when you do /ranks
   gui-name: '&cRanks'

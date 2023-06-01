@@ -1,9 +1,6 @@
 package me.jadenp.notranks.gui;
 
-import me.jadenp.notranks.ConfigOptions;
-import me.jadenp.notranks.LanguageOptions;
-import me.jadenp.notranks.NotRanks;
-import me.jadenp.notranks.Rank;
+import me.jadenp.notranks.*;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -20,6 +17,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 
 import static me.jadenp.notranks.ConfigOptions.confirmation;
+import static me.jadenp.notranks.ConfigOptions.getRankInfo;
 
 public class GUI implements Listener {
 
@@ -38,6 +36,10 @@ public class GUI implements Listener {
 
     public static void clearGUIs(){
         customGuis.clear();
+    }
+
+    public static GUIOptions getGUI(String type){
+        return customGuis.get(type);
     }
 
     public static void setCustomItems(Map<String, CustomItem> customItems){
@@ -181,17 +183,18 @@ public class GUI implements Listener {
             for (String command : customItem.getCommands()){
                 command = command.replaceAll("\\{player}", event.getWhoClicked().getName());
                 while (command.contains("{slot") && command.substring(command.indexOf("{slot")).contains("}")){
-                    String replacement = guiType;
+                    String replacement = "";
                     try {
                         int slot = Integer.parseInt(command.substring(command.indexOf("{slot") + 5, command.substring(command.indexOf("{slot")).indexOf("}") + command.substring(0, command.indexOf("{slot")).length()));
                         ItemStack item = event.getInventory().getContents()[slot];
-                        if (item != null) {
+                        if (item != null && item.hasItemMeta()) {
                             if (gui.getRankSlots().contains(slot)){
-                                int rankNum = (playerPages.get(event.getWhoClicked().getUniqueId()) - 1) * gui.getRankSlots().size() + gui.getRankSlots().indexOf(slot);
-                                replacement+= " " + rankNum;
+                                RankInfo rankInfo = getRankInfo(Objects.requireNonNull(item.getItemMeta()).getDisplayName());
+                                if (rankInfo == null)
+                                    throw new NumberFormatException();
+                                int rankNum = rankInfo.getIndex();
+                                replacement = rankInfo.getType() +  " " + rankNum;
                             }
-                            if (replacement == null)
-                                replacement = "";
                             if (replacement.equals("")) {
                                 ItemMeta meta = item.getItemMeta();
                                 assert meta != null;

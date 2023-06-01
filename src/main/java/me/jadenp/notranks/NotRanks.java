@@ -38,13 +38,18 @@ import static me.jadenp.notranks.LanguageOptions.*;
  * set rank works - all commands -
  * add warning if there is no rank path for a gui -
  * placeholder changes work - rank progress, rank cost - x
- * confirmation gui -
+ * confirmation gui - x
  * saving new ranks works - x
  * page replacements are the correct item - x
  * cannot switch page when there is no next page - x
  * set rank works - x
- * /rankup (path) (rank/#) -
- * {slot<x>} -
+ * /rankup (path) (rank/#) --confirm - x
+ * /rankinfo (path) (rank/#) - x
+ * {slot<x>} - x
+ * easier to find requirement typos x
+ * rankup doesn't check rank order - x
+ * tab-complete is right for remove - x
+ * remove returns correctly - x
  */
 
 public final class NotRanks extends JavaPlugin implements CommandExecutor, Listener {
@@ -256,33 +261,47 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                     sender.sendMessage(prefix + parse(unknownRankPath, (Player) sender));
                     return true;
                 }
-                // 0 if they have no rank, otherwise, 1+ last rank they have gotten
-                int nextRank;
-                if (args.length > 1){
+                // get next rank num, if none is specified, +1 last rank
+                int nextRank = -1;
+                if (args.length > 1) {
                     try {
                         nextRank = Integer.parseInt(args[1]);
-                    } catch (NumberFormatException e){
-                        // unknown rank number
-                        sender.sendMessage(prefix + parse(unknownRankPath, (Player) sender));
-                        return true;
+                    } catch (NumberFormatException e) {
+                        // try and find rank from name
+                        for (int i = 0; i < rankPath.size(); i++) {
+                            Rank rank = rankPath.get(i);
+                            if (ChatColor.stripColor(rank.getName()).equalsIgnoreCase(args[1])) {
+                                nextRank = i;
+                                break;
+                            }
+                        }
                     }
-                } else {
+                }
+                if (nextRank == -1)
                     nextRank = rankProgress == null || rankProgress.isEmpty() ? 0 : rankProgress.get(rankProgress.size() - 1) + 1;
-                }
 
-
-                if (rankPath.size() > nextRank) { // check if they are on the max rank
-                    // check requirements
-                    if (rankPath.get(nextRank).checkRequirements((Player) sender, rankType)) {
-                        rankup((Player) sender, rankType, nextRank);
-                    } else {
-                        // rankup deny
-                        sender.sendMessage(prefix + parse(rankUpDeny, (Player) sender));
-                        ((Player) sender).playSound(((Player) sender).getLocation(), Sound.ENTITY_VILLAGER_NO, 1, 1);
-                    }
-                } else {
+                if (rankPath.size() <= nextRank) { // check if they are on the max rank
                     sender.sendMessage(prefix + parse(maxRank, (Player) sender));
+                    return true;
                 }
+                if (getRankNum((Player) sender, rankType) + 1 != nextRank && GUI.getGUI(rankType).isOrderlyProgression()) { // check if they can skip ranks
+                    sender.sendMessage(prefix + parse(notOnRank, (Player) sender));
+                    return true;
+                }
+                if (!rankPath.get(nextRank).checkRequirements((Player) sender, rankType)) { // check requirements
+                    sender.sendMessage(prefix + parse(rankUpDeny, (Player) sender));
+                    ((Player) sender).playSound(((Player) sender).getLocation(), Sound.ENTITY_VILLAGER_NO, 1, 1);
+                    return true;
+                }
+                if (args[args.length - 1].equalsIgnoreCase("--confirm")) {
+                    // rankup
+                    rankup((Player) sender, rankType, nextRank);
+                } else {
+                    // confirmation gui
+                    GUI.openGUI((Player) sender, "confirmation", 1, getRank(nextRank, rankType));
+                }
+
+
             } else {
                 sender.sendMessage(prefix + parse(noAccess, (Player) sender));
             }
@@ -365,8 +384,9 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                     }
                     return true;
                 } else if (args[0].equalsIgnoreCase("help")) {
-                    sender.sendMessage(prefix + ChatColor.YELLOW + "/ranks <path>" + ChatColor.GOLD + "  Opens the rank gui");
-                    sender.sendMessage(prefix + ChatColor.YELLOW + "/rankup <path>" + ChatColor.GOLD + "  Ranks yourself up");
+                    sender.sendMessage(prefix + ChatColor.YELLOW + "/ranks <path> <#/rank>" + ChatColor.GOLD + "  Opens the rank gui");
+                    sender.sendMessage(prefix + ChatColor.YELLOW + "/rankinfo <path> <#/rank>" + ChatColor.GOLD + "  Opens the rank gui");
+                    sender.sendMessage(prefix + ChatColor.YELLOW + "/rankup <path> <#/rank>" + ChatColor.GOLD + "  Ranks yourself up");
                     if (sender.hasPermission("notranks.admin")) {
                         sender.sendMessage(prefix + ChatColor.RED + "/ranks reload" + ChatColor.DARK_RED + "  Reloads the plugin");
                         sender.sendMessage(prefix + ChatColor.RED + "/ranks set (player) <path> (#/rank)" + ChatColor.DARK_RED + "  Sets the player's rank");
@@ -389,6 +409,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                                 return true;
                             }
                             String path = args.length == 4 ? args[2] : "default";
+                            String rankArg = args.length == 4 ? args[3] : args[2];
                             if (!ranks.containsKey(path)) {
                                 // no path found
                                 sender.sendMessage(prefix + parse(unknownRankPath, (Player) sender));
@@ -398,7 +419,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                             List<Integer> rankCompletion = getRankCompletion(player, path);
                             int rankNum = -1;
                             for (Rank rank : validRanks) {
-                                if (ChatColor.stripColor(rank.getName()).equalsIgnoreCase(args[2])) {
+                                if (ChatColor.stripColor(rank.getName()).equalsIgnoreCase(rankArg)) {
                                     rankNum = validRanks.indexOf(rank);
                                     break;
                                 }
@@ -406,7 +427,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                             if (rankNum == -1) {
                                 // cannot find rank from string
                                 try {
-                                    rankNum = Integer.parseInt(args[2]);
+                                    rankNum = Integer.parseInt(rankArg);
                                 } catch (NumberFormatException ignored) {
                                     // not a number
                                     sender.sendMessage(prefix + ChatColor.RED + "Unknown Rank");
@@ -431,6 +452,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                     } else {
                         sender.sendMessage(prefix + parse(noAccess, (Player) sender));
                     }
+                    return true;
                 }
             // open gui
             String rankType = args.length > 0 ? args[0].toLowerCase() : "default";
@@ -448,6 +470,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
             }
 
         } else if (command.getName().equalsIgnoreCase("rankinfo")) {
+            // /rankinfo (path) (rank)
             if (sender.hasPermission("notranks.default")) {
                 String rankType = args.length > 0 ? args[0].toLowerCase() : "default";
                 List<Rank> rankPath = ranks.get(rankType);
@@ -457,8 +480,25 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                     sender.sendMessage(prefix + parse(unknownRankPath, (Player) sender));
                     return true;
                 }
-                // 0 if they have no rank, otherwise, 1+ last rank they have gotten
-                int nextRank = rankProgress == null || rankProgress.isEmpty() ? 0 : rankProgress.get(rankProgress.size() - 1) + 1;
+                // get next rank num, if none is specified, +1 last rank
+                int nextRank = -1;
+                if (args.length > 1) {
+                    try {
+                        nextRank = Integer.parseInt(args[1]);
+                    } catch (NumberFormatException e) {
+                        // try and find rank from name
+                        for (int i = 0; i < rankPath.size(); i++) {
+                            Rank rank = rankPath.get(i);
+                            if (ChatColor.stripColor(rank.getName()).equalsIgnoreCase(args[1])) {
+                                nextRank = i;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (nextRank == -1)
+                    nextRank = rankProgress == null || rankProgress.isEmpty() ? 0 : rankProgress.get(rankProgress.size() - 1) + 1;
+
                 if (rankPath.size() > nextRank) { // check if they are on the max rank
                     // display the next rank
                     Rank rank = rankPath.get(nextRank);
@@ -485,12 +525,10 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
         return true;
     }
 
-    @Nullable
     @Override
     public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, @NotNull String[] args) {
+        List<String> tab = new ArrayList<>();
         if (command.getName().equalsIgnoreCase("ranks")) {
-
-            List<String> tab = new ArrayList<>();
             if (args.length == 1) {
                 if (sender.hasPermission("notranks.admin")) {
                     tab.add("reload");
@@ -518,7 +556,8 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                         for (Rank rank : ranks.get("default")) {
                             tab.add(ChatColor.stripColor(rank.getName()));
                         }
-                    tab.add("none");
+                    if (args[0].equalsIgnoreCase("set"))
+                        tab.add("none");
                 }
             } else if (args.length == 4) {
                 if ((args[0].equalsIgnoreCase("set") || args[0].equalsIgnoreCase("remove")) && sender.hasPermission("notranks.admin")) {
@@ -526,17 +565,34 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                         for (Rank rank : ranks.get(args[2])) {
                             tab.add(ChatColor.stripColor(rank.getName()));
                         }
-                    tab.add("none");
+                    if (args[0].equalsIgnoreCase("set"))
+                        tab.add("none");
                 }
             }
-            String typed = args[args.length - 1];
-            tab.removeIf(test -> test.toLowerCase(Locale.ROOT).indexOf(typed.toLowerCase(Locale.ROOT)) != 0);
-            Collections.sort(tab);
-            return tab;
 
+
+        } else if (command.getName().equalsIgnoreCase("rankinfo") || command.getName().equalsIgnoreCase("rankup")) {
+            if (args.length == 1) {
+                if (sender.hasPermission("notranks.default")) {
+                    for (Map.Entry<String, List<Rank>> entry : ranks.entrySet()) {
+                        tab.add(entry.getKey());
+                    }
+                }
+            } else if (args.length == 2) {
+                if (sender.hasPermission("notranks.default")) {
+                    if (ranks.containsKey(args[0]))
+                        for (Rank rank : ranks.get(args[0])) {
+                            tab.add(ChatColor.stripColor(rank.getName()));
+                        }
+                }
+            } else if (args.length == 3 && command.getName().equalsIgnoreCase("rankup") && sender.hasPermission("notranks.default")) {
+                tab.add("--confirm");
+            }
         }
-
-        return super.onTabComplete(sender, command, alias, args);
+        String typed = args[args.length - 1];
+        tab.removeIf(test -> test.toLowerCase(Locale.ROOT).indexOf(typed.toLowerCase(Locale.ROOT)) != 0);
+        Collections.sort(tab);
+        return tab;
     }
 
 

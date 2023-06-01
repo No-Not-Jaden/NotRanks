@@ -191,39 +191,43 @@ public class Rank {
     }
 
     public boolean isRequirementCompleted(String requirement, OfflinePlayer player) {
-        String placeholder = requirement.substring(0, requirement.indexOf(" "));
-        String operator = requirement.substring(requirement.indexOf(" ") + 1, requirement.lastIndexOf(" "));
-        String value = requirement.substring(requirement.lastIndexOf(" ") + 1);
-        Object parsedValue = parseValue(value);
+        try {
+            String placeholder = requirement.substring(0, requirement.indexOf(" "));
+            String operator = requirement.substring(requirement.indexOf(" ") + 1, requirement.lastIndexOf(" "));
+            String value = requirement.substring(requirement.lastIndexOf(" ") + 1);
+            Object parsedValue = parseValue(value);
 
-        if (placeholder.contains("%")) {
-            String parsed = PlaceholderAPI.setPlaceholders(player, placeholder);
-            Object parsedPlaceholder = parseValue(parsed);
+            if (placeholder.contains("%")) {
+                String parsed = PlaceholderAPI.setPlaceholders(player, placeholder);
+                Object parsedPlaceholder = parseValue(parsed);
 
-            // value types don't match
-            if (parsedValue instanceof Boolean && !(parsedPlaceholder instanceof Boolean)) {
-                return false;
-            } else if (parsedValue instanceof Integer && !(parsedPlaceholder instanceof Integer)) {
-                return false;
-            } else if (parsedValue instanceof Double && !(parsedPlaceholder instanceof Double)) {
-                return false;
-            } else if (parsedValue instanceof String && !(parsedPlaceholder instanceof String)) {
-                return false;
-            }
-            return compareObjects(parsedValue, parsedPlaceholder, operator);
-        } else {
-            // check if it is a material
-            if (player.isOnline()) {
-                assert player.getPlayer() != null;
-                Material m = Material.getMaterial(placeholder);
-                if (m != null) {
-                    if (parsedValue instanceof Integer || parsedValue instanceof Double) {
-                        int reqValue = parsedValue instanceof Double ? ((Double) parsedValue).intValue() : (int) parsedValue;
-                        int playerValue = checkItemAmount(player.getPlayer(), m);
-                        return compareObjects(reqValue, playerValue, operator);
+                // value types don't match
+                if (parsedValue instanceof Boolean && !(parsedPlaceholder instanceof Boolean)) {
+                    return false;
+                } else if (parsedValue instanceof Integer && !(parsedPlaceholder instanceof Integer)) {
+                    return false;
+                } else if (parsedValue instanceof Double && !(parsedPlaceholder instanceof Double)) {
+                    return false;
+                } else if (parsedValue instanceof String && !(parsedPlaceholder instanceof String)) {
+                    return false;
+                }
+                return compareObjects(parsedValue, parsedPlaceholder, operator);
+            } else {
+                // check if it is a material
+                if (player.isOnline()) {
+                    assert player.getPlayer() != null;
+                    Material m = Material.getMaterial(placeholder);
+                    if (m != null) {
+                        if (parsedValue instanceof Integer || parsedValue instanceof Double) {
+                            int reqValue = parsedValue instanceof Double ? ((Double) parsedValue).intValue() : (int) parsedValue;
+                            int playerValue = checkItemAmount(player.getPlayer(), m);
+                            return compareObjects(reqValue, playerValue, operator);
+                        }
                     }
                 }
             }
+        } catch (IndexOutOfBoundsException e){
+            Bukkit.getLogger().warning("Could not check requirement: " + requirement + "\nIs it formatted properly?");
         }
         return false;
     }

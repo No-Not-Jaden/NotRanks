@@ -388,4 +388,15 @@ public class ConfigOptions {
         }
         return -1;
     }
+
+    public static RankInfo getRankInfo(String rankName){
+        for (Map.Entry<String, List<Rank>> entry : ranks.entrySet()){
+            for (Rank rank : entry.getValue()){
+                if (rank.getName().equals(rankName)){
+                    return new RankInfo(entry.getKey(), entry.getValue().indexOf(rank), rank);
+                }
+            }
+        }
+        return null;
+    }
 }
