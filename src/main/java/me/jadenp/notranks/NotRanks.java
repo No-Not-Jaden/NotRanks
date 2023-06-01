@@ -293,7 +293,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                     ((Player) sender).playSound(((Player) sender).getLocation(), Sound.ENTITY_VILLAGER_NO, 1, 1);
                     return true;
                 }
-                if (args[args.length - 1].equalsIgnoreCase("--confirm")) {
+                if (args[args.length - 1].equalsIgnoreCase("--confirm") || !confirmation) {
                     // rankup
                     rankup((Player) sender, rankType, nextRank);
                 } else {
