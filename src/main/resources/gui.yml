@@ -141,7 +141,7 @@ example-path:
   auto-size: false
   remove-page-items: true
   deny-click-item: STRUCTURE_VOID
-  completed-deny-click-item: LIGHT
+  completed-deny-click-item: KNOWLEDGE_BOOK
   size: 36
   orderly-progression: true
   rank-slots:

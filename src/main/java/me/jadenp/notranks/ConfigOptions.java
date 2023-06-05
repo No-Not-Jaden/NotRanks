@@ -271,8 +271,8 @@ public class ConfigOptions {
             if (key.equals("custom-items"))
                 continue;
             // add newer features here
-            if (guiConfig.isSet(key + ".completed-deny-click-item"))
-                guiConfig.set(key + ".completed-deny-click-item", "DISABLE");
+            if (!guiConfig.isSet(key + ".completed-deny-click-item"))
+                guiConfig.set(key + ".completed-deny-click-item", guiConfig.getString(key + ".deny-click-item"));
             if (!ranks.containsKey(key) && !key.equals("confirmation")){
                 Bukkit.getLogger().warning("Found a GUI for " + key + ", but did not find a rank path to match it.");
             }

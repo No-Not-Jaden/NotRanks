@@ -17,8 +17,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-import static me.jadenp.notranks.ConfigOptions.isRankUnlocked;
-import static me.jadenp.notranks.ConfigOptions.ranks;
+import static me.jadenp.notranks.ConfigOptions.*;
 import static me.jadenp.notranks.LanguageOptions.color;
 import static me.jadenp.notranks.LanguageOptions.prefix;
 import static me.jadenp.notranks.gui.GUI.*;
@@ -111,7 +110,9 @@ public class GUIOptions {
                 denyClickItem1 = "DISABLE";
             }
         denyClickItem = denyClickItem1;
-        denyClickItem1 = Objects.requireNonNull(settings.getString("completed-deny-click-item")).toUpperCase();
+        if (debug)
+            Bukkit.getLogger().info("[NotRanks] Loaded deny click item: " + denyClickItem1 + " for " + type + " gui");
+        denyClickItem1 = settings.isSet("completed-deny-click-item") ? Objects.requireNonNull(settings.getString("completed-deny-click-item")).toUpperCase() : denyClickItem;
         if (!denyClickItem1.equals("DISABLE") && !denyClickItem1.equals("RANK"))
             try {
                 Material.valueOf(denyClickItem1);
@@ -120,7 +121,8 @@ public class GUIOptions {
                 denyClickItem1 = "DISABLE";
             }
         completedDenyClickItem = denyClickItem1;
-
+        if (debug)
+            Bukkit.getLogger().info("[NotRanks] Loaded completed deny click item: " + denyClickItem1 + " for " + type + " gui");
 
         if (rankSlots.size() == 0){
             Bukkit.getLogger().warning("No slots for ranks!");

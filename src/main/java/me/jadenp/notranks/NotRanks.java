@@ -292,7 +292,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                 sender.sendMessage(prefix + parse(noAccess, (Player) sender));
             }
         } else if (command.getName().equalsIgnoreCase("ranks")) {
-            if (!(sender instanceof Player)) {
+            if (!(sender instanceof Player) && !(args.length == 1 && args[0].equalsIgnoreCase("reload"))) {
                 sender.sendMessage(prefix + ChatColor.RED + "Only players can use this command!");
                 return true;
             }
@@ -306,7 +306,8 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                         }
                         sender.sendMessage(prefix + ChatColor.GREEN + "Reloaded NotRanks version " + this.getDescription().getVersion() + ".");
                     } else {
-                        sender.sendMessage(prefix + parse(noAccess, (Player) sender));
+                        if (sender instanceof Player)
+                            sender.sendMessage(prefix + parse(noAccess, (Player) sender));
                     }
                     return true;
                 } else if (args[0].equalsIgnoreCase("set")) {
@@ -436,10 +437,12 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                             sender.sendMessage(prefix + ChatColor.GOLD + "" + ChatColor.BOLD + "Usage: " + ChatColor.YELLOW + "/ranks set (player) <path> (#/rank)");
                         }
                     } else {
+                        assert sender instanceof Player;
                         sender.sendMessage(prefix + parse(noAccess, (Player) sender));
                     }
                     return true;
                 }
+            assert sender instanceof Player;
             // open gui
             String rankType = args.length > 0 ? args[0].toLowerCase() : "default";
             if (sender.hasPermission("notranks.default")) {
