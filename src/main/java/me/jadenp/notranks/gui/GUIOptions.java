@@ -34,6 +34,7 @@ public class GUIOptions {
     private final List<Integer> rankSlots = new ArrayList<>();
     private final boolean orderlyProgression;
     private final String completedDenyClickItem;
+    private final boolean requirePermission;
 
     public GUIOptions(ConfigurationSection settings){
         String denyClickItem1;
@@ -43,6 +44,7 @@ public class GUIOptions {
         addPage = settings.getBoolean("add-page");
         removePageItems = settings.getBoolean("remove-page-items");
         orderlyProgression = settings.getBoolean("orderly-progression");
+        requirePermission = settings.getBoolean("require-permission");
         if (autoSize){
             int rankSize = ranks.get(type).size();
             int rows = rankSize / 7;
@@ -196,6 +198,10 @@ public class GUIOptions {
         if (type.equalsIgnoreCase("confirmation"))
             return new ArrayList<>();
         return ranks.get(type);
+    }
+
+    public boolean isPermissionRequired(){
+        return requirePermission;
     }
 
     public boolean isOrderlyProgression() {

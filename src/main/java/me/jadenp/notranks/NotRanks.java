@@ -2,6 +2,7 @@ package me.jadenp.notranks;
 
 
 import me.jadenp.notranks.gui.GUI;
+import me.jadenp.notranks.gui.GUIOptions;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Sound;
@@ -234,71 +235,67 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                 return true;
             }
 
-                String rankType = args.length > 0 ? args[0] : "default";
-                List<Rank> rankPath = ranks.get(rankType);
-                List<Integer> rankProgress = getRankCompletion((Player) sender, rankType);
-                if (rankPath == null) {
-                    // unknown rank path
-                    sender.sendMessage(prefix + parse(unknownRankPath, (Player) sender));
-                    return true;
-                }
-                // check if they have permission
-                if (!sender.hasPermission("notranks." + rankType)){
-                    sender.sendMessage(prefix + parse(noAccess, (Player) sender));
-                    return true;
-                }
-                // get next rank num, if none is specified, +1 last rank
-                int nextRank = -1;
-                if (args.length > 1) {
-                    try {
-                        nextRank = Integer.parseInt(args[1]);
-                    } catch (NumberFormatException e) {
-                        // try and find rank from name
-                        for (int i = 0; i < rankPath.size(); i++) {
-                            Rank rank = rankPath.get(i);
-                            if (ChatColor.stripColor(rank.getName()).equalsIgnoreCase(args[1])) {
-                                nextRank = i;
-                                break;
-                            }
+            String rankType = args.length > 0 ? args[0] : "default";
+            List<Rank> rankPath = ranks.get(rankType);
+            List<Integer> rankProgress = getRankCompletion((Player) sender, rankType);
+            if (rankPath == null) {
+                // unknown rank path
+                sender.sendMessage(prefix + parse(unknownRankPath, (Player) sender));
+                return true;
+            }
+            GUIOptions guiOptions = GUI.getGUI(rankType);
+            // check if they have permission
+            if (!sender.hasPermission("notranks." + rankType) && guiOptions.isPermissionRequired()) {
+                sender.sendMessage(prefix + parse(noAccess, (Player) sender));
+                return true;
+            }
+            // get next rank num, if none is specified, +1 last rank
+            int nextRank = -1;
+            if (args.length > 1) {
+                try {
+                    nextRank = Integer.parseInt(args[1]);
+                } catch (NumberFormatException e) {
+                    // try and find rank from name
+                    for (int i = 0; i < rankPath.size(); i++) {
+                        Rank rank = rankPath.get(i);
+                        if (ChatColor.stripColor(rank.getName()).equalsIgnoreCase(args[1])) {
+                            nextRank = i;
+                            break;
                         }
                     }
                 }
-                if (nextRank == -1)
-                    nextRank = rankProgress == null || rankProgress.isEmpty() ? 0 : rankProgress.get(rankProgress.size() - 1) + 1;
+            }
+            if (nextRank == -1)
+                nextRank = rankProgress == null || rankProgress.isEmpty() ? 0 : rankProgress.get(rankProgress.size() - 1) + 1;
 
-                if (ConfigOptions.isRankUnlocked((Player) sender, rankType, nextRank)) {
-                    // rank already unlocked
-                    sender.sendMessage(prefix + LanguageOptions.parse(LanguageOptions.alreadyCompleted, (Player) sender));
-                    return true;
-                }
-                if (rankPath.size() <= nextRank) { // check if they are on the max rank
-                    sender.sendMessage(prefix + parse(maxRank, (Player) sender));
-                    return true;
-                }
-                if (getRankNum((Player) sender, rankType) + 1 != nextRank && GUI.getGUI(rankType).isOrderlyProgression()) { // check if they can skip ranks
-                    sender.sendMessage(prefix + parse(notOnRank, (Player) sender));
-                    return true;
-                }
-                if (!rankPath.get(nextRank).checkRequirements((Player) sender, rankType)) { // check requirements
-                    sender.sendMessage(prefix + parse(rankUpDeny, (Player) sender));
-                    ((Player) sender).playSound(((Player) sender).getLocation(), Sound.ENTITY_VILLAGER_NO, 1, 1);
-                    return true;
-                }
-                if (args[args.length - 1].equalsIgnoreCase("--confirm") || !confirmation) {
-                    // rankup
-                    rankup((Player) sender, rankType, nextRank);
-                } else {
-                    // confirmation gui
-                    GUI.openGUI((Player) sender, "confirmation", 1, getRank(nextRank, rankType));
-                }
-
+            if (ConfigOptions.isRankUnlocked((Player) sender, rankType, nextRank)) {
+                // rank already unlocked
+                sender.sendMessage(prefix + LanguageOptions.parse(LanguageOptions.alreadyCompleted, (Player) sender));
+                return true;
+            }
+            if (rankPath.size() <= nextRank) { // check if they are on the max rank
+                sender.sendMessage(prefix + parse(maxRank, (Player) sender));
+                return true;
+            }
+            if (getRankNum((Player) sender, rankType) + 1 != nextRank && GUI.getGUI(rankType).isOrderlyProgression()) { // check if they can skip ranks
+                sender.sendMessage(prefix + parse(notOnRank, (Player) sender));
+                return true;
+            }
+            if (!rankPath.get(nextRank).checkRequirements((Player) sender, rankType)) { // check requirements
+                sender.sendMessage(prefix + parse(rankUpDeny, (Player) sender));
+                ((Player) sender).playSound(((Player) sender).getLocation(), Sound.ENTITY_VILLAGER_NO, 1, 1);
+                return true;
+            }
+            if (args[args.length - 1].equalsIgnoreCase("--confirm") || !confirmation) {
+                // rankup
+                rankup((Player) sender, rankType, nextRank);
+            } else {
+                // confirmation gui
+                GUI.openGUI((Player) sender, "confirmation", 1, getRank(nextRank, rankType));
+            }
 
 
         } else if (command.getName().equalsIgnoreCase("ranks")) {
-            if (!(sender instanceof Player) && !(args.length == 1 && args[0].equalsIgnoreCase("reload"))) {
-                sender.sendMessage(prefix + ChatColor.RED + "Only players can use this command!");
-                return true;
-            }
             if (args.length > 0)
                 if (args[0].equalsIgnoreCase("reload")) {
                     if (sender.hasPermission("notranks.admin")) {
@@ -445,7 +442,10 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                     }
                     return true;
                 }
-            assert sender instanceof Player;
+            if (!(sender instanceof Player)) {
+                sender.sendMessage(prefix + ChatColor.RED + "Only players can use this command!");
+                return true;
+            }
             // open gui
             String rankType = args.length > 0 ? args[0].toLowerCase() : "default";
             // check if the path exists
@@ -453,8 +453,9 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                 sender.sendMessage(prefix + parse(unknownRankPath, (Player) sender));
                 return true;
             }
+            GUIOptions guiOptions = GUI.getGUI(rankType);
             // check if they have permission
-            if (!sender.hasPermission("notranks." + rankType)){
+            if (!sender.hasPermission("notranks." + rankType) && guiOptions.isPermissionRequired()) {
                 sender.sendMessage(prefix + parse(noAccess, (Player) sender));
                 return true;
             }
@@ -462,58 +463,63 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
             sender.sendMessage(prefix + parse(guiOpen, (Player) sender));
             return true;
         } else if (command.getName().equalsIgnoreCase("rankinfo")) {
+            if (!(sender instanceof Player)) {
+                sender.sendMessage(prefix + ChatColor.RED + "Only players can use this command!");
+                return true;
+            }
             // /rankinfo (path) (rank)
-                String rankType = args.length > 0 ? args[0].toLowerCase() : "default";
-                List<Rank> rankPath = ranks.get(rankType);
-                List<Integer> rankProgress = getRankCompletion((Player) sender, rankType);
-                if (rankPath == null) {
-                    // unknown rank path
-                    sender.sendMessage(prefix + parse(unknownRankPath, (Player) sender));
-                    return true;
-                }
-                // check if they have permission
-                if (!sender.hasPermission("notranks." + rankType)){
-                    sender.sendMessage(prefix + parse(noAccess, (Player) sender));
-                    return true;
-                }
-                // get next rank num, if none is specified, +1 last rank
-                int nextRank = -1;
-                if (args.length > 1) {
-                    try {
-                        nextRank = Integer.parseInt(args[1]);
-                    } catch (NumberFormatException e) {
-                        // try and find rank from name
-                        for (int i = 0; i < rankPath.size(); i++) {
-                            Rank rank = rankPath.get(i);
-                            if (ChatColor.stripColor(rank.getName()).equalsIgnoreCase(args[1])) {
-                                nextRank = i;
-                                break;
-                            }
+            String rankType = args.length > 0 ? args[0].toLowerCase() : "default";
+            List<Rank> rankPath = ranks.get(rankType);
+            List<Integer> rankProgress = getRankCompletion((Player) sender, rankType);
+            if (rankPath == null) {
+                // unknown rank path
+                sender.sendMessage(prefix + parse(unknownRankPath, (Player) sender));
+                return true;
+            }
+            GUIOptions guiOptions = GUI.getGUI(rankType);
+            // check if they have permission
+            if (!sender.hasPermission("notranks." + rankType) && guiOptions.isPermissionRequired()) {
+                sender.sendMessage(prefix + parse(noAccess, (Player) sender));
+                return true;
+            }
+            // get next rank num, if none is specified, +1 last rank
+            int nextRank = -1;
+            if (args.length > 1) {
+                try {
+                    nextRank = Integer.parseInt(args[1]);
+                } catch (NumberFormatException e) {
+                    // try and find rank from name
+                    for (int i = 0; i < rankPath.size(); i++) {
+                        Rank rank = rankPath.get(i);
+                        if (ChatColor.stripColor(rank.getName()).equalsIgnoreCase(args[1])) {
+                            nextRank = i;
+                            break;
                         }
                     }
                 }
-                if (nextRank == -1)
-                    nextRank = rankProgress == null || rankProgress.isEmpty() ? 0 : rankProgress.get(rankProgress.size() - 1) + 1;
+            }
+            if (nextRank == -1)
+                nextRank = rankProgress == null || rankProgress.isEmpty() ? 0 : rankProgress.get(rankProgress.size() - 1) + 1;
 
-                if (rankPath.size() > nextRank) { // check if they are on the max rank
-                    // display the next rank
-                    Rank rank = rankPath.get(nextRank);
-                    List<String> chat = rank.getLore((Player) sender, false);
-                    String name = ChatColor.translateAlternateColorCodes('&', rank.getName());
-                    sender.sendMessage(ChatColor.GRAY + "" + ChatColor.STRIKETHROUGH + "            " + ChatColor.RESET + " " + name + ChatColor.RESET + " " + ChatColor.GRAY + "" + ChatColor.STRIKETHROUGH + "            ");
+            if (rankPath.size() > nextRank) { // check if they are on the max rank
+                // display the next rank
+                Rank rank = rankPath.get(nextRank);
+                List<String> chat = rank.getLore((Player) sender, false);
+                String name = ChatColor.translateAlternateColorCodes('&', rank.getName());
+                sender.sendMessage(ChatColor.GRAY + "" + ChatColor.STRIKETHROUGH + "            " + ChatColor.RESET + " " + name + ChatColor.RESET + " " + ChatColor.GRAY + "" + ChatColor.STRIKETHROUGH + "            ");
 
-                    for (String str : chat) {
-                        sender.sendMessage(str);
-                    }
-                    StringBuilder str = new StringBuilder("                        ");
-                    int multiplier = name.contains("&l") ? 2 : 1;
-                    for (int i = 0; i < ChatColor.stripColor(name).length() * multiplier; i++) {
-                        str.append(" ");
-                    }
-                    sender.sendMessage(ChatColor.GRAY + "" + ChatColor.STRIKETHROUGH + str);
-                } else {
-                    sender.sendMessage(prefix + parse(maxRank, (Player) sender));
+                for (String str : chat) {
+                    sender.sendMessage(str);
                 }
+                StringBuilder str = new StringBuilder("                        ");
+                int multiplier = name.contains("&l") ? 2 : 1;
+                for (int i = 0; i < ChatColor.stripColor(name).length() * multiplier; i++) {
+                    str.append(" ");
+                }
+                sender.sendMessage(ChatColor.GRAY + "" + ChatColor.STRIKETHROUGH + str);
+            } else {
+                sender.sendMessage(prefix + parse(maxRank, (Player) sender));
+            }
         }
         return true;
     }

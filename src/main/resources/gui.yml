@@ -73,6 +73,8 @@ custom-items:
 default:
   # name of the gui that opens when you do /ranks
   gui-name: '&cRanks'
+  # require permission to open the GUI
+  require-permission: true
   # whether the page number will be added to the name of the gui
   add-page: false
   # this will surround the ranks with fill items and expand the inventory size as new ranks are added
@@ -137,6 +139,7 @@ confirmation:
       item: confirm
 example-path:
   gui-name: '&c&lPlayer Ranks'
+  require-permission: true
   add-page: false
   auto-size: false
   remove-page-items: true
