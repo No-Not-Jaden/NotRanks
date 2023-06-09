@@ -233,13 +233,18 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                 sender.sendMessage(prefix + ChatColor.RED + "Only players can use this command!");
                 return true;
             }
-            if (sender.hasPermission("notranks.default")) {
+
                 String rankType = args.length > 0 ? args[0] : "default";
                 List<Rank> rankPath = ranks.get(rankType);
                 List<Integer> rankProgress = getRankCompletion((Player) sender, rankType);
                 if (rankPath == null) {
                     // unknown rank path
                     sender.sendMessage(prefix + parse(unknownRankPath, (Player) sender));
+                    return true;
+                }
+                // check if they have permission
+                if (!sender.hasPermission("notranks." + rankType)){
+                    sender.sendMessage(prefix + parse(noAccess, (Player) sender));
                     return true;
                 }
                 // get next rank num, if none is specified, +1 last rank
@@ -288,9 +293,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                 }
 
 
-            } else {
-                sender.sendMessage(prefix + parse(noAccess, (Player) sender));
-            }
+
         } else if (command.getName().equalsIgnoreCase("ranks")) {
             if (!(sender instanceof Player) && !(args.length == 1 && args[0].equalsIgnoreCase("reload"))) {
                 sender.sendMessage(prefix + ChatColor.RED + "Only players can use this command!");
@@ -445,28 +448,32 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
             assert sender instanceof Player;
             // open gui
             String rankType = args.length > 0 ? args[0].toLowerCase() : "default";
-            if (sender.hasPermission("notranks.default")) {
-                if (ranks.containsKey(rankType)) {
-                    GUI.openGUI((Player) sender, rankType, 1);
-                    sender.sendMessage(prefix + parse(guiOpen, (Player) sender));
-                } else {
-                    // no rank path found
-                    sender.sendMessage(prefix + parse(unknownRankPath, (Player) sender));
-                }
-            } else {
-                // no permission
-                sender.sendMessage(prefix + parse(noAccess, (Player) sender));
+            // check if the path exists
+            if (!ranks.containsKey(rankType)) {
+                sender.sendMessage(prefix + parse(unknownRankPath, (Player) sender));
+                return true;
             }
-
+            // check if they have permission
+            if (!sender.hasPermission("notranks." + rankType)){
+                sender.sendMessage(prefix + parse(noAccess, (Player) sender));
+                return true;
+            }
+            GUI.openGUI((Player) sender, rankType, 1);
+            sender.sendMessage(prefix + parse(guiOpen, (Player) sender));
+            return true;
         } else if (command.getName().equalsIgnoreCase("rankinfo")) {
             // /rankinfo (path) (rank)
-            if (sender.hasPermission("notranks.default")) {
                 String rankType = args.length > 0 ? args[0].toLowerCase() : "default";
                 List<Rank> rankPath = ranks.get(rankType);
                 List<Integer> rankProgress = getRankCompletion((Player) sender, rankType);
                 if (rankPath == null) {
                     // unknown rank path
                     sender.sendMessage(prefix + parse(unknownRankPath, (Player) sender));
+                    return true;
+                }
+                // check if they have permission
+                if (!sender.hasPermission("notranks." + rankType)){
+                    sender.sendMessage(prefix + parse(noAccess, (Player) sender));
                     return true;
                 }
                 // get next rank num, if none is specified, +1 last rank
@@ -507,9 +514,6 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                 } else {
                     sender.sendMessage(prefix + parse(maxRank, (Player) sender));
                 }
-            } else {
-                sender.sendMessage(prefix + parse(noAccess, (Player) sender));
-            }
         }
         return true;
     }
