@@ -353,8 +353,12 @@ public class ConfigOptions {
         return null;
     }
 
-    public static Rank getRank(int index, String rankType){
-        return ranks.get(rankType).get(index);
+    public static @Nullable Rank getRank(int index, String rankType){
+        List<Rank> ranksList = ranks.get(rankType);
+        if (index >= ranksList.size()){
+            return null;
+        }
+        return ranksList.get(index);
     }
 
     public static void addRank(OfflinePlayer p, String rankType, int index){

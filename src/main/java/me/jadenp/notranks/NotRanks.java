@@ -152,7 +152,9 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                     for (Map.Entry<String, List<Rank>> rankPaths : ranks.entrySet()) {
                         int rankNum = getRankNum(p, rankPaths.getKey());
                         if (rankNum < rankPaths.getValue().size() - 1) { // make sure they aren't on the max rank
-                            getRank(rankNum + 1, rankPaths.getKey()).checkRankCompletion(p, rankPaths.getKey()); // check completion on next rank
+                             Rank rank = getRank(rankNum + 1, rankPaths.getKey());
+                             if (rank != null)
+                                rank.checkRankCompletion(p, rankPaths.getKey()); // check completion on next rank
                         }
                     }
                 }
@@ -183,6 +185,10 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
 
     public void rankup(Player p, String rankType, int newRankIndex) {
         Rank newRank = getRank(newRankIndex, rankType);
+        if (newRank == null){
+            Bukkit.getLogger().warning("[NotRanks] " + p.getName() + " is trying to rankup to a rank that doesn't exist! " + rankType + ":" + newRankIndex + "\nPlease contact the developer Not_Jaden.");
+            return;
+        }
         RankupEvent event = new RankupEvent(p, newRank, getRank(p, rankType), newRankIndex);
         Bukkit.getPluginManager().callEvent(event);
         if (!event.isCancelled()) {
@@ -235,7 +241,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                 return true;
             }
 
-            String rankType = args.length > 0 ? args[0] : "default";
+            String rankType = args.length > 0 && !args[0].equalsIgnoreCase("--confirm") ? args[0] : "default";
             List<Rank> rankPath = ranks.get(rankType);
             List<Integer> rankProgress = getRankCompletion((Player) sender, rankType);
             if (rankPath == null) {
@@ -286,7 +292,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                 ((Player) sender).playSound(((Player) sender).getLocation(), Sound.ENTITY_VILLAGER_NO, 1, 1);
                 return true;
             }
-            if (args[args.length - 1].equalsIgnoreCase("--confirm") || !confirmation) {
+            if (!confirmation || (args.length > 0 && args[args.length - 1].equalsIgnoreCase("--confirm"))) {
                 // rankup
                 rankup((Player) sender, rankType, nextRank);
             } else {
@@ -575,6 +581,9 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                 if (sender.hasPermission("notranks.default")) {
                     for (Map.Entry<String, List<Rank>> entry : ranks.entrySet()) {
                         tab.add(entry.getKey());
+                    }
+                    if (command.getName().equalsIgnoreCase("rankup")){
+                        tab.add("--confirm");
                     }
                 }
             } else if (args.length == 2) {

@@ -55,7 +55,7 @@ prefix:
   # {prefix} for the rank name
   # {name} for player name - must be used once and only once if overwrite is enabled
   # placeholders will be parsed
-  format: '&7[{prefix}&7] &f{name} &*: &r'
+  format: '&7[{prefix}&7] &f{name} &8: &r'
   # name of beginning rank
   no-rank: '&fUnranked'
 
