@@ -187,7 +187,6 @@ public class Rank {
             }
         }
         player.getInventory().setContents(contents);
-        player.updateInventory();
     }
 
     public boolean isRequirementCompleted(String requirement, OfflinePlayer player) {
@@ -442,6 +441,8 @@ public class Rank {
             return str;
         if (str.contains(".")) {
             int endIndex = str.length() - (3 + str.substring(str.indexOf(".")).length());
+            if (endIndex <= 0)
+                return str;
             return addThousands(str.substring(0, endIndex)) + nfThousands + str.substring(endIndex);
         }
         return addThousands(str.substring(0, str.length()-3)) + nfThousands + str.substring(str.length() - 3);

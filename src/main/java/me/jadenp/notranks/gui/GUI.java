@@ -165,6 +165,7 @@ public class GUI implements Listener {
                 }
             }
             // check for completion
+            assert rank != null;
             if (!rank.checkRequirements((Player) event.getWhoClicked(), guiType)) {
                 // incomplete
                 gui.notifyThroughGUI(event, LanguageOptions.parse(LanguageOptions.rankUpDeny, (Player) event.getWhoClicked()), false);

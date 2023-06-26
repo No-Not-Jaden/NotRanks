@@ -251,7 +251,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
             }
             GUIOptions guiOptions = GUI.getGUI(rankType);
             // check if they have permission
-            if (!sender.hasPermission("notranks." + rankType) && guiOptions.isPermissionRequired()) {
+            if (!sender.hasPermission("notranks." + rankType) && guiOptions.isPermissionRequired() && !sender.hasPermission("notranks.admin")) {
                 sender.sendMessage(prefix + parse(noAccess, (Player) sender));
                 return true;
             }
@@ -461,7 +461,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
             }
             GUIOptions guiOptions = GUI.getGUI(rankType);
             // check if they have permission
-            if (!sender.hasPermission("notranks." + rankType) && guiOptions.isPermissionRequired()) {
+            if (!sender.hasPermission("notranks." + rankType) && guiOptions.isPermissionRequired() && !sender.hasPermission("notranks.admin")) {
                 sender.sendMessage(prefix + parse(noAccess, (Player) sender));
                 return true;
             }
@@ -484,7 +484,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
             }
             GUIOptions guiOptions = GUI.getGUI(rankType);
             // check if they have permission
-            if (!sender.hasPermission("notranks." + rankType) && guiOptions.isPermissionRequired()) {
+            if (!sender.hasPermission("notranks." + rankType) && guiOptions.isPermissionRequired() && !sender.hasPermission("notranks.admin")) {
                 sender.sendMessage(prefix + parse(noAccess, (Player) sender));
                 return true;
             }

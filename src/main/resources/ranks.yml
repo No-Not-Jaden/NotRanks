@@ -265,7 +265,7 @@ example-path:
       - '%statistic_hours_played% >= 72'
       - '%statistic_cake_slices_eaten% >= 13'
       - '%statistic_kill_entity:WARDEN% >= 1'
-      - '%statistic_mine_block:ANCIENT_DEBRIS >= 24%'
+      - '%statistic_mine_block:ANCIENT_DEBRIS% >= 24'
     cost: 500
     hide-nbt: true
     completion-lore:

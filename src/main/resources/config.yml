@@ -4,9 +4,9 @@ confirmation: true
 currency:
   # accepts a spigot material or a placeholder - ex: '%vault_eco_balance%'
   unit: 'DIAMOND'
-  # if using a placeholder, add the remove command here - ex: 'eco take {player} {amount}'
+  # if using a placeholder, add the remove command here
   remove-currency-commands:
-    - 'msg {player} {amount} diamonds have been taken'
+    - 'msg {player} {amount} diamonds have been taken' # - 'eco take {player} {amount}'
   # what you want before/after the currency ex: $ or €
   prefix: ''
   suffix: '&b♦'

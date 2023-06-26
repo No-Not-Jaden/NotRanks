@@ -54,13 +54,22 @@ public class GUIOptions {
                 rows = 4;
             size = rows * 9 + 18;
             // auto add rank slots
-            for (int i = 0; i < rows-1; i++) {
-                for (int j = i * 9 + 10; j < i * 9 + 17; j++) {
+            if (rankSize % 7 > 0) {
+                for (int i = 0; i < rows - 1; i++) {
+                    for (int j = i * 9 + 10; j < i * 9 + 17; j++) {
+                        rankSlots.add(j);
+                    }
+                }
+                // adds the extra rank slots needed at the end
+                for (int j = (rows - 1) * 9 + 10; j < (rows - 1) * 9 + 10 + rankSize % 7; j++) {
                     rankSlots.add(j);
                 }
-            }
-            for (int j = (rows-1) * 9 + 10; j < (rows-1) * 9 + 10 + rankSize % 7; j++) {
-                rankSlots.add(j);
+            } else {
+                for (int i = 0; i < rows; i++) {
+                    for (int j = i * 9 + 10; j < i * 9 + 17; j++) {
+                        rankSlots.add(j);
+                    }
+                }
             }
             // setup auto-size format
             customItems = new CustomItem[size];
