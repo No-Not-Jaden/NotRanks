@@ -354,6 +354,10 @@ public class ConfigOptions {
     }
 
     public static @Nullable Rank getRank(int index, String rankType){
+        if (ranks.size() == 0) {
+            Bukkit.getLogger().warning("No ranks found! Is ranks.yml formatted correctly?");
+            return null;
+        }
         List<Rank> ranksList = ranks.get(rankType);
         if (index >= ranksList.size()){
             return null;
