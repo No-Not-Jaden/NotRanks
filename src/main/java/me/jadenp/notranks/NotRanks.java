@@ -25,10 +25,6 @@ import java.util.*;
 import static me.jadenp.notranks.ConfigOptions.*;
 import static me.jadenp.notranks.LanguageOptions.*;
 
-/**
- * Already completed text
- * Different item for completed rank
- */
 
 public final class NotRanks extends JavaPlugin implements CommandExecutor, Listener {
 

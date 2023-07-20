@@ -331,25 +331,8 @@ public class Rank {
                     } else {
                         amount = checkItemAmount(p, Material.valueOf(currency));
                     }
-                    String strCost = ((double) Math.round(cost * Math.pow(10, decimals)) / Math.pow(10, decimals)) + "";
-                    String strAmount = ((double) Math.round(amount * Math.pow(10, decimals)) / Math.pow(10, decimals)) + "";
-                    if (decimals == 0) {
-                        if (strCost.contains("."))
-                            strCost = strCost.substring(0, strCost.indexOf("."));
-                    }
-                    if (decimals == 0) {
-                        if (strAmount.contains("."))
-                            strAmount = strAmount.substring(0, strAmount.indexOf("."));
-                    }
-                    if (numberFormatting == 1){
-                        // thousands
-                        strCost = addThousands(strCost);
-                        strAmount = addThousands(strAmount);
-                    } else if (numberFormatting == 2){
-                        // divisions
-                        strCost = setDivision(strCost);
-                        strAmount = setDivision(strAmount);
-                    }
+                    String strCost = formatNumber(cost);
+                    String strAmount = formatNumber(amount);
 
 
                     if (error) {
@@ -423,15 +406,9 @@ public class Rank {
                 String parsed = PlaceholderAPI.setPlaceholders(p, placeholder);
 
                 try {
-                    Double.parseDouble(value);
                     // is number
-                    if (numberFormatting == 1){
-                        // thousands
-                        value = addThousands(value);
-                    } else if (numberFormatting == 2){
-                        // divisions
-                        value = setDivision(value);
-                    }
+                    value = formatNumber(Double.parseDouble(value));
+                    parsed = formatNumber(Double.parseDouble(parsed));
                 } catch (NumberFormatException ignored){
                 }
 
@@ -445,37 +422,6 @@ public class Rank {
         return str;
     }
 
-    public String addThousands(String str){
-        if (str.length() <= 3)
-            return str;
-        if (str.contains(".")) {
-            int endIndex = str.length() - (3 + str.substring(str.indexOf(".")).length());
-            if (endIndex <= 0)
-                return str;
-            return addThousands(str.substring(0, endIndex)) + nfThousands + str.substring(endIndex);
-        }
-        return addThousands(str.substring(0, str.length()-3)) + nfThousands + str.substring(str.length() - 3);
-    }
-
-    public String setDivision(String str){
-        double amount;
-        try {
-            amount = Double.parseDouble(str);
-        } catch (NumberFormatException e){
-            return str;
-        }
-        for (Map.Entry<Long, String> entry : nfDivisions.entrySet()){
-            if (amount / entry.getKey() >= 1){
-                String strCost = ((double) Math.round(amount / entry.getKey() * Math.pow(10, nfDecimals)) / Math.pow(10, nfDecimals)) + "";
-                if (nfDecimals == 0) {
-                    if (strCost.contains("."))
-                        strCost = strCost.substring(0, strCost.indexOf("."));
-                }
-                return strCost + entry.getValue();
-            }
-        }
-        return str;
-    }
 
     private boolean usingBase64(String str){
         try {

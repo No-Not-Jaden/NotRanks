@@ -16,6 +16,8 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.*;
 
 public class ConfigOptions {
@@ -41,7 +43,7 @@ public class ConfigOptions {
     public static String noRank;
     public static boolean usingHeads;
     public static int numberFormatting;
-    public static String nfThousands;
+    public static char nfThousands;
     public static int nfDecimals;
     public static LinkedHashMap<Long, String> nfDivisions = new LinkedHashMap<>();
     public static String completionBefore;
@@ -52,6 +54,9 @@ public class ConfigOptions {
     public static File guiFile;
     public static File ranksFile;
     public static boolean confirmation;
+    public static char decimalSymbol;
+    public static DecimalFormat decimalFormat;
+    public static DecimalFormat divisionFormat;
 
     public static void loadConfig() throws IOException {
         // close everyone out of gui
@@ -122,6 +127,8 @@ public class ConfigOptions {
             plugin.getConfig().set("head.completed", 6269);
         if (!plugin.getConfig().isSet("number-formatting.type"))
             plugin.getConfig().set("number-formatting.type", 1);
+        if (!plugin.getConfig().isSet("number-formatting.decimal-symbol"))
+            plugin.getConfig().set("number-formatting.decimal-symbol", ".");
         if (!plugin.getConfig().isSet("number-formatting.thousands"))
             plugin.getConfig().set("number-formatting.thousands", ",");
         if (!plugin.getConfig().isSet("number-formatting.divisions.decimals")) {
@@ -355,15 +362,51 @@ public class ConfigOptions {
         overwritePrefix = plugin.getConfig().getBoolean("prefix.overwrite-previous");
         prefixFormat = plugin.getConfig().getString("prefix.format");
         noRank = plugin.getConfig().getString("prefix.no-rank");
-        usingHeads = plugin.getConfig().getBoolean("head.enabled");
-        numberFormatting = plugin.getConfig().getInt("number-formatting.type");
-        nfThousands = plugin.getConfig().getString("number-formatting.thousands");
-        nfDecimals = plugin.getConfig().getInt("number-formatting.divisions.decimals");
         completionBefore = plugin.getConfig().getString("requirement-completion.before");
         completionAfter = plugin.getConfig().getString("requirement-completion.after");
         completionPrefix = plugin.getConfig().getString("requirement-completion.prefix");
         completionSuffix = plugin.getConfig().getString("requirement-completion.suffix");
         confirmation = plugin.getConfig().getBoolean("confirmation");
+        usingHeads = plugin.getConfig().getBoolean("head.enabled");
+        numberFormatting = plugin.getConfig().getInt("number-formatting.type");
+        nfDecimals = plugin.getConfig().getInt("number-formatting.divisions.decimals");
+        String thousandsSymbol = plugin.getConfig().getString("number-formatting.thousands");
+        assert thousandsSymbol != null;
+        if (thousandsSymbol.isEmpty())
+            thousandsSymbol = " ";
+        nfThousands = thousandsSymbol.charAt(0);
+        String decimalSymbolString = plugin.getConfig().getString("number-formatting.decimal-symbol");
+        assert decimalSymbolString != null;
+        if (decimalSymbolString.isEmpty())
+            decimalSymbolString = " ";
+        decimalSymbol = decimalSymbolString.charAt(0);
+
+            Locale locale = new Locale("en", "US");
+
+            DecimalFormatSymbols symbols = new DecimalFormatSymbols(locale);
+            symbols.setDecimalSeparator(decimalSymbol);
+            symbols.setGroupingSeparator(nfThousands);
+
+            StringBuilder pattern = new StringBuilder("#");
+            if (numberFormatting == 1)
+                pattern.append(',');
+            pattern.append("###");
+            pattern.append('.');
+            if (decimals > 0) {
+                for (int i = 0; i < decimals; i++) {
+                    pattern.append("#");
+                }
+            }
+            decimalFormat = new DecimalFormat(pattern.toString(), symbols);
+
+            StringBuilder divisionPattern = new StringBuilder("#");
+            divisionPattern.append('.');
+            if (nfDecimals > 0) {
+                for (int i = 0; i < nfDecimals; i++) {
+                    divisionPattern.append("#");
+                }
+            }
+            divisionFormat = new DecimalFormat(divisionPattern.toString(), symbols);
 
 
         nfDivisions.clear();
@@ -576,5 +619,39 @@ public class ConfigOptions {
             }
         }
         return "";
+    }
+
+    public static String formatNumber(Double number){
+        if (numberFormatting == 2){
+            // set divisions
+            return setDivision(number);
+        }
+        String strNum = decimalFormat.format(number);
+        if (decimals == 0)
+            if (strNum.contains(decimalSymbol + ""))
+                strNum = strNum.substring(0, strNum.indexOf(decimalSymbol));
+        return removeUnnecessaryZeros(strNum);
+    }
+
+    public static String setDivision(Double number){
+        for (Map.Entry<Long, String> entry : nfDivisions.entrySet()){
+            if (number / entry.getKey() >= 1){
+                String strCost = divisionFormat.format((double) number / entry.getKey());
+                if (nfDecimals == 0) {
+                    if (strCost.contains(decimalSymbol + ""))
+                        strCost = strCost.substring(0, strCost.indexOf(decimalSymbol));
+                }
+                return removeUnnecessaryZeros(strCost) + entry.getValue();
+            }
+        }
+        return removeUnnecessaryZeros(decimalFormat.format(number));
+    }
+
+    public static String removeUnnecessaryZeros(String value){
+        if (value.isEmpty())
+            return "";
+        while (value.contains(Character.toString(decimalSymbol)) && (value.charAt(value.length()-1) == '0' || value.charAt(value.length()-1) == decimalSymbol))
+            value = value.substring(0, value.length()-1);
+        return value;
     }
 }
