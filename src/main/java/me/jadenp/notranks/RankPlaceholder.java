@@ -44,7 +44,7 @@ public class RankPlaceholder extends PlaceholderExpansion {
     public String onRequest(OfflinePlayer player, String identifier){
 
         // %notranks_rank_<path>%
-        // %notranks_prefix_<path>%
+        // %notranks_prefix%
         // %notranks_rank_number_<path>%
         // %notranks_requirement_<x>_<path>%
         // %notranks_rank_progress_<path>%
@@ -132,22 +132,11 @@ public class RankPlaceholder extends PlaceholderExpansion {
             } catch (NumberFormatException | IndexOutOfBoundsException e){
                 return "";
             }
-        } else if (identifier.startsWith("prefix")){
-            try {
-                String path;
-                if (identifier.length() > 14){
-                    // has path
-                    path = identifier.substring(identifier.lastIndexOf("_") + 1);
-                } else {
-                    path = "default";
-                }
-                Rank rank = getRank(player, path);
-                if (rank == null)
-                    return LanguageOptions.parse(noRank, player);
-                return rank.getName();
-            } catch (NumberFormatException | IndexOutOfBoundsException e){
-                return "";
-            }
+        } else if (identifier.startsWith("prefix")) {
+            Rank rank = getPrefixRank(player);
+            if (rank == null)
+                return LanguageOptions.parse(noRank, player);
+            return rank.getName();
         }
 
 

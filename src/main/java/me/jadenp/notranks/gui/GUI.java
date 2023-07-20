@@ -15,9 +15,10 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.regex.Matcher;
 
-import static me.jadenp.notranks.ConfigOptions.confirmation;
-import static me.jadenp.notranks.ConfigOptions.getRankInfo;
+import static me.jadenp.notranks.ConfigOptions.*;
+import static me.jadenp.notranks.LanguageOptions.*;
 
 public class GUI implements Listener {
 
@@ -150,6 +151,29 @@ public class GUI implements Listener {
         // check if it is a rank slot
         if (gui.getRankSlots().contains(event.getSlot()) && !gui.getType().equalsIgnoreCase("confirmation")){
             int rankNum = gui.getRankSlots().indexOf(event.getSlot()) + (playerPages.get(event.getWhoClicked().getUniqueId()) - 1) * gui.getRankSlots().size();
+            if (gui.getType().equalsIgnoreCase("choose-prefix")){
+                List<Rank> completedRanks = getAllCompletedRanks((OfflinePlayer) event.getWhoClicked());
+                if (completedRanks.size() <= rankNum) {
+                    event.getWhoClicked().sendMessage(prefix + parse(unknownRank, (Player) event.getWhoClicked()));
+                    if (debug)
+                        Bukkit.getLogger().info("[NotRanks] Completed ranks is smaller than rank number! " + completedRanks + "<=" + rankNum);
+                    return;
+                }
+                Rank rank = completedRanks.get(rankNum);
+                String path = getRankPath(rank);
+                int rankIndex = getRankNum(rank);
+                if (path.isEmpty() || rankIndex == -1) {
+                    event.getWhoClicked().sendMessage(prefix + parse(unknownRank, (Player) event.getWhoClicked()));
+                    if (debug)
+                        Bukkit.getLogger().info("[NotRanks] Could not find rank path or number from rank " + path + ":" + rankIndex);
+                    return;
+                }
+                prefixSelections.put(event.getWhoClicked().getUniqueId(), "r:" + rankIndex + "p:" + path);
+                event.getWhoClicked().sendMessage(prefix + parse(prefixRank.replaceAll("\\{rank}", Matcher.quoteReplacement(rank.getName())), (OfflinePlayer) event.getWhoClicked()));
+                event.getView().close();
+                return;
+            }
+
             Rank rank = ConfigOptions.getRank(rankNum, gui.getType());
             if (ConfigOptions.isRankUnlocked((OfflinePlayer) event.getWhoClicked(), guiType, rankNum)) {
                 // rank already unlocked
@@ -166,7 +190,7 @@ public class GUI implements Listener {
             }
             // check for completion
             assert rank != null;
-            if (!rank.checkRequirements((Player) event.getWhoClicked(), guiType)) {
+            if (rank.checkUncompleted((Player) event.getWhoClicked(), guiType)) {
                 // incomplete
                 gui.notifyThroughGUI(event, LanguageOptions.parse(LanguageOptions.rankUpDeny, (Player) event.getWhoClicked()), false);
                 return;

@@ -7,7 +7,6 @@ custom-items:
     custom-model-data: 10
     # name and lore accept placeholders and hex
     # {amount} will be replaced with the value you are sorting by. This changes for different GUIs
-    # {amount_tax} will be replaced with {amount} * bounty tax
     # this will make the name invisible
     name: '&r'
     lore: [ ]
@@ -21,7 +20,7 @@ custom-items:
     # [back] <x> goes to the last x amount of pages or last page if x is empty
     # [gui] (gui name) (page) opens a new gui - only gui name is required, ex: [gui] default | [gui] default 3
     # adding @{permission} at the beginning will check for a permission before executing the command. !@ will check if they don't have permission
-    #   ex: '@notbounties.admin [next]' will only go to the next page if the player clicking the item has notbounties.admin
+    #   ex: '@notranks.admin [next]' will only go to the next page if the player clicking the item has notranks.admin
     #   '!@essentials.fly [p] top' will run the command /top as the player if the player doesn't have essentials.fly
     # {player} will be replaced with the name of the player who clicked
     # {slot<x>} will be replaced with the rank path and the rank number
@@ -69,6 +68,30 @@ custom-items:
     amount: 1
     name: '&c&lCancel'
     commands:
+      - '[close]'
+  default-prefix:
+    material: DIRT
+    amount: 1
+    name: '&#6b4616Default Path'
+    lore:
+      - ''
+      - '&6&oClick to follow the'
+      - '&6&odefault rank path'
+      - ''
+    commands:
+      - '[p] rank prefix default'
+      - '[close]'
+  reset-prefix:
+    material: WATER_BUCKET
+    amount: 1
+    name: '&fReset Prefix'
+    lore:
+      - ''
+      - '&7Your prefix will'
+      - '&7match your last rank'
+      - ''
+    commands:
+      - '[p] rank prefix reset'
       - '[close]'
 default:
   # name of the gui that opens when you do /ranks
@@ -157,3 +180,34 @@ example-path:
     2:
       slot: 27
       item: exit
+choose-prefix:
+  gui-name: '&d&lChoose Prefix'
+  require-permission: false
+  add-page: false
+  auto-size: false
+  remove-page-items: true
+  deny-click-item: DISABLE
+  completed-deny-click-item: DISABLE
+  size: 27
+  orderly-progression: false
+  rank-slots:
+    - '0-17'
+  layout:
+    1:
+      slot: 18-26
+      item: fill
+    2:
+      slot: 22
+      item: exit
+    3:
+      slot: 18
+      item: back
+    4:
+      slot: 26
+      item: next
+    5:
+      slot: 19
+      item: default-prefix
+    6:
+      slot: 25
+      item: reset-prefix

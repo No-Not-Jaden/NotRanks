@@ -22,6 +22,12 @@ public class ConfigOptions {
     public static Map<String, List<Rank>> ranks = new HashMap<>();
     // <Player UUID, <Rank Type, Completed Rank Index (starting from 0)>>
     public static Map<UUID, Map<String, List<Integer>>> rankData = new HashMap<>();
+    // p:PathName - prefix changes as player ranks up through the path
+    // r:(rankNum) - shouldn't be used on its own, but will be default rank path
+    // r:1p:default - rank 1 of default rank path - will not change when player ranks up
+    // nothing - prefix changes with last rankup
+    public static Map<UUID, String> prefixSelections = new HashMap<>();
+    public static Map<UUID, String> lastRankPathUsed = new HashMap<>();
     public static boolean HDBEnabled;
     public static String currency;
     public static boolean usingPlaceholderCurrency;
@@ -52,6 +58,8 @@ public class ConfigOptions {
         for (Player player : Bukkit.getOnlinePlayers()){
             if (GUI.playerPages.containsKey(player.getUniqueId())){
                 player.closeInventory();
+                if (debug)
+                    Bukkit.getLogger().info("[NotRanks] Closed GUI for " + player.getName() + ".");
             }
         }
         GUI.playerPages.clear();
@@ -65,10 +73,14 @@ public class ConfigOptions {
         HDBEnabled = plugin.getServer().getPluginManager().getPlugin("HeadDatabase") != null;
 
         plugin.reloadConfig();
-        if (!plugin.getConfig().isSet("currency.unit"))
-            plugin.getConfig().set("currency.unit", "DIAMOND");
-        if (!plugin.getConfig().isSet("currency.remove-currency-commands"))
-            plugin.getConfig().set("currency.remove-currency-commands", new ArrayList<>());
+        if (plugin.getConfig().isSet("currency.unit")){
+            plugin.getConfig().set("currency.object", plugin.getConfig().getString("currency.unit"));
+            plugin.getConfig().set("currency.remove-commands", plugin.getConfig().getStringList("currency.remove-currency-commands"));
+        }
+        if (!plugin.getConfig().isSet("currency.object"))
+            plugin.getConfig().set("currency.object", "DIAMOND");
+        if (!plugin.getConfig().isSet("currency.remove-commands"))
+            plugin.getConfig().set("currency.remove-commands", new ArrayList<>());
         if (!plugin.getConfig().isSet("currency.prefix"))
             plugin.getConfig().set("currency.prefix", "");
         if (!plugin.getConfig().isSet("currency.suffix"))
@@ -127,6 +139,8 @@ public class ConfigOptions {
         // migrate ranks
         YamlConfiguration ranksConfig = YamlConfiguration.loadConfiguration(ranksFile);
         for (int i = 1; plugin.getConfig().isConfigurationSection(i + ""); i++){
+            if (debug)
+                Bukkit.getLogger().info("[NotRanks] Migrating rank " + i + " to ranks.yml");
             ranksConfig.set("default." + i + ".name", plugin.getConfig().getString(i + ".name"));
             ranksConfig.set("default." + i + ".head", plugin.getConfig().getString(i + ".head"));
             ranksConfig.set("default." + i + ".item", plugin.getConfig().getString(i + ".item"));
@@ -159,6 +173,8 @@ public class ConfigOptions {
                 boolean hideNBT = ranksConfig.isSet(key + "." + i + ".hide-nbt") && ranksConfig.getBoolean(key + "." + i + ".hide-nbt");
 
                 rankPath.add(new Rank(name, lore, requirements, cost, commands, head, completedHead, item, completionLoreEnabled, completionLore, hideNBT));
+                if (debug)
+                    Bukkit.getLogger().info("[NotRanks] Registered rank: " + key + ".");
             }
             ranks.put(key, rankPath);
         }
@@ -166,6 +182,8 @@ public class ConfigOptions {
         // migrate gui
         YamlConfiguration guiConfig = YamlConfiguration.loadConfiguration(guiFile);
         if (plugin.getConfig().isConfigurationSection("gui")){
+            if (debug)
+                Bukkit.getLogger().info("[NotRanks] Migrating gui to gui.yml");
             guiConfig.set("default.auto-size", plugin.getConfig().getBoolean("gui.auto-size"));
             guiConfig.set("default.remove-page-items", plugin.getConfig().getBoolean("gui.replace-page-items"));
             guiConfig.set("default.size", plugin.getConfig().getInt("gui.size"));
@@ -220,6 +238,45 @@ public class ConfigOptions {
             plugin.getConfig().set("gui", null);
         }
 
+        if (!guiConfig.isConfigurationSection("choose-prefix")){
+            // add choose-prefix gui
+            guiConfig.set("choose-prefix.gui-name", "&d&lChoose Prefix");
+            guiConfig.set("choose-prefix.require-permission", false);
+            guiConfig.set("choose-prefix.add-page", false);
+            guiConfig.set("choose-prefix.auto-size", false);
+            guiConfig.set("choose-prefix.remove-page-items", true);
+            guiConfig.set("choose-prefix.deny-click-item", "DISABLE");
+            guiConfig.set("choose-prefix.completed-deny-click-item", "DISABLE");
+            guiConfig.set("choose-prefix.size", 27);
+            guiConfig.set("choose-prefix.orderly-progression", false);
+            guiConfig.set("choose-prefix.rank-slots", Collections.singletonList("0-17"));
+            guiConfig.set("choose-prefix.layout.1.slot", "18-26");
+            guiConfig.set("choose-prefix.layout.1.item", "fill");
+            guiConfig.set("choose-prefix.layout.2.slot", "22");
+            guiConfig.set("choose-prefix.layout.2.item", "exit");
+            guiConfig.set("choose-prefix.layout.3.slot", "18");
+            guiConfig.set("choose-prefix.layout.3.item", "back");
+            guiConfig.set("choose-prefix.layout.4.slot", "26");
+            guiConfig.set("choose-prefix.layout.4.item", "next");
+            guiConfig.set("choose-prefix.layout.5.slot", "19");
+            guiConfig.set("choose-prefix.layout.5.item", "default-prefix");
+            guiConfig.set("choose-prefix.layout.6.slot", "25");
+            guiConfig.set("choose-prefix.layout.6.item", "reset-prefix");
+
+            if (!guiConfig.isConfigurationSection("custom-item.reset-prefix")){
+                guiConfig.set("custom-items.default-prefix.material", "DIRT");
+                guiConfig.set("custom-items.default-prefix.amount", 1);
+                guiConfig.set("custom-items.default-prefix.name", "&#6b4616Default Path");
+                guiConfig.set("custom-items.default-prefix.lore", Arrays.asList("", "&6&oClick to follow the", "&6&odefault rank path", ""));
+                guiConfig.set("custom-items.default-prefix.commands", Arrays.asList("[p] rank prefix default", "[close]"));
+                guiConfig.set("custom-items.reset-prefix.material", "WATER_BUCKET");
+                guiConfig.set("custom-items.reset-prefix.amount", 1);
+                guiConfig.set("custom-items.reset-prefix.name", "&fReset Prefix");
+                guiConfig.set("custom-items.reset-prefix.lore", Arrays.asList("", "&7Your prefix will", "&7match your last rank", ""));
+                guiConfig.set("custom-items.reset-prefix.commands", Arrays.asList("[p] rank prefix reset", "[close]"));
+            }
+        }
+
         // read custom items
         if (guiConfig.isConfigurationSection("custom-items")){
             Map<String, CustomItem> customItems = new HashMap<>();
@@ -261,6 +318,8 @@ public class ConfigOptions {
                 List<String> itemCommands = guiConfig.isSet("custom-items." + key + ".commands") ? guiConfig.getStringList("custom-items." + key + ".commands") : new ArrayList<>();
                 CustomItem customItem = new CustomItem(itemStack, itemCommands);
                 customItems.put(key, customItem);
+                if (debug)
+                    Bukkit.getLogger().info("[NotRanks] Read custom item: " + key + ".");
             }
             GUI.setCustomItems(customItems);
         }
@@ -275,18 +334,20 @@ public class ConfigOptions {
                 guiConfig.set(key + ".completed-deny-click-item", guiConfig.getString(key + ".deny-click-item"));
             if (!guiConfig.isSet(key + ".require-permission"))
                 guiConfig.set(key + ".require-permission", false);
-            if (!ranks.containsKey(key) && !key.equals("confirmation")){
-                Bukkit.getLogger().warning("Found a GUI for " + key + ", but did not find a rank path to match it.");
+            if (!ranks.containsKey(key) && !key.equals("confirmation") && !key.equalsIgnoreCase("choose-prefix")){
+                Bukkit.getLogger().warning("[NotRanks] Found a GUI for " + key + ", but did not find a rank path to match it.");
             }
             GUIOptions guiOptions = new GUIOptions(Objects.requireNonNull(guiConfig.getConfigurationSection(key)));
             GUI.addGUI(guiOptions, key);
+            if (debug)
+                Bukkit.getLogger().info("[NotRanks] Registered GUI " + key + ".");
         }
         guiConfig.save(guiFile);
 
         // read config
-        currency = plugin.getConfig().getString("currency.unit");
-        usingPlaceholderCurrency = Objects.requireNonNull(plugin.getConfig().getString("currency.unit")).contains("%");
-        removeCommands = plugin.getConfig().getStringList("currency.remove-currency-commands");
+        currency = plugin.getConfig().getString("currency.object");
+        usingPlaceholderCurrency = Objects.requireNonNull(plugin.getConfig().getString("currency.object")).contains("%");
+        removeCommands = plugin.getConfig().getStringList("currency.remove-commands");
         currencyPrefix = plugin.getConfig().getString("currency.prefix");
         currencySuffix = plugin.getConfig().getString("currency.suffix");
         decimals = plugin.getConfig().getInt("currency.decimals");
@@ -355,14 +416,73 @@ public class ConfigOptions {
 
     public static @Nullable Rank getRank(int index, String rankType){
         if (ranks.size() == 0) {
-            Bukkit.getLogger().warning("No ranks found! Is ranks.yml formatted correctly?");
+            Bukkit.getLogger().warning("[NotRanks] No ranks found! Is ranks.yml formatted correctly?");
             return null;
         }
         List<Rank> ranksList = ranks.get(rankType);
         if (index >= ranksList.size()){
+            if (debug)
+                Bukkit.getLogger().info("[NotRanks] Rank " + index + " of " + rankType + " does not exist! There are not that many ranks.");
             return null;
         }
         return ranksList.get(index);
+    }
+
+    /**
+     * Get a rank from rank format
+     * @Example
+     * <p>p:PathName - last rank player had in path</p>
+     * <p>r:(rankNum) - rank in default path</p>
+     * <p>r:1p:default - rank 1 of default rank path</p>
+     * <p>nothing - last rank</p>
+     * @param rankFormat String in rank format
+     * @param player Player that the request is for
+     * @return Requested Rank or null if the rank format was incorrect or no rank existed
+     */
+    public static @Nullable Rank getRank(String rankFormat, OfflinePlayer player){
+        if (rankFormat.isEmpty())
+            return getRank(player, getLastRankPath(player));
+        if (rankFormat.startsWith("p:")) {
+            String path = rankFormat.substring(2);
+            return getRank(player, path);
+        }
+        return getRank(rankFormat);
+    }
+    /**
+     * Get a rank from rank format
+     * @Example
+     * <p>r:(rankNum) - rank in default path</p>
+     * <p>r:1p:default - rank 1 of default rank path</p>
+     * @param rankFormat String in rank format
+     * @return Requested Rank or null if the rank format was incorrect or no rank existed
+     */
+    public static @Nullable Rank getRank(String rankFormat){
+        boolean hasPath = rankFormat.contains("p");
+        try {
+            String path = hasPath ? rankFormat.substring(rankFormat.indexOf("p") + 2) : "default";
+            String rank = hasPath ? rankFormat.substring(2, rankFormat.indexOf("p")) : rankFormat.substring(2);
+            return getRank(Integer.parseInt(rank), path);
+        } catch (IndexOutOfBoundsException | NumberFormatException e){
+            // incorrect format
+            return null;
+        }
+    }
+
+    /**
+     * Get the prefix rank the player is using
+     * @param player Player to get prefix rank of
+     * @return Rank that the player wants to be their prefix or null for no rank
+     */
+    public static @Nullable Rank getPrefixRank(OfflinePlayer player){
+        if (prefixSelections.containsKey(player.getUniqueId()))
+            return getRank(prefixSelections.get(player.getUniqueId()), player);
+        return getRank(player, getLastRankPath(player)); // get last rank
+    }
+
+    public static String getLastRankPath(OfflinePlayer player) {
+        if (lastRankPathUsed.containsKey(player.getUniqueId()))
+            return lastRankPathUsed.get(player.getUniqueId());
+        return "default";
     }
 
     public static void addRank(OfflinePlayer p, String rankType, int index){
@@ -395,9 +515,26 @@ public class ConfigOptions {
     public static int getRankNum(OfflinePlayer p, String rankType){
         if (rankData.containsKey(p.getUniqueId()) && rankData.get(p.getUniqueId()).containsKey(rankType)) {
             List<Integer> completedRanks = rankData.get(p.getUniqueId()).get(rankType);
-            if (completedRanks.isEmpty())
+            if (completedRanks.isEmpty()) {
                 return -1;
+            }
             return completedRanks.get(completedRanks.size()-1);
+        }
+        return -1;
+    }
+
+    /**
+     * Find rank number from rank object
+     * @param rank Rank to find number of
+     * @return Rank number or -1 if no rank was found
+     */
+    public static int getRankNum(Rank rank){
+        for (Map.Entry<String, List<Rank>> entry : ranks.entrySet()) {
+            for (Rank compareRank : entry.getValue()) {
+                if (compareRank.equals(rank)){
+                    return entry.getValue().indexOf(compareRank);
+                }
+            }
         }
         return -1;
     }
@@ -411,5 +548,33 @@ public class ConfigOptions {
             }
         }
         return null;
+    }
+
+    public static List<Rank> getAllCompletedRanks(OfflinePlayer player){
+        List<Rank> completed = new ArrayList<>();
+        for (Map.Entry<String, List<Rank>> entry : ranks.entrySet()){
+            for (int i = 0; i < entry.getValue().size(); i++) {
+                if (isRankUnlocked(player, entry.getKey(), i)){
+                    completed.add(entry.getValue().get(i));
+                }
+            }
+        }
+        return completed;
+    }
+
+    /**
+     * Get rank path from rank
+     * @param rank to find path of
+     * @return Rank path or an empty string if no rank matches
+     */
+    public static String getRankPath(Rank rank){
+        for (Map.Entry<String, List<Rank>> entry : ranks.entrySet()) {
+            for (Rank compareRank : entry.getValue()) {
+                if (compareRank.equals(rank)){
+                    return entry.getKey();
+                }
+            }
+        }
+        return "";
     }
 }

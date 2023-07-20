@@ -20,5 +20,11 @@ prefix: '&7[&cRanks&7] &8> &r'
 max-rank: '&cYou are already at the max rank!'
 # message sent to player when they do not specify a valid rank path
 unknown-rank-path: '&cUnknown rank path!'
+# message sent to player when they use an unknown rank in a command
+unknown-rank: '&cUnknown rank!'
 # message sent to player when they have already completed the rank
 already-completed: '&aYou have already completed this rank!'
+# The next messages are sent when the player is editing their prefix
+prefix-reset: '&fYour prefix has been reset.'
+prefix-path: '&aYour prefix has been set to follow the path &2{path}'
+prefix-rank: '&aYour prefix has been set to &2{rank}'

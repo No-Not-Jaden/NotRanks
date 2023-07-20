@@ -25,6 +25,10 @@ public class LanguageOptions {
     public static String maxRank;
     public static String unknownRankPath;
     public static String alreadyCompleted;
+    public static String unknownRank;
+    public static String prefixReset;
+    public static String prefixPath;
+    public static String prefixRank;
 
     public static void loadConfig() throws IOException {
         File language = new File(NotRanks.getInstance().getDataFolder() + File.separator + "language.yml");
@@ -58,6 +62,14 @@ public class LanguageOptions {
             langConf.set("unknown-rank-path", "&cUnknown rank path!");
         if (!langConf.isSet("already-completed"))
             langConf.set("already-completed", "&aYou have already completed this rank!");
+        if (!langConf.isSet("unknown-rank"))
+            langConf.set("unknown-rank", "&cUnknown rank!");
+        if (!langConf.isSet("prefix-reset"))
+            langConf.set("prefix-reset", "&fYour prefix has been reset.");
+        if (!langConf.isSet("prefix-path"))
+            langConf.set("prefix-path", "&aYour prefix has been set to follow the path &2{path}");
+        if (!langConf.isSet("prefix-rank"))
+            langConf.set("prefix-rank", "&aYour prefix has been set to &2{rank}");
 
         langConf.save(language);
 
@@ -84,6 +96,15 @@ public class LanguageOptions {
         unknownRankPath = langConf.getString("unknown-rank-path");
 
         alreadyCompleted = langConf.getString("already-completed");
+
+        unknownRank = langConf.getString("unknown-rank");
+
+        prefixReset = langConf.getString("prefix-reset");
+
+        prefixPath = langConf.getString("prefix-path");
+
+        prefixRank = langConf.getString("prefix-rank");
+
     }
 
     public static String parse(String str, OfflinePlayer player){

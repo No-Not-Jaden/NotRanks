@@ -237,21 +237,28 @@ public class Rank {
      * @param p Player to check completion
      * @param path Path of the rank - this is only used in the completion notification
      */
-    public void checkRankCompletion(Player p, String path) {
+    public void checkRankCompletion(Player p, String path, boolean log) {
         List<Boolean> progress;
         progress = new ArrayList<>();
         if (requirements != null) {
             if (!requirements.isEmpty()) {
                 for (String req : requirements) {
-                    if (!req.isEmpty())
-                        progress.add(isRequirementCompleted(req, p));
+                    if (!req.isEmpty()) {
+                        boolean result = isRequirementCompleted(req, p);
+                        progress.add(result);
+                        if (log)
+                            Bukkit.getLogger().info("[NotRanks] " + req + " -> " + result);
+                    }
                 }
             }
         }
 
         // checking cost
         String requirement = currency + " >= " + cost;
-        progress.add(isRequirementCompleted(requirement, p));
+        boolean costReq = isRequirementCompleted(requirement, p);
+        progress.add(costReq);
+        if (log)
+            Bukkit.getLogger().info("[NotRanks] " + requirement + " -> " + costReq);
 
         List<String> req = requirements != null ? new ArrayList<>(requirements) : new ArrayList<>();
         req.add(requirement);
@@ -278,6 +285,8 @@ public class Rank {
                     }
                 }
             }
+            if (log)
+                Bukkit.getLogger().info("[NotRanks] Total Rank Progress: " + completedYet.toString());
             firstTimeCompletion.replace(p.getUniqueId().toString(), completedYet);
         } else {
             firstTimeCompletion.put(p.getUniqueId().toString(), progress);
@@ -521,21 +530,7 @@ public class Rank {
     }
 
     public ItemStack getItem(Player p, boolean enchanted) {
-        ItemStack item = null;
-        if (usingHeads){
-            if (enchanted){
-                item = createPlayerSkull(finishedHead);
-            } else {
-                item = createPlayerSkull(head);
-            }
-            if (debug && item == null){
-                Bukkit.getLogger().info("[NotRanks] Could not get head.");
-            }
-        }
-
-        if (item == null)
-            item = new ItemStack(material);
-
+        ItemStack item = getBaseItem(enchanted);
 
         ItemMeta meta = item.getItemMeta();
         assert meta != null;
@@ -556,6 +551,44 @@ public class Rank {
         item.setItemMeta(meta);
         if (enchanted)
             item.addUnsafeEnchantment(Enchantment.ARROW_INFINITE, 1);
+        return item;
+    }
+
+    public ItemStack getPrefixItem(boolean enchanted){
+        ItemStack item = getBaseItem(false);
+        ItemMeta meta = item.getItemMeta();
+        assert meta != null;
+        meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', name));
+        List<String> lore = new ArrayList<>();
+        lore.add("");
+        lore.add(ChatColor.GRAY + "Click to set this");
+        lore.add(ChatColor.GRAY + "rank as your prefix");
+        lore.add("");
+        meta.setLore(lore);
+        if (enchanted) {
+            item.addUnsafeEnchantment(Enchantment.ARROW_INFINITE, 1);
+            meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+        }
+        item.setItemMeta(meta);
+        return item;
+    }
+
+
+    private ItemStack getBaseItem(boolean enchanted){
+        ItemStack item = null;
+        if (usingHeads){
+            if (enchanted){
+                item = createPlayerSkull(finishedHead);
+            } else {
+                item = createPlayerSkull(head);
+            }
+            if (debug && item == null){
+                Bukkit.getLogger().info("[NotRanks] Could not get head.");
+            }
+        }
+
+        if (item == null)
+            item = new ItemStack(material);
         return item;
     }
 
@@ -580,16 +613,18 @@ public class Rank {
 
 
     /**
-     * Check to see if a player has completed all the rank requirements
+     * Check to see if a player has uncompleted requirements
      * @param p Player to view rank progress
-     * @return true if a player has completed all requirements for this rank
+     * @return true if a player has at least one uncompleted requirement
      */
-    public boolean checkRequirements(Player p, String path) {
-        checkRankCompletion(p, path);
+    public boolean checkUncompleted(Player p, String path) {
+        if (debug)
+            Bukkit.getLogger().info("[NotRanks] Checking rank completion for " + p.getName() + " in path " + path + ".");
+        checkRankCompletion(p, path, debug);
         if (completed.containsKey(p.getUniqueId().toString())) {
-            return !(completed.get(p.getUniqueId().toString()).contains(false));
+            return completed.get(p.getUniqueId().toString()).contains(false);
         } else {
-            return false;
+            return true;
         }
     }
 

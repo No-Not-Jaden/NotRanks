@@ -136,7 +136,7 @@ public class GUIOptions {
             Bukkit.getLogger().info("[NotRanks] Loaded completed deny click item: " + denyClickItem1 + " for " + type + " gui");
 
         if (rankSlots.size() == 0){
-            Bukkit.getLogger().warning("No slots for ranks!");
+            Bukkit.getLogger().warning("[NotRanks] No slots for ranks in the " + name + " GUI!");
         }
     }
 
@@ -156,7 +156,9 @@ public class GUIOptions {
         if (page < 1) {
             page = 1;
         }
-        if ((page-1) * rankSlots.size() >= getRanks().size() && page != 1){
+        List<Rank> guiRanks = type.equalsIgnoreCase("choose-prefix") ? getAllCompletedRanks(player) : getRanks();
+        int ranksSize = guiRanks.size();
+        if ((page-1) * rankSlots.size() >= ranksSize && page != 1){
             playerPages.put(player.getUniqueId(), page-1);
             return createInventory(player, page-1);
         }
@@ -171,7 +173,7 @@ public class GUIOptions {
             // check if item is a page item
             if (removePageItems){
                 // next
-                if (getPageType(customItems[i].getCommands()) == 1 && page * rankSlots.size() >= getRanks().size()){
+                if (getPageType(customItems[i].getCommands()) == 1 && page * rankSlots.size() >= ranksSize){
                     contents[i] = pageReplacements.get(replacementIndex).getFormattedItem(player);
                     replacementIndex++;
                     continue;
@@ -185,15 +187,18 @@ public class GUIOptions {
             }
             contents[i] = customItems[i].getFormattedItem(player);
         }
-        // single case for confirmation gui
+        // cases for non-rank GUIs
         if (type.equalsIgnoreCase("confirmation")){
             for (Integer rankSlot : rankSlots) {
                 contents[rankSlot] = displayRanks[0].getItem(player, false);
             }
         }
         // set up player slots - i = index of rank in rank list
-        for (int i = (page-1) * rankSlots.size(); i < Math.min(page * rankSlots.size(), getRanks().size()); i++){
-            contents[rankSlots.get(i % rankSlots.size())] = getRanks().get(i).getItem(player, isRankUnlocked(player, type, i));
+        Rank prefixRank = getPrefixRank(player);
+        for (int i = (page-1) * rankSlots.size(); i < Math.min(page * rankSlots.size(), ranksSize); i++){
+            Rank rank = guiRanks.get(i);
+            ItemStack item = type.equalsIgnoreCase("choose-prefix") ? rank.getPrefixItem(rank.equals(prefixRank)) : rank.getItem(player, isRankUnlocked(player, type, i));
+            contents[rankSlots.get(i % rankSlots.size())] = item;
         }
         inventory.setContents(contents);
         return inventory;
@@ -250,6 +255,7 @@ public class GUIOptions {
             return result;
         } catch (NumberFormatException | ArrayIndexOutOfBoundsException e){
             // formatting error
+            Bukkit.getLogger().warning("[NotRanks] Formatting error for rank-slots for: " + str);
             return new int[0];
         }
     }
