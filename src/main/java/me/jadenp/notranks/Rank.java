@@ -26,6 +26,7 @@ import java.util.Map;
 
 import static me.jadenp.notranks.ConfigOptions.*;
 import static me.jadenp.notranks.LanguageOptions.*;
+import static me.jadenp.notranks.NumberFormatting.*;
 
 
 public class Rank {
@@ -44,7 +45,7 @@ public class Rank {
     private final boolean hideNBT;
 
     public Rank(String name, List<String> lore, List<String> requirements, double cost, List<String> commands, String head, String finishedHead, String item, boolean completionLoreEnabled, List<String> completionLore, boolean hideNBT) {
-        this.name = decodeHex(name);
+        this.name = color(name);
         this.lore = lore;
         this.requirements = requirements;
         this.cost = cost;
@@ -137,57 +138,7 @@ public class Rank {
         return false;
     }
 
-    public void doRemoveCommands(Player player, double amount) {
-        String strAmount = ((double) Math.round(amount * Math.pow(10, decimals)) / Math.pow(10, decimals)) + "";
-        if (decimals == 0) {
-            if (strAmount.contains("."))
-                strAmount = strAmount.substring(0, strAmount.indexOf("."));
-        }
-        if (removeCommands != null)
-            for (String str : removeCommands) {
-                while (str.contains("{player}")) {
-                    str = str.replace("{player}", player.getName());
-                }
-                while (str.contains("{amount}")) {
-                    str = str.replace("{amount}", strAmount);
-                }
-                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), str);
-            }
-    }
 
-    public int checkItemAmount(Player player, Material material) {
-        int amount = 0;
-        ItemStack[] contents = player.getInventory().getContents();
-        for (ItemStack content : contents) {
-            if (content != null) {
-                if (content.getType() == material) {
-                    amount += content.getAmount();
-                }
-            }
-        }
-        return amount;
-    }
-
-    public void removeItem(Player player, Material material, int amount) {
-        ItemStack[] contents = player.getInventory().getContents();
-        for (int i = 0; i < contents.length; i++) {
-            if (contents[i] != null) {
-                if (contents[i].getType().equals(material)) {
-                    if (contents[i].getAmount() > amount) {
-                        contents[i] = new ItemStack(contents[i].getType(), contents[i].getAmount() - amount);
-                        break;
-                    } else if (contents[i].getAmount() < amount) {
-                        amount -= contents[i].getAmount();
-                        contents[i] = null;
-                    } else {
-                        contents[i] = null;
-                        break;
-                    }
-                }
-            }
-        }
-        player.getInventory().setContents(contents);
-    }
 
     public boolean isRequirementCompleted(String requirement, OfflinePlayer player) {
         try {
@@ -219,7 +170,7 @@ public class Rank {
                     if (m != null) {
                         if (parsedValue instanceof Integer || parsedValue instanceof Double) {
                             int reqValue = parsedValue instanceof Double ? ((Double) parsedValue).intValue() : (int) parsedValue;
-                            int playerValue = checkItemAmount(player.getPlayer(), m);
+                            int playerValue = checkAmount(player.getPlayer(), m);
                             return compareObjects(reqValue, playerValue, operator);
                         }
                     }
@@ -317,7 +268,7 @@ public class Rank {
 
         if (lore != null)
             for (String str : lore) {
-                str = decodeHex(str);
+                str = color(str);
                 str = PlaceholderAPI.setPlaceholders(p, str);
                 if (str.contains("{cost}")) {
                     double amount = 0;
@@ -329,7 +280,7 @@ public class Rank {
                             error = true;
                         }
                     } else {
-                        amount = checkItemAmount(p, Material.valueOf(currency));
+                        amount = checkAmount(p, Material.valueOf(currency));
                     }
                     String strCost = formatNumber(cost);
                     String strAmount = formatNumber(amount);
@@ -592,19 +543,6 @@ public class Rank {
         return name;
     }
 
-    public static String decodeHex(String text) {
-        while (text.contains("[#")) {
-            String hex = text.substring(text.indexOf('#'), text.indexOf(']'));
-            text = text.substring(0, text.indexOf('[')) + ChatColor.of(hex2Rgb(hex)) + text.substring(text.indexOf(']') + 1);
-        }
-        return ChatColor.translateAlternateColorCodes('&', text);
-    }
 
-    public static Color hex2Rgb(String colorStr) {
-        return new Color(
-                Integer.valueOf(colorStr.substring(1, 3), 16),
-                Integer.valueOf(colorStr.substring(3, 5), 16),
-                Integer.valueOf(colorStr.substring(5, 7), 16));
-    }
 
 }

@@ -20,6 +20,9 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.*;
 
+import static me.jadenp.notranks.NumberFormatting.currency;
+import static me.jadenp.notranks.NumberFormatting.sortByValue;
+
 public class ConfigOptions {
     public static Map<String, List<Rank>> ranks = new HashMap<>();
     // <Player UUID, <Rank Type, Completed Rank Index (starting from 0)>>
@@ -31,21 +34,13 @@ public class ConfigOptions {
     public static Map<UUID, String> prefixSelections = new HashMap<>();
     public static Map<UUID, String> lastRankPathUsed = new HashMap<>();
     public static boolean HDBEnabled;
-    public static String currency;
     public static boolean usingPlaceholderCurrency;
-    public static List<String> removeCommands;
-    public static String currencyPrefix;
-    public static String currencySuffix;
     public static int decimals;
     public static boolean addPrefix;
     public static boolean overwritePrefix;
     public static String prefixFormat;
     public static String noRank;
     public static boolean usingHeads;
-    public static int numberFormatting;
-    public static char nfThousands;
-    public static int nfDecimals;
-    public static LinkedHashMap<Long, String> nfDivisions = new LinkedHashMap<>();
     public static String completionBefore;
     public static String completionPrefix;
     public static String completionSuffix;
@@ -54,9 +49,6 @@ public class ConfigOptions {
     public static File guiFile;
     public static File ranksFile;
     public static boolean confirmation;
-    public static char decimalSymbol;
-    public static DecimalFormat decimalFormat;
-    public static DecimalFormat divisionFormat;
 
     public static void loadConfig() throws IOException {
         // close everyone out of gui
@@ -125,14 +117,32 @@ public class ConfigOptions {
             plugin.getConfig().set("head.enabled", true);
         if (!plugin.getConfig().isSet("head.completed"))
             plugin.getConfig().set("head.completed", 6269);
-        if (!plugin.getConfig().isSet("number-formatting.type"))
-            plugin.getConfig().set("number-formatting.type", 1);
-        if (!plugin.getConfig().isSet("number-formatting.decimal-symbol"))
-            plugin.getConfig().set("number-formatting.decimal-symbol", ".");
-        if (!plugin.getConfig().isSet("number-formatting.thousands"))
-            plugin.getConfig().set("number-formatting.thousands", ",");
-        if (!plugin.getConfig().isSet("number-formatting.divisions.decimals")) {
-            plugin.getConfig().set("number-formatting.divisions.decimals", 2);
+        if (plugin.getConfig().isInt("number-formatting.type")) {
+            switch (plugin.getConfig().getInt("number-formatting.type")) {
+                case 0:
+                    plugin.getConfig().set("number-formatting.pattern", "#.##");
+                    plugin.getConfig().set("number-formatting.use-divisions", true);
+                    break;
+                case 1:
+                    plugin.getConfig().set("number-formatting.use-divisions", false);
+                    break;
+                case 2:
+                    plugin.getConfig().set("number-formatting.use-divisions", true);
+                    break;
+            }
+            plugin.getConfig().set("number-formatting.type", null);
+            plugin.getConfig().set("number-formatting.thousands", null);
+            plugin.getConfig().set("number-formatting.divisions.decimals", null);
+            plugin.getConfig().set("number-formatting.decimal-symbol", null);
+            plugin.getConfig().set("currency.decimals", null);
+        }
+        if (!plugin.getConfig().isSet("number-formatting.use-divisions"))
+            plugin.getConfig().set("number-formatting.use-divisions", true);
+        if (!plugin.getConfig().isSet("number-formatting.pattern"))
+            plugin.getConfig().set("number-formatting.pattern", "#,###.##");
+        if (!plugin.getConfig().isSet("number-formatting.format-locale"))
+            plugin.getConfig().set("number-formatting.format-locale", "en-US");
+        if (!plugin.getConfig().isConfigurationSection("number-formatting.divisions")) {
             plugin.getConfig().set("number-formatting.divisions.1000", "K");
         }
         if (!plugin.getConfig().isSet("confirmation"))
@@ -352,11 +362,7 @@ public class ConfigOptions {
         guiConfig.save(guiFile);
 
         // read config
-        currency = plugin.getConfig().getString("currency.object");
         usingPlaceholderCurrency = Objects.requireNonNull(plugin.getConfig().getString("currency.object")).contains("%");
-        removeCommands = plugin.getConfig().getStringList("currency.remove-commands");
-        currencyPrefix = plugin.getConfig().getString("currency.prefix");
-        currencySuffix = plugin.getConfig().getString("currency.suffix");
         decimals = plugin.getConfig().getInt("currency.decimals");
         addPrefix = plugin.getConfig().getBoolean("prefix.enabled");
         overwritePrefix = plugin.getConfig().getBoolean("prefix.overwrite-previous");
@@ -368,59 +374,9 @@ public class ConfigOptions {
         completionSuffix = plugin.getConfig().getString("requirement-completion.suffix");
         confirmation = plugin.getConfig().getBoolean("confirmation");
         usingHeads = plugin.getConfig().getBoolean("head.enabled");
-        numberFormatting = plugin.getConfig().getInt("number-formatting.type");
-        nfDecimals = plugin.getConfig().getInt("number-formatting.divisions.decimals");
-        String thousandsSymbol = plugin.getConfig().getString("number-formatting.thousands");
-        assert thousandsSymbol != null;
-        if (thousandsSymbol.isEmpty())
-            thousandsSymbol = " ";
-        nfThousands = thousandsSymbol.charAt(0);
-        String decimalSymbolString = plugin.getConfig().getString("number-formatting.decimal-symbol");
-        assert decimalSymbolString != null;
-        if (decimalSymbolString.isEmpty())
-            decimalSymbolString = " ";
-        decimalSymbol = decimalSymbolString.charAt(0);
-
-            Locale locale = new Locale("en", "US");
-
-            DecimalFormatSymbols symbols = new DecimalFormatSymbols(locale);
-            symbols.setDecimalSeparator(decimalSymbol);
-            symbols.setGroupingSeparator(nfThousands);
-
-            StringBuilder pattern = new StringBuilder("#");
-            if (numberFormatting == 1)
-                pattern.append(',');
-            pattern.append("###");
-            pattern.append('.');
-            if (decimals > 0) {
-                for (int i = 0; i < decimals; i++) {
-                    pattern.append("#");
-                }
-            }
-            decimalFormat = new DecimalFormat(pattern.toString(), symbols);
-
-            StringBuilder divisionPattern = new StringBuilder("#");
-            divisionPattern.append('.');
-            if (nfDecimals > 0) {
-                for (int i = 0; i < nfDecimals; i++) {
-                    divisionPattern.append("#");
-                }
-            }
-            divisionFormat = new DecimalFormat(divisionPattern.toString(), symbols);
 
 
-        nfDivisions.clear();
-        Map<Long, String> preDivisions = new HashMap<>();
-        for (String s : Objects.requireNonNull(plugin.getConfig().getConfigurationSection("number-formatting.divisions")).getKeys(false)){
-            if (s.equals("decimals"))
-                continue;
-            try {
-                preDivisions.put(Long.parseLong(s), plugin.getConfig().getString("number-formatting.divisions." + s));
-            } catch (NumberFormatException e){
-                Bukkit.getLogger().warning("Division is not a number: " + s);
-            }
-        }
-        nfDivisions = sortByValue(preDivisions);
+        NumberFormatting.setCurrencyOptions(Objects.requireNonNull(plugin.getConfig().getConfigurationSection("currency")), plugin.getConfig().getConfigurationSection("number-formatting"));
 
 
         if (!usingPlaceholderCurrency) {
@@ -434,21 +390,7 @@ public class ConfigOptions {
 
         plugin.saveConfig();
     }
-    public static LinkedHashMap<Long, String> sortByValue(Map<Long, String> hm) {
-        // Create a list from elements of HashMap
-        List<Map.Entry<Long, String>> list =
-                new LinkedList<>(hm.entrySet());
 
-        // Sort the list
-        list.sort((o1, o2) -> (o2.getKey()).compareTo(o1.getKey()));
-
-        // put data from sorted list to hashmap
-        LinkedHashMap<Long, String> temp = new LinkedHashMap<>();
-        for (Map.Entry<Long, String> aa : list) {
-            temp.put(aa.getKey(), aa.getValue());
-        }
-        return temp;
-    }
 
     public static @Nullable Rank getRank(OfflinePlayer p, String rankType) {
         int rankNum = getRankNum(p, rankType);
@@ -621,37 +563,4 @@ public class ConfigOptions {
         return "";
     }
 
-    public static String formatNumber(Double number){
-        if (numberFormatting == 2){
-            // set divisions
-            return setDivision(number);
-        }
-        String strNum = decimalFormat.format(number);
-        if (decimals == 0)
-            if (strNum.contains(decimalSymbol + ""))
-                strNum = strNum.substring(0, strNum.indexOf(decimalSymbol));
-        return removeUnnecessaryZeros(strNum);
-    }
-
-    public static String setDivision(Double number){
-        for (Map.Entry<Long, String> entry : nfDivisions.entrySet()){
-            if (number / entry.getKey() >= 1){
-                String strCost = divisionFormat.format((double) number / entry.getKey());
-                if (nfDecimals == 0) {
-                    if (strCost.contains(decimalSymbol + ""))
-                        strCost = strCost.substring(0, strCost.indexOf(decimalSymbol));
-                }
-                return removeUnnecessaryZeros(strCost) + entry.getValue();
-            }
-        }
-        return removeUnnecessaryZeros(decimalFormat.format(number));
-    }
-
-    public static String removeUnnecessaryZeros(String value){
-        if (value.isEmpty())
-            return "";
-        while (value.contains(Character.toString(decimalSymbol)) && (value.charAt(value.length()-1) == '0' || value.charAt(value.length()-1) == decimalSymbol))
-            value = value.substring(0, value.length()-1);
-        return value;
-    }
 }
