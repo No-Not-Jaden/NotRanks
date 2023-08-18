@@ -16,12 +16,9 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
 import java.util.*;
 
 import static me.jadenp.notranks.NumberFormatting.currency;
-import static me.jadenp.notranks.NumberFormatting.sortByValue;
 
 public class ConfigOptions {
     public static Map<String, List<Rank>> ranks = new HashMap<>();
@@ -53,13 +50,13 @@ public class ConfigOptions {
     public static void loadConfig() throws IOException {
         // close everyone out of gui
         for (Player player : Bukkit.getOnlinePlayers()){
-            if (GUI.playerPages.containsKey(player.getUniqueId())){
+            if (GUI.playerInfo.containsKey(player.getUniqueId())){
                 player.closeInventory();
                 if (debug)
                     Bukkit.getLogger().info("[NotRanks] Closed GUI for " + player.getName() + ".");
             }
         }
-        GUI.playerPages.clear();
+        GUI.playerInfo.clear();
 
 
         NotRanks plugin = NotRanks.getInstance();
@@ -451,6 +448,11 @@ public class ConfigOptions {
             // incorrect format
             return null;
         }
+    }
+
+
+    public static String getRankFormat(int rankNum, String path) {
+        return "r:" + rankNum + "p:" + path;
     }
 
     /**

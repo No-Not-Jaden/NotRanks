@@ -103,7 +103,7 @@ public class Commands implements CommandExecutor, TabCompleter {
                 NotRanks.getInstance().rankup((Player) sender, rankType, nextRank);
             } else {
                 // confirmation gui
-                GUI.openGUI((Player) sender, "confirmation", 1, getRank(nextRank, rankType));
+                GUI.openGUI((Player) sender, "confirmation", 1, getRankFormat(nextRank, rankType));
             }
         } else if (command.getName().equalsIgnoreCase("ranks")) {
             if (args.length > 0)
@@ -291,7 +291,7 @@ public class Commands implements CommandExecutor, TabCompleter {
                                 sender.sendMessage(prefix + ChatColor.RED + player.getName() + " does not have the rank of " + validRanks.get(rankNum).getName() + ChatColor.RED + ".");
                             }
                         } else {
-                            sender.sendMessage(prefix + ChatColor.GOLD + "" + ChatColor.BOLD + "Usage: " + ChatColor.YELLOW + "/ranks set (player) <path> (#/rank)");
+                            sender.sendMessage(prefix + ChatColor.GOLD + "" + ChatColor.BOLD + "Usage: " + ChatColor.YELLOW + "/ranks remove (player) <path> (#/rank)");
                         }
                     } else {
                         assert sender instanceof Player;

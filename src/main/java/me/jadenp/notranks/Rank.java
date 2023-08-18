@@ -431,7 +431,7 @@ public class Rank {
 
         ItemMeta meta = item.getItemMeta();
         assert meta != null;
-        meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', name));
+        meta.setDisplayName(parse(name, p));
         meta.setLore(getLore(p, enchanted));
         if (hideNBT) {
             meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);

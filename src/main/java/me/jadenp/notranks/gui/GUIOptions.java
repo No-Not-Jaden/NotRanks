@@ -18,8 +18,7 @@ import java.util.List;
 import java.util.Objects;
 
 import static me.jadenp.notranks.ConfigOptions.*;
-import static me.jadenp.notranks.LanguageOptions.color;
-import static me.jadenp.notranks.LanguageOptions.prefix;
+import static me.jadenp.notranks.LanguageOptions.*;
 import static me.jadenp.notranks.gui.GUI.*;
 
 public class GUIOptions {
@@ -152,17 +151,22 @@ public class GUIOptions {
      * @param page Page of gui - This will change the items in player slots and page items if enabled
      * @return Custom GUI Inventory
      */
-    public Inventory createInventory(Player player, int page, Rank... displayRanks){
+    public Inventory createInventory(Player player, int page, String... formattedRanks){
         if (page < 1) {
             page = 1;
         }
+        Rank[] displayRanks = new Rank[formattedRanks.length];
+        for (int i = 0; i < formattedRanks.length; i++) {
+            displayRanks[i] = getRank(formattedRanks[i], player);
+        }
         List<Rank> guiRanks = type.equalsIgnoreCase("choose-prefix") ? getAllCompletedRanks(player) : getRanks();
         int ranksSize = guiRanks.size();
-        if ((page-1) * rankSlots.size() >= ranksSize && page != 1){
-            playerPages.put(player.getUniqueId(), page-1);
-            return createInventory(player, page-1);
+        while ((page-1) * rankSlots.size() >= ranksSize && page != 1){
+            page--;
+            playerInfo.put(player.getUniqueId(), new PlayerInfo(page, type, formattedRanks));
         }
         String name = addPage ? this.name + " " + page : this.name;
+        name = parse(name, player);
         Inventory inventory = Bukkit.createInventory(player, size, name);
         ItemStack[] contents = inventory.getContents();
         // set up regular items
@@ -190,6 +194,7 @@ public class GUIOptions {
         // cases for non-rank GUIs
         if (type.equalsIgnoreCase("confirmation")){
             for (Integer rankSlot : rankSlots) {
+                assert displayRanks[0] != null;
                 contents[rankSlot] = displayRanks[0].getItem(player, false);
             }
         }
@@ -300,8 +305,8 @@ public class GUIOptions {
             new BukkitRunnable(){
                 @Override
                 public void run() {
-                    if (GUI.playerPages.containsKey(event.getWhoClicked().getUniqueId())){
-                        openGUI((Player) event.getWhoClicked(), type, GUI.playerPages.get(event.getWhoClicked().getUniqueId()));
+                    if (playerInfo.containsKey(event.getWhoClicked().getUniqueId())){
+                        openGUI((Player) event.getWhoClicked(), type, playerInfo.get(event.getWhoClicked().getUniqueId()).getPage());
                     }
                 }
             }.runTaskLater(NotRanks.getInstance(), 20);
@@ -316,8 +321,8 @@ public class GUIOptions {
             event.getInventory().setContents(contents);new BukkitRunnable(){
                 @Override
                 public void run() {
-                    if (GUI.playerPages.containsKey(event.getWhoClicked().getUniqueId())){
-                        openGUI((Player) event.getWhoClicked(), type, GUI.playerPages.get(event.getWhoClicked().getUniqueId()));
+                    if (playerInfo.containsKey(event.getWhoClicked().getUniqueId())){
+                        openGUI((Player) event.getWhoClicked(), type, playerInfo.get(event.getWhoClicked().getUniqueId()).getPage());
                     }
                 }
             }.runTaskLater(NotRanks.getInstance(), 20);

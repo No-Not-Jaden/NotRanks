@@ -22,7 +22,7 @@ import static me.jadenp.notranks.LanguageOptions.*;
 
 public class GUI implements Listener {
 
-    public static final Map<UUID, Integer> playerPages = new HashMap<>();
+    public static final Map<UUID, PlayerInfo> playerInfo = new HashMap<>();
     public static Map<UUID, Long> notifyThroughGUIDelay = new HashMap<>();
     private static final Map<String, GUIOptions> customGuis = new HashMap<>();
     public static Map<String, CustomItem> customItems = new HashMap<>();
@@ -77,14 +77,15 @@ public class GUI implements Listener {
     }
 
 
-    public static void openGUI(Player player, String name, int page, Rank... displayRanks) {
+    public static void openGUI(Player player, String name, int page, String... displayRanks) {
         if (!customGuis.containsKey(name))
             return;
         GUIOptions gui = customGuis.get(name);
         if (page < 1)
             page = 1;
+
         player.openInventory(gui.createInventory(player, page, displayRanks));
-        playerPages.put(player.getUniqueId(), page);
+        playerInfo.put(player.getUniqueId(), new PlayerInfo(page, name, displayRanks));
     }
 
     /**
@@ -114,7 +115,7 @@ public class GUI implements Listener {
     // is this called when server forces the inventory to be closed?
     @EventHandler
     public void onGUIClose(InventoryCloseEvent event){
-        playerPages.remove(event.getPlayer().getUniqueId());
+        playerInfo.remove(event.getPlayer().getUniqueId());
     }
 
     /**
@@ -135,10 +136,10 @@ public class GUI implements Listener {
 
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
-        if (!playerPages.containsKey(event.getWhoClicked().getUniqueId())) // check if they are in a GUI
+        if (!playerInfo.containsKey(event.getWhoClicked().getUniqueId())) // check if they are in a GUI
             return;
-        // find the gui - yeah, a linear search
-        GUIOptions gui = getGUIByTitle(event.getView().getTitle());
+        PlayerInfo info = playerInfo.get(event.getWhoClicked().getUniqueId());
+        GUIOptions gui = getGUI(info.getGuiType());
 
         if (gui == null) // JIC a player has a page number, but they aren't in a gui
             return;
@@ -150,7 +151,7 @@ public class GUI implements Listener {
             return;
         // check if it is a rank slot
         if (gui.getRankSlots().contains(event.getSlot()) && !gui.getType().equalsIgnoreCase("confirmation")){
-            int rankNum = gui.getRankSlots().indexOf(event.getSlot()) + (playerPages.get(event.getWhoClicked().getUniqueId()) - 1) * gui.getRankSlots().size();
+            int rankNum = gui.getRankSlots().indexOf(event.getSlot()) + (info.getPage() - 1) * gui.getRankSlots().size();
             if (gui.getType().equalsIgnoreCase("choose-prefix")){
                 List<Rank> completedRanks = getAllCompletedRanks((OfflinePlayer) event.getWhoClicked());
                 if (completedRanks.size() <= rankNum) {
@@ -174,7 +175,7 @@ public class GUI implements Listener {
                 return;
             }
 
-            Rank rank = ConfigOptions.getRank(rankNum, gui.getType());
+            Rank rank = ConfigOptions.getRank(rankNum, guiType);
             if (ConfigOptions.isRankUnlocked((OfflinePlayer) event.getWhoClicked(), guiType, rankNum)) {
                 // rank already unlocked
                 gui.notifyThroughGUI(event, LanguageOptions.parse(LanguageOptions.alreadyCompleted, (Player) event.getWhoClicked()), true);
@@ -196,7 +197,7 @@ public class GUI implements Listener {
                 return;
             }
             if (confirmation){
-                openGUI((Player) event.getWhoClicked(), "confirmation", 1, rank);
+                openGUI((Player) event.getWhoClicked(), "confirmation", 1, getRankFormat(rankNum, guiType));
             } else {
                 NotRanks.getInstance().rankup((Player) event.getWhoClicked(), gui.getType(), rankNum);
                 event.getView().close();
@@ -213,12 +214,17 @@ public class GUI implements Listener {
                         int slot = Integer.parseInt(command.substring(command.indexOf("{slot") + 5, command.substring(command.indexOf("{slot")).indexOf("}") + command.substring(0, command.indexOf("{slot")).length()));
                         ItemStack item = event.getInventory().getContents()[slot];
                         if (item != null && item.hasItemMeta()) {
-                            if (gui.getRankSlots().contains(slot)){
-                                RankInfo rankInfo = getRankInfo(Objects.requireNonNull(item.getItemMeta()).getDisplayName());
-                                if (rankInfo == null)
-                                    throw new NumberFormatException();
-                                int rankNum = rankInfo.getIndex();
-                                replacement = rankInfo.getType() +  " " + rankNum;
+                            if (info.getRankFormat().length > 0) {
+                                String rankFormat = info.getRankFormat()[0];
+                                Rank rank = getRank(rankFormat);
+                                if (rank != null) {
+                                    replacement = getRankPath(rank) + " " + getRankNum(rank);
+                                }
+                            } else if (gui.getRankSlots().contains(slot)){
+                                int rankNum = gui.getRankSlots().indexOf(slot) + gui.getRankSlots().size() * (info.getPage() - 1);
+                                Rank rank = getRank(rankNum, guiType);
+                                if (rank != null)
+                                    replacement = guiType +  " " + rankNum;
                             }
                             if (replacement.equals("")) {
                                 ItemMeta meta = item.getItemMeta();
@@ -251,13 +257,13 @@ public class GUI implements Listener {
                     try {
                         amount = Integer.parseInt(command.substring(7));
                     } catch (IndexOutOfBoundsException | NumberFormatException ignored){}
-                    openGUI((Player) event.getWhoClicked(), gui.getType(), playerPages.get(event.getWhoClicked().getUniqueId()) + amount);
+                    openGUI((Player) event.getWhoClicked(), gui.getType(), info.getPage() + amount);
                 } else if (command.startsWith("[back]")) {
                     int amount = 1;
                     try {
                         amount = Integer.parseInt(command.substring(7));
                     } catch (IndexOutOfBoundsException | NumberFormatException ignored){}
-                    openGUI((Player) event.getWhoClicked(), gui.getType(), playerPages.get(event.getWhoClicked().getUniqueId()) - amount);
+                    openGUI((Player) event.getWhoClicked(), gui.getType(), info.getPage() - amount);
                 } else if (command.startsWith("[gui]")){
                     int amount = 1;
                     String guiName = command.substring(6);

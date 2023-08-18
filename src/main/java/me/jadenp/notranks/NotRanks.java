@@ -25,11 +25,15 @@ import java.util.*;
 import static me.jadenp.notranks.ConfigOptions.*;
 import static me.jadenp.notranks.LanguageOptions.*;
 
+/**
+ * rankinfo does nothing
+ * rank remove usage gone-
+ * rankup works -
+ */
 
 public final class NotRanks extends JavaPlugin implements CommandExecutor, Listener {
 
     public File playerdata = new File(this.getDataFolder() + File.separator + "playerdata.yml");
-
     public File logsFolder = new File(this.getDataFolder() + File.separator + "logs");
     Date now = new Date();
     SimpleDateFormat format = new SimpleDateFormat("dd-MM-yyyy");
@@ -52,6 +56,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
         Commands commands = new Commands();
         Objects.requireNonNull(getCommand("ranks")).setExecutor(commands);
         Objects.requireNonNull(getCommand("rankup")).setExecutor(commands);
+        Objects.requireNonNull(getCommand("rankinfo")).setExecutor(commands);
         Bukkit.getServer().getPluginManager().registerEvents(this, this);
         Bukkit.getServer().getPluginManager().registerEvents(new GUI(), this);
         new RankPlaceholder(this).register();
