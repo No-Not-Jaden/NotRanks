@@ -28,6 +28,10 @@ public class Commands implements CommandExecutor, TabCompleter {
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
+        if (!sender.hasPermission("notranks.default") && !sender.hasPermission("notranks.admin")) {
+            sender.sendMessage(prefix + parse(noAccess, (Player) sender));
+            return true;
+        }
         if (command.getName().equalsIgnoreCase("rankup")) {
             if (!(sender instanceof Player)) {
                 sender.sendMessage(prefix + ChatColor.RED + "Only players can use this command!");
@@ -75,7 +79,7 @@ public class Commands implements CommandExecutor, TabCompleter {
 
             if (debug)
                 Bukkit.getLogger().info("[NotRanks] Attempting to rankup " + sender.getName() + " to " + rankType + ":" + nextRank);
-            if (ConfigOptions.isRankUnlocked((Player) sender, rankType, nextRank)) {
+            if (ConfigOptions.isRankUnlocked((Player) sender, rankType, nextRank) == Rank.CompletionStatus.COMPLETE) {
                 // rank already unlocked
                 sender.sendMessage(prefix + LanguageOptions.parse(LanguageOptions.alreadyCompleted, (Player) sender));
                 return true;
@@ -167,7 +171,7 @@ public class Commands implements CommandExecutor, TabCompleter {
                             sender.sendMessage(prefix + parse(prefixReset, (Player) sender));
                             break;
                         default:
-                            if (!isRankUnlocked((Player) sender, path, rankNum)){
+                            if (isRankUnlocked((Player) sender, path, rankNum) != Rank.CompletionStatus.COMPLETE){
                                 // haven't completed the rank
                                 sender.sendMessage(prefix + parse(notOnRank, (Player) sender));
                                 return true;
@@ -361,7 +365,7 @@ public class Commands implements CommandExecutor, TabCompleter {
             if (rankPath.size() > nextRank) { // check if they are on the max rank
                 // display the next rank
                 Rank rank = rankPath.get(nextRank);
-                List<String> chat = rank.getLore((Player) sender, false);
+                List<String> chat = rank.getLore((Player) sender, Rank.CompletionStatus.INCOMPLETE);
                 String name = ChatColor.translateAlternateColorCodes('&', rank.getName());
                 sender.sendMessage(ChatColor.GRAY + "" + ChatColor.STRIKETHROUGH + "            " + ChatColor.RESET + " " + name + ChatColor.RESET + " " + ChatColor.GRAY + "" + ChatColor.STRIKETHROUGH + "            ");
 
@@ -414,7 +418,7 @@ public class Commands implements CommandExecutor, TabCompleter {
                 if (args[0].equalsIgnoreCase("prefix") && sender.hasPermission("notranks.default")){
                     List<Rank> rankList = ranks.containsKey(args[1]) ? ranks.get(args[1]) : new ArrayList<>();
                     for (int i = 0; i < rankList.size(); i++) {
-                        if (isRankUnlocked((OfflinePlayer) sender, args[1].toLowerCase(), i))
+                        if (isRankUnlocked((OfflinePlayer) sender, args[1].toLowerCase(), i) == Rank.CompletionStatus.COMPLETE)
                             tab.add(ChatColor.stripColor(rankList.get(i).getName()));
                     }
                 }

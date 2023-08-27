@@ -26,6 +26,14 @@ default:
         - '&7<&m                      &7>'
         - '&a&l&nRank Completed'
         - '&7<&m                      &7>'
+    # this will change the lore if the player cannot rankup to the rank
+    not-on-rank:
+      enabled: false
+      lore:
+        - '&7<&m                      &7>'
+        - '&cYou do not have access'
+        - '&cto this rank yet'
+        - '&7<&m                      &7>'
     hide-nbt: true
     requirements:
       #                        vv operator - can be "<=" ">=" "!=" "=" ">" "<" ||| true/false & text can only use "!=" & "="
@@ -69,6 +77,10 @@ example-path:
         - '&2&oCongratulations on'
         - '&2&oyour first rank!'
         - '&7<&m                      &7>'
+    not-on-rank:
+      enabled: false
+      lore:
+        - 'doesn''t matter because this is the first rank'
     commands:
       - 'broadcast &e&lCongrats to &a{player} &e&lfor ranking up to &8&lWanderer'
   2:
@@ -99,6 +111,13 @@ example-path:
         - '&2&ofor a spider jockey'
         - '&2&oto spawn'
         - '&7<&m                      &7>'
+    not-on-rank:
+      enabled: true
+      lore:
+        - '&7<&m                      &7>'
+        - '&cYou do not have access'
+        - '&cto this rank yet'
+        - '&7<&m                      &7>'
     commands:
       - 'broadcast &e&lCongrats to &a{player} &e&lfor ranking up to &a&lCitizen'
   3:
@@ -127,6 +146,13 @@ example-path:
         - '&2&oTip: You do not get'
         - '&2&oslowed down while'
         - '&2&oeating and climbing'
+        - '&7<&m                      &7>'
+    not-on-rank:
+      enabled: true
+      lore:
+        - '&7<&m                      &7>'
+        - '&cYou do not have access'
+        - '&cto this rank yet'
         - '&7<&m                      &7>'
     commands:
       - 'broadcast &e&lCongrats to &a{player} &e&lfor ranking up to &2&lApprentice'
@@ -157,6 +183,13 @@ example-path:
         - '&2&oSquids are'
         - '&2&oGuardians'' archenemy'
         - '&7<&m                      &7>'
+    not-on-rank:
+      enabled: true
+      lore:
+        - '&7<&m                      &7>'
+        - '&cYou do not have access'
+        - '&cto this rank yet'
+        - '&7<&m                      &7>'
     commands:
       - 'broadcast &e&lCongrats to &a{player} &e&lfor ranking up to &d&lMerchant'
   5:
@@ -186,6 +219,13 @@ example-path:
         - '&2&o rank path when'
         - '&2&opigs fly'
         - '&7<&m                      &7>'
+    not-on-rank:
+      enabled: true
+      lore:
+        - '&7<&m                      &7>'
+        - '&cYou do not have access'
+        - '&cto this rank yet'
+        - '&7<&m                      &7>'
     commands:
       - 'broadcast &e&lCongrats to &a{player} &e&lfor ranking up to &6&lMaster'
   6:
@@ -214,6 +254,13 @@ example-path:
         - '&2&oDid you know?'
         - '&2&oWithers can'
         - '&2&obreak obsidian'
+        - '&7<&m                      &7>'
+    not-on-rank:
+      enabled: true
+      lore:
+        - '&7<&m                      &7>'
+        - '&cYou do not have access'
+        - '&cto this rank yet'
         - '&7<&m                      &7>'
     commands:
       - 'broadcast &e&lCongrats to &a{player} &e&lfor ranking up to &e&lElder'
@@ -246,6 +293,13 @@ example-path:
         - '&2&oblocks to construct'
         - '&2&oa max level beacon'
         - '&7<&m                      &7>'
+    not-on-rank:
+      enabled: true
+      lore:
+        - '&7<&m                      &7>'
+        - '&cYou do not have access'
+        - '&cto this rank yet'
+        - '&7<&m                      &7>'
     commands:
       - 'broadcast &e&lCongrats to &a{player} &e&lfor ranking up to &4&lChief'
   8:
@@ -274,6 +328,13 @@ example-path:
         - '&7<&m                      &7>'
         - '&a&l&nRank Completed'
         - '&2&oThanks for playing!'
+        - '&7<&m                      &7>'
+    not-on-rank:
+      enabled: true
+      lore:
+        - '&7<&m                      &7>'
+        - '&cYou do not have access'
+        - '&cto this rank yet'
         - '&7<&m                      &7>'
     commands:
       - 'broadcast &e&lCongrats to &a{player} &e&lfor ranking up to &b&lC&3&lh&b&la&3&lm&b&lp&3&li&b&lo&3&ln'

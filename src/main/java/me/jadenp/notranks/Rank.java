@@ -6,6 +6,7 @@ import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemFlag;
@@ -15,7 +16,6 @@ import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.profile.PlayerProfile;
 import org.bukkit.profile.PlayerTextures;
 
-import java.awt.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
@@ -42,20 +42,37 @@ public class Rank {
     private final Material material;
     private final boolean completionLoreEnabled;
     private final List<String> completionLore;
+    private final boolean notOnRankLoreEnabled;
+    private final List<String> notOnRankLore;
     private final boolean hideNBT;
 
-    public Rank(String name, List<String> lore, List<String> requirements, double cost, List<String> commands, String head, String finishedHead, String item, boolean completionLoreEnabled, List<String> completionLore, boolean hideNBT) {
-        this.name = color(name);
-        this.lore = lore;
-        this.requirements = requirements;
-        this.cost = cost;
-        this.commands = commands;
-        this.head = head;
-        this.finishedHead = finishedHead;
-        material = Material.getMaterial(item);
-        this.completionLoreEnabled = completionLoreEnabled;
-        this.completionLore = completionLore;
-        this.hideNBT = hideNBT;
+    public enum CompletionStatus {
+        COMPLETE, INCOMPLETE, NO_ACCESS;
+    }
+
+    public Rank(ConfigurationSection configurationSection, String completedHead) {
+        Material material1;
+        name = configurationSection.isSet("name") ? configurationSection.getString("name") : "&6&lUnnamed Rank";
+        lore = configurationSection.isSet("lore") ? configurationSection.getStringList("lore") : new ArrayList<>();
+        requirements = configurationSection.isSet("requirements") ? configurationSection.getStringList("requirements") : new ArrayList<>();
+        cost = configurationSection.isSet("cost") ? configurationSection.getInt("cost") : 0;
+        commands = configurationSection.isSet("commands") ? configurationSection.getStringList("commands") : new ArrayList<>();
+        head = configurationSection.isSet("head") ? configurationSection.getString("head") : "1";
+        String item = configurationSection.isSet("item") ? configurationSection.getString("item") : "EMERALD_BLOCK";
+        try {
+            assert item != null;
+            material1 = Material.valueOf(item.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            Bukkit.getLogger().warning("Could not get material \"" + item + "\" for rank: " + name);
+            material1 = Material.EMERALD_BLOCK;
+        }
+        material = material1;
+        completionLoreEnabled = configurationSection.isSet("completion-lore.enabled") && configurationSection.getBoolean("completion-lore.enabled");
+        completionLore = configurationSection.isSet("completion-lore.lore") ? configurationSection.getStringList("completion-lore.lore") : new ArrayList<>();
+        hideNBT = configurationSection.isSet("hide-nbt") && configurationSection.getBoolean("hide-nbt");
+        notOnRankLoreEnabled = configurationSection.isSet("not-on-rank.enabled") && configurationSection.getBoolean("not-on-rank.enabled");
+        notOnRankLore = configurationSection.isSet("not-on-rank.lore") ? configurationSection.getStringList("not-on-rank.lore") : new ArrayList<>();
+        finishedHead = completedHead;
     }
 
     public double getCost() {
@@ -262,8 +279,26 @@ public class Rank {
         return (float) tru / completion.size();
     }
 
-    public List<String> getLore(Player p, boolean completed) {
-        List<String> lore = completionLoreEnabled && completed ? completionLore : this.lore;
+    public List<String> getLore(Player p, CompletionStatus completionStatus) {
+
+        List<String> lore = null;
+        switch (completionStatus) {
+            case COMPLETE:
+                if (completionLoreEnabled)
+                    lore = completionLore;
+                else
+                    lore = this.lore;
+                break;
+            case INCOMPLETE:
+                lore = this.lore;
+                break;
+            case NO_ACCESS:
+                if (notOnRankLoreEnabled)
+                    lore = notOnRankLore;
+                else
+                    lore = this.lore;
+                break;
+        }
         List<String> text = new ArrayList<>();
 
         if (lore != null)
@@ -290,10 +325,10 @@ public class Rank {
                         // use smthn else to replace amount
                         str = ChatColor.RED + ChatColor.translateAlternateColorCodes('&', substringBefore(str, "{cost}") + currencyPrefix) + ChatColor.YELLOW + currency + ChatColor.translateAlternateColorCodes('&', currencySuffix) + ChatColor.DARK_GRAY + " / " + ChatColor.translateAlternateColorCodes('&', currencyPrefix) + ChatColor.RED + cost + ChatColor.translateAlternateColorCodes('&', currencySuffix + substringAfter(str, "{cost}"));
                     } else {
-                        if (amount < cost && !completed) {
+                        if (amount < cost && completionStatus != CompletionStatus.COMPLETE) {
                             str = ChatColor.RED + ChatColor.translateAlternateColorCodes('&', substringBefore(str, "{cost}") + currencyPrefix) + ChatColor.YELLOW + strAmount + ChatColor.translateAlternateColorCodes('&', currencySuffix) + ChatColor.DARK_GRAY + " / " + ChatColor.translateAlternateColorCodes('&', currencyPrefix) + ChatColor.RED + strCost + ChatColor.translateAlternateColorCodes('&', currencySuffix + substringAfter(str, "{cost}"));
                         } else {
-                            // STILL GOTTA DO THIS
+                            // Completed
                             str = color(completionBefore) + ChatColor.stripColor(color( substringBefore(str, "{cost}"))) + color(completionPrefix) + ChatColor.stripColor(color(currencyPrefix)) + strCost + ChatColor.stripColor(color( currencySuffix)) + " / " + ChatColor.stripColor(color(currencyPrefix)) + strCost + ChatColor.stripColor(color( currencySuffix)) + color(completionSuffix)  + ChatColor.stripColor(color(substringAfter(str, "{cost}"))) + color(completionAfter);
                         }
                     }
@@ -309,7 +344,7 @@ public class Rank {
                                 reqNum++;
                         }
                         if (requirements.size() >= reqNum) {
-                            str = getRequirementString(reqNum, p, completed, str);
+                            str = getRequirementString(reqNum, p, completionStatus == CompletionStatus.COMPLETE, str);
                         } else {
                             str = ChatColor.DARK_RED + ChatColor.translateAlternateColorCodes('&', substringBefore(str, "{req")) + "{ERROR}" + ChatColor.translateAlternateColorCodes('&', substringAfter(str, "}"));
                         }
@@ -426,13 +461,13 @@ public class Rank {
         return item;
     }
 
-    public ItemStack getItem(Player p, boolean enchanted) {
-        ItemStack item = getBaseItem(enchanted);
+    public ItemStack getItem(Player p, CompletionStatus completionStatus) {
+        ItemStack item = getBaseItem(completionStatus == CompletionStatus.COMPLETE);
 
         ItemMeta meta = item.getItemMeta();
         assert meta != null;
         meta.setDisplayName(parse(name, p));
-        meta.setLore(getLore(p, enchanted));
+        meta.setLore(getLore(p, completionStatus));
         if (hideNBT) {
             meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
             meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
@@ -442,11 +477,11 @@ public class Rank {
             meta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE);
             meta.addItemFlags(ItemFlag.HIDE_POTION_EFFECTS);
         }
-        if (!hideNBT && enchanted){
+        if (!hideNBT && completionStatus == CompletionStatus.COMPLETE){
             meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
         }
         item.setItemMeta(meta);
-        if (enchanted)
+        if (completionStatus == CompletionStatus.COMPLETE)
             item.addUnsafeEnchantment(Enchantment.ARROW_INFINITE, 1);
         return item;
     }

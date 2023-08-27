@@ -176,7 +176,7 @@ public class GUI implements Listener {
             }
 
             Rank rank = ConfigOptions.getRank(rankNum, guiType);
-            if (ConfigOptions.isRankUnlocked((OfflinePlayer) event.getWhoClicked(), guiType, rankNum)) {
+            if (ConfigOptions.isRankUnlocked((OfflinePlayer) event.getWhoClicked(), guiType, rankNum) == Rank.CompletionStatus.COMPLETE) {
                 // rank already unlocked
                 gui.notifyThroughGUI(event, LanguageOptions.parse(LanguageOptions.alreadyCompleted, (Player) event.getWhoClicked()), true);
                 return;

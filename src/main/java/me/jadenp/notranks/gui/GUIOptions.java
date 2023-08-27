@@ -195,7 +195,7 @@ public class GUIOptions {
         if (type.equalsIgnoreCase("confirmation")){
             for (Integer rankSlot : rankSlots) {
                 assert displayRanks[0] != null;
-                contents[rankSlot] = displayRanks[0].getItem(player, false);
+                contents[rankSlot] = displayRanks[0].getItem(player, Rank.CompletionStatus.INCOMPLETE);
             }
         }
         // set up player slots - i = index of rank in rank list

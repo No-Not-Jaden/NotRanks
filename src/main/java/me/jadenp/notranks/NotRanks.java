@@ -26,9 +26,8 @@ import static me.jadenp.notranks.ConfigOptions.*;
 import static me.jadenp.notranks.LanguageOptions.*;
 
 /**
- * rankinfo does nothing
- * rank remove usage gone-
- * rankup works -
+ * need default permission to use commands - x
+ * not on rank lore - x
  */
 
 public final class NotRanks extends JavaPlugin implements CommandExecutor, Listener {

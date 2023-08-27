@@ -22,7 +22,7 @@ commands:
 permissions:
   notranks.default:
     default: true
-    description: default
+    description: use all of the default commands
   notranks.admin:
     default: op
     description: admin commands

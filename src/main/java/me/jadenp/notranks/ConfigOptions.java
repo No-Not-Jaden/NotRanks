@@ -6,6 +6,7 @@ import me.jadenp.notranks.gui.GUIOptions;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
@@ -175,18 +176,10 @@ public class ConfigOptions {
         for (String key : ranksConfig.getKeys(false)){
             List<Rank> rankPath = new ArrayList<>();
             for (int i = 1; ranksConfig.isSet(key + "." + i); i++) {
-                String name = ranksConfig.isSet(key + "." + i + ".name") ? ranksConfig.getString(key + "." + i + ".name") : "&6&lRank " + i;
-                List<String> lore = ranksConfig.isSet(key + "." + i + ".lore") ? ranksConfig.getStringList(key + "." + i + ".lore") : new ArrayList<>();
-                List<String> requirements = ranksConfig.isSet(key + "." + i + ".requirements") ? ranksConfig.getStringList(key + "." + i + ".requirements") : new ArrayList<>();
-                int cost = ranksConfig.isSet(key + "." + i + ".cost") ? ranksConfig.getInt(key + "." + i + ".cost") : 0;
-                List<String> commands = ranksConfig.isSet(key + "." + i + ".commands") ? ranksConfig.getStringList(key + "." + i + ".commands") : new ArrayList<>();
-                String head = ranksConfig.isSet(key + "." + i + ".head") ? ranksConfig.getString(key + "." + i + ".head") : "1";
-                String item = ranksConfig.isSet(key + "." + i + ".item") ? ranksConfig.getString(key + "." + i + ".item") : "EMERALD_BLOCK";
-                boolean completionLoreEnabled = ranksConfig.isSet(key + "." + i + ".completion-lore.enabled") && ranksConfig.getBoolean(key + "." + i + ".completion-lore.enabled");
-                List<String> completionLore = ranksConfig.isSet(key + "." + i + ".completion-lore.lore") ? ranksConfig.getStringList(key + "." + i + ".completion-lore.lore") : new ArrayList<>();
-                boolean hideNBT = ranksConfig.isSet(key + "." + i + ".hide-nbt") && ranksConfig.getBoolean(key + "." + i + ".hide-nbt");
+                ConfigurationSection configurationSection = ranksConfig.getConfigurationSection(key + "." + i);
 
-                rankPath.add(new Rank(name, lore, requirements, cost, commands, head, completedHead, item, completionLoreEnabled, completionLore, hideNBT));
+                assert configurationSection != null;
+                rankPath.add(new Rank(configurationSection, completedHead));
                 if (debug)
                     Bukkit.getLogger().info("[NotRanks] Registered rank: " + key + ".");
             }
@@ -491,12 +484,15 @@ public class ConfigOptions {
         rankData.put(p.getUniqueId(), playerRankInfo);
     }
 
-    public static boolean isRankUnlocked(OfflinePlayer p, String rankType, int index){
+    public static Rank.CompletionStatus isRankUnlocked(OfflinePlayer p, String rankType, int index){
         if (rankData.containsKey(p.getUniqueId()) && rankData.get(p.getUniqueId()).containsKey(rankType)) {
             List<Integer> completedRanks = rankData.get(p.getUniqueId()).get(rankType);
-            return completedRanks.contains(index);
+            if (completedRanks.contains(index))
+                return Rank.CompletionStatus.COMPLETE;
+            if (!GUI.getGUI(rankType).isOrderlyProgression() || completedRanks.contains(index-1))
+                return Rank.CompletionStatus.INCOMPLETE;
         }
-        return false;
+        return Rank.CompletionStatus.NO_ACCESS;
     }
 
     public static int getRankNum(OfflinePlayer p, String rankType){
@@ -541,7 +537,7 @@ public class ConfigOptions {
         List<Rank> completed = new ArrayList<>();
         for (Map.Entry<String, List<Rank>> entry : ranks.entrySet()){
             for (int i = 0; i < entry.getValue().size(); i++) {
-                if (isRankUnlocked(player, entry.getKey(), i)){
+                if (isRankUnlocked(player, entry.getKey(), i) == Rank.CompletionStatus.COMPLETE){
                     completed.add(entry.getValue().get(i));
                 }
             }
