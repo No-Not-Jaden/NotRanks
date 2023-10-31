@@ -8,7 +8,7 @@ default:
     # this item will be used if heads is disabled
     item: EMERALD_BLOCK
     # {cost} to get x/total - with prefix & suffix around each number
-    # {req1} to get the first requirement x/total ({req2} {req3} etc)
+    # {req1} to get the first requirement x/total ({req2} {req3} etc.)
     # lore will change from red to green after completion if there is ^^ included
     lore:
       - '&e<△> &c&lREQUIREMENTS &e<△>'

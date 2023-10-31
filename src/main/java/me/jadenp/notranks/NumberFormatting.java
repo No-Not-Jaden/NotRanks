@@ -70,11 +70,11 @@ public class NumberFormatting {
     }
 
     public static String formatNumber(String number) {
-        if (number.length() == 0)
+        if (number.isEmpty())
             return "";
-        if (number.startsWith(currencyPrefix) && currencyPrefix.length() > 0)
+        if (number.startsWith(currencyPrefix) && !currencyPrefix.isEmpty())
             return currencyPrefix + formatNumber(number.substring(currencyPrefix.length()));
-        if (number.endsWith(currencySuffix) && currencySuffix.length() > 0)
+        if (number.endsWith(currencySuffix) && !currencySuffix.isEmpty())
             return formatNumber(number.substring(0, number.length() - currencySuffix.length())) + currencySuffix;
         if (isNumber(number))
             return formatNumber(tryParse(number));
@@ -87,7 +87,7 @@ public class NumberFormatting {
     }
 
     public static double findFirstNumber(String str) {
-        if (str.length() == 0)
+        if (str.isEmpty())
             return 0;
         if (isNumber(str))
             return Double.parseDouble(str);
@@ -160,16 +160,6 @@ public class NumberFormatting {
 
     }
 
-    /*public static void doAddCommands(Player p, double amount) {
-            if (addCommands == null || addCommands.isEmpty() && usingPlaceholderCurrency)
-                Bukkit.getLogger().warning("We detected a placeholder as currency, but there are no add commands to give players there reward! (Is it formatted correctly?)");
-
-        for (String str : addCommands) {
-            str = str.replaceAll("\\{player}", p.getName()).replaceAll("\\{amount}", amount + "");
-            Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), parse(str, p));
-        }
-    }*/
-
     public static void removeItem(Player player, Material material, long amount) {
         ItemStack[] contents = player.getInventory().getContents();
         for (int i = 0; i < contents.length; i++) {
@@ -224,6 +214,7 @@ public class NumberFormatting {
      * @param player Player to get balance from
      * @return Balance of player
      */
+    @SuppressWarnings("UnusedAssignment")
     public static double getBalance(Player player) {
 
                 double balance;

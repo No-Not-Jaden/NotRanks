@@ -23,7 +23,7 @@ import static me.jadenp.notranks.LanguageOptions.*;
 public class GUI implements Listener {
 
     public static final Map<UUID, PlayerInfo> playerInfo = new HashMap<>();
-    public static Map<UUID, Long> notifyThroughGUIDelay = new HashMap<>();
+    public static final Map<UUID, Long> notifyThroughGUIDelay = new HashMap<>();
     private static final Map<String, GUIOptions> customGuis = new HashMap<>();
     public static Map<String, CustomItem> customItems = new HashMap<>();
     public static CustomItem exit;
@@ -226,7 +226,7 @@ public class GUI implements Listener {
                                 if (rank != null)
                                     replacement = guiType +  " " + rankNum;
                             }
-                            if (replacement.equals("")) {
+                            if (replacement.isEmpty()) {
                                 ItemMeta meta = item.getItemMeta();
                                 assert meta != null;
                                 replacement = meta.getDisplayName();

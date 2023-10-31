@@ -162,7 +162,7 @@ confirmation:
       item: confirm
 example-path:
   gui-name: '&c&lPlayer Ranks'
-  require-permission: true
+  require-permission: true # permission for this path would be notranks.example-path
   add-page: false
   auto-size: false
   remove-page-items: true

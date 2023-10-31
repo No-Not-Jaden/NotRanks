@@ -18,9 +18,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 
 import static me.jadenp.notranks.ConfigOptions.*;
-import static me.jadenp.notranks.ConfigOptions.ranks;
 import static me.jadenp.notranks.LanguageOptions.*;
-import static me.jadenp.notranks.LanguageOptions.maxRank;
 
 public class Commands implements CommandExecutor, TabCompleter {
     public Commands() {
@@ -158,7 +156,7 @@ public class Commands implements CommandExecutor, TabCompleter {
                         sender.sendMessage(prefix + parse(prefixPath.replaceAll("\\{path}", Matcher.quoteReplacement(path)), (Player) sender));
                         return true;
                     }
-                    int rankNum = getRankNumFromText(path, args[2]);
+                    int rankNum = getRankNumFromText(path, ChatColor.stripColor(color(args[2])));
 
                     switch (rankNum){
                         case -1:
@@ -221,7 +219,7 @@ public class Commands implements CommandExecutor, TabCompleter {
 
                             setRankCompletion(player, path, rankCompletion);
                         } else {
-                            sender.sendMessage(prefix + ChatColor.GOLD + "" + ChatColor.BOLD + "Usage: " + ChatColor.YELLOW + "/ranks set (player) <path> (#/rank)");
+                            sender.sendMessage(prefix + ChatColor.GOLD + ChatColor.BOLD + "Usage: " + ChatColor.YELLOW + "/ranks set (player) <path> (#/rank)");
                         }
                     } else {
                         sender.sendMessage(prefix + parse(noAccess, (Player) sender));
@@ -295,7 +293,7 @@ public class Commands implements CommandExecutor, TabCompleter {
                                 sender.sendMessage(prefix + ChatColor.RED + player.getName() + " does not have the rank of " + validRanks.get(rankNum).getName() + ChatColor.RED + ".");
                             }
                         } else {
-                            sender.sendMessage(prefix + ChatColor.GOLD + "" + ChatColor.BOLD + "Usage: " + ChatColor.YELLOW + "/ranks remove (player) <path> (#/rank)");
+                            sender.sendMessage(prefix + ChatColor.GOLD + ChatColor.BOLD + "Usage: " + ChatColor.YELLOW + "/ranks remove (player) <path> (#/rank)");
                         }
                     } else {
                         assert sender instanceof Player;
@@ -366,8 +364,8 @@ public class Commands implements CommandExecutor, TabCompleter {
                 // display the next rank
                 Rank rank = rankPath.get(nextRank);
                 List<String> chat = rank.getLore((Player) sender, Rank.CompletionStatus.INCOMPLETE);
-                String name = ChatColor.translateAlternateColorCodes('&', rank.getName());
-                sender.sendMessage(ChatColor.GRAY + "" + ChatColor.STRIKETHROUGH + "            " + ChatColor.RESET + " " + name + ChatColor.RESET + " " + ChatColor.GRAY + "" + ChatColor.STRIKETHROUGH + "            ");
+                String name = rank.getName();
+                sender.sendMessage(ChatColor.GRAY + "" + ChatColor.STRIKETHROUGH + "            " + ChatColor.RESET + " " + name + ChatColor.RESET + " " + ChatColor.GRAY + ChatColor.STRIKETHROUGH + "            ");
 
                 for (String str : chat) {
                     sender.sendMessage(str);
@@ -419,7 +417,7 @@ public class Commands implements CommandExecutor, TabCompleter {
                     List<Rank> rankList = ranks.containsKey(args[1]) ? ranks.get(args[1]) : new ArrayList<>();
                     for (int i = 0; i < rankList.size(); i++) {
                         if (isRankUnlocked((OfflinePlayer) sender, args[1].toLowerCase(), i) == Rank.CompletionStatus.COMPLETE)
-                            tab.add(ChatColor.stripColor(rankList.get(i).getName()));
+                            tab.add(ChatColor.stripColor(color(rankList.get(i).getName())));
                     }
                 }
                 if ((args[0].equalsIgnoreCase("set") || args[0].equalsIgnoreCase("remove")) && sender.hasPermission("notranks.admin")) {
@@ -428,7 +426,7 @@ public class Commands implements CommandExecutor, TabCompleter {
                     }
                     List<Rank> rankList = ranks.containsKey(args[1]) ? ranks.get(args[1]) : new ArrayList<>();
                     for (Rank rank : rankList)
-                        tab.add(ChatColor.stripColor(rank.getName()));
+                        tab.add(ChatColor.stripColor(color(rank.getName())));
                     if (args[0].equalsIgnoreCase("set"))
                         tab.add("none");
                 }
@@ -436,7 +434,7 @@ public class Commands implements CommandExecutor, TabCompleter {
                 if ((args[0].equalsIgnoreCase("set") || args[0].equalsIgnoreCase("remove")) && sender.hasPermission("notranks.admin")) {
                     if (ranks.containsKey(args[2]))
                         for (Rank rank : ranks.get(args[2])) {
-                            tab.add(ChatColor.stripColor(rank.getName()));
+                            tab.add(ChatColor.stripColor(color(rank.getName())));
                         }
                     if (args[0].equalsIgnoreCase("set"))
                         tab.add("none");
@@ -480,10 +478,11 @@ public class Commands implements CommandExecutor, TabCompleter {
      */
     public static int getRankNumFromText(String path, String text){
         List<Rank> validRanks = ranks.get(path);
+        text = ChatColor.stripColor(color(text));
 
         int rankNum = -1;
         for (Rank rank : validRanks) {
-            if (ChatColor.stripColor(rank.getName()).equalsIgnoreCase(text)) {
+            if (ChatColor.stripColor(color(rank.getName())).equalsIgnoreCase(text)) {
                 rankNum = validRanks.indexOf(rank);
                 break;
             }

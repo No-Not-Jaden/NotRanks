@@ -134,7 +134,7 @@ public class GUIOptions {
         if (debug)
             Bukkit.getLogger().info("[NotRanks] Loaded completed deny click item: " + denyClickItem1 + " for " + type + " gui");
 
-        if (rankSlots.size() == 0){
+        if (rankSlots.isEmpty()){
             Bukkit.getLogger().warning("[NotRanks] No slots for ranks in the " + name + " GUI!");
         }
     }

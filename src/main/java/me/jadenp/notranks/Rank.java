@@ -19,10 +19,6 @@ import org.bukkit.profile.PlayerTextures;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 import static me.jadenp.notranks.ConfigOptions.*;
 import static me.jadenp.notranks.LanguageOptions.*;
@@ -47,7 +43,7 @@ public class Rank {
     private final boolean hideNBT;
 
     public enum CompletionStatus {
-        COMPLETE, INCOMPLETE, NO_ACCESS;
+        COMPLETE, INCOMPLETE, NO_ACCESS
     }
 
     public Rank(ConfigurationSection configurationSection, String completedHead) {
@@ -433,7 +429,7 @@ public class Rank {
             return profile;
         } catch (IllegalArgumentException | MalformedURLException e){
             if (debug)
-                e.printStackTrace();
+                Bukkit.getLogger().warning(e.toString());
             return null;
         }
     }
@@ -452,9 +448,9 @@ public class Rank {
             HeadDatabaseAPI hdb = new HeadDatabaseAPI();
             try {
                 item = hdb.getItemHead(data);
-            } catch (NullPointerException nullPointerException) {
+            } catch (NullPointerException e) {
                 if (debug)
-                    nullPointerException.printStackTrace();
+                    Bukkit.getLogger().warning(e.toString());
                 return null;
             }
         }

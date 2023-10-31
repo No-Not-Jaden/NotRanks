@@ -32,13 +32,13 @@ import static me.jadenp.notranks.LanguageOptions.*;
 
 public final class NotRanks extends JavaPlugin implements CommandExecutor, Listener {
 
-    public File playerdata = new File(this.getDataFolder() + File.separator + "playerdata.yml");
-    public File logsFolder = new File(this.getDataFolder() + File.separator + "logs");
-    Date now = new Date();
-    SimpleDateFormat format = new SimpleDateFormat("dd-MM-yyyy");
-    SimpleDateFormat formatExact = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
-    File today = new File(logsFolder + File.separator + format.format(now) + ".txt");
-    public ArrayList<String> logs = new ArrayList<>();
+    public final File playerdata = new File(this.getDataFolder() + File.separator + "playerdata.yml");
+    public final File logsFolder = new File(this.getDataFolder() + File.separator + "logs");
+    final Date now = new Date();
+    final SimpleDateFormat format = new SimpleDateFormat("dd-MM-yyyy");
+    final SimpleDateFormat formatExact = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
+    final File today = new File(logsFolder + File.separator + format.format(now) + ".txt");
+    public final ArrayList<String> logs = new ArrayList<>();
 
 
     public static NotRanks instance;
@@ -73,7 +73,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                     }
                     scanner.close();
                 } catch (FileNotFoundException e) {
-                    e.printStackTrace();
+                    Bukkit.getLogger().warning(e.toString());
                 }
             }
         } catch (IOException e) {
@@ -85,7 +85,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                 Bukkit.getLogger().info("Creating a new player data file.");
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            Bukkit.getLogger().warning(e.toString());
         }
 
         YamlConfiguration configuration = YamlConfiguration.loadConfiguration(playerdata);
@@ -142,7 +142,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                 try {
                     saveRanks();
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    Bukkit.getLogger().warning(e.toString());
                 }
                 // clean out notifyThroughGUIDelay
                 GUI.notifyThroughGUIDelay.entrySet().removeIf(entries -> entries.getValue() < System.currentTimeMillis());
@@ -182,7 +182,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
         try {
             saveRanks();
         } catch (IOException e) {
-            e.printStackTrace();
+            Bukkit.getLogger().warning(e.toString());
         }
         log();
     }
@@ -197,7 +197,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
         RankupEvent event = new RankupEvent(p, newRank, getRank(p, rankType), newRankIndex);
         Bukkit.getPluginManager().callEvent(event);
         if (!event.isCancelled()) {
-            if (rankUp.length() > 0) {
+            if (!rankUp.isEmpty()) {
                 String text = rankUp;
                 text = text.replaceAll("\\{player}", p.getName());
                 text = text.replaceAll("\\{rank}", newRank.getName());

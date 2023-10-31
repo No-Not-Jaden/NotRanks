@@ -22,15 +22,15 @@ import java.util.*;
 import static me.jadenp.notranks.NumberFormatting.currency;
 
 public class ConfigOptions {
-    public static Map<String, List<Rank>> ranks = new HashMap<>();
+    public static final Map<String, List<Rank>> ranks = new HashMap<>();
     // <Player UUID, <Rank Type, Completed Rank Index (starting from 0)>>
-    public static Map<UUID, Map<String, List<Integer>>> rankData = new HashMap<>();
+    public static final Map<UUID, Map<String, List<Integer>>> rankData = new HashMap<>();
     // p:PathName - prefix changes as player ranks up through the path
     // r:(rankNum) - shouldn't be used on its own, but will be default rank path
     // r:1p:default - rank 1 of default rank path - will not change when player ranks up
     // nothing - prefix changes with last rankup
-    public static Map<UUID, String> prefixSelections = new HashMap<>();
-    public static Map<UUID, String> lastRankPathUsed = new HashMap<>();
+    public static final Map<UUID, String> prefixSelections = new HashMap<>();
+    public static final Map<UUID, String> lastRankPathUsed = new HashMap<>();
     public static boolean HDBEnabled;
     public static boolean usingPlaceholderCurrency;
     public static int decimals;
@@ -390,7 +390,7 @@ public class ConfigOptions {
     }
 
     public static @Nullable Rank getRank(int index, String rankType){
-        if (ranks.size() == 0) {
+        if (ranks.isEmpty()) {
             Bukkit.getLogger().warning("[NotRanks] No ranks found! Is ranks.yml formatted correctly?");
             return null;
         }
