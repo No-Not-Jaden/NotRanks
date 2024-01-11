@@ -1,10 +1,11 @@
 name: NotRanks
 version: ${project.version}
 main: me.jadenp.notranks.NotRanks
-softdepend: [HeadDatabase]
 api-version: 1.13
-depend:
+softdepend:
   - PlaceholderAPI
+  - HeadDataBase
+  - Vault
 authors: [ Not_Jaden ]
 description: Simpler way to organize ranks
 commands:

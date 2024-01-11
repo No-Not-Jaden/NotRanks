@@ -202,7 +202,7 @@ public class GUIOptions {
         Rank prefixRank = getPrefixRank(player);
         for (int i = (page-1) * rankSlots.size(); i < Math.min(page * rankSlots.size(), ranksSize); i++){
             Rank rank = guiRanks.get(i);
-            ItemStack item = type.equalsIgnoreCase("choose-prefix") ? rank.getPrefixItem(rank.equals(prefixRank)) : rank.getItem(player, isRankUnlocked(player, type, i));
+            ItemStack item = type.equalsIgnoreCase("choose-prefix") ? rank.getPrefixItem(rank.equals(prefixRank), player) : rank.getItem(player, isRankUnlocked(player, type, i));
             contents[rankSlots.get(i % rankSlots.size())] = item;
         }
         inventory.setContents(contents);

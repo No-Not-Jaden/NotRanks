@@ -28,3 +28,8 @@ already-completed: '&aYou have already completed this rank!'
 prefix-reset: '&fYour prefix has been reset.'
 prefix-path: '&aYour prefix has been set to follow the path &2{path}'
 prefix-rank: '&aYour prefix has been set to &2{rank}'
+prefix-lore:
+  - ''
+  - '&7Click to set this'
+  - '&7rank as your prefix'
+  - ''

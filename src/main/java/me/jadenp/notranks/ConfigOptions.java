@@ -19,7 +19,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
-import static me.jadenp.notranks.NumberFormatting.currency;
 
 public class ConfigOptions {
     public static final Map<String, List<Rank>> ranks = new HashMap<>();
@@ -32,7 +31,6 @@ public class ConfigOptions {
     public static final Map<UUID, String> prefixSelections = new HashMap<>();
     public static final Map<UUID, String> lastRankPathUsed = new HashMap<>();
     public static boolean HDBEnabled;
-    public static boolean usingPlaceholderCurrency;
     public static int decimals;
     public static boolean addPrefix;
     public static boolean overwritePrefix;
@@ -47,6 +45,7 @@ public class ConfigOptions {
     public static File guiFile;
     public static File ranksFile;
     public static boolean confirmation;
+    public static boolean papiEnabled;
 
     public static void loadConfig() throws IOException {
         // close everyone out of gui
@@ -65,31 +64,20 @@ public class ConfigOptions {
         guiFile = new File(plugin.getDataFolder() + File.separator + "gui.yml");
         ranksFile = new File(plugin.getDataFolder() + File.separator + "ranks.yml");
 
-        HDBEnabled = plugin.getServer().getPluginManager().getPlugin("HeadDatabase") != null;
+        HDBEnabled = plugin.getServer().getPluginManager().isPluginEnabled("HeadDataBase");
+        papiEnabled = plugin.getServer().getPluginManager().isPluginEnabled("PlaceholderAPI");
 
+        plugin.saveDefaultConfig();
         plugin.reloadConfig();
         if (plugin.getConfig().isSet("currency.unit")){
             plugin.getConfig().set("currency.object", plugin.getConfig().getString("currency.unit"));
             plugin.getConfig().set("currency.remove-commands", plugin.getConfig().getStringList("currency.remove-currency-commands"));
+            plugin.getConfig().set("currency.unit", null);
+            plugin.getConfig().set("currency.remove-currency-commands", null);
         }
-        if (!plugin.getConfig().isSet("currency.object"))
-            plugin.getConfig().set("currency.object", "DIAMOND");
-        if (!plugin.getConfig().isSet("currency.remove-commands"))
-            plugin.getConfig().set("currency.remove-commands", new ArrayList<>());
-        if (!plugin.getConfig().isSet("currency.prefix"))
-            plugin.getConfig().set("currency.prefix", "");
-        if (!plugin.getConfig().isSet("currency.suffix"))
-            plugin.getConfig().set("currency.suffix", "");
-        if (!plugin.getConfig().isSet("currency.decimals"))
-            plugin.getConfig().set("currency.decimals", 0);
-        if (!plugin.getConfig().isSet("prefix.enabled"))
-            plugin.getConfig().set("prefix.enabled", false);
-        if (!plugin.getConfig().isSet("prefix.overwrite-previous"))
-            plugin.getConfig().set("prefix.overwrite-previous", false);
-        if (!plugin.getConfig().isSet("prefix.format"))
-            plugin.getConfig().set("prefix.format", "&7[{prefix}&7] &r");
-        if (!plugin.getConfig().isSet("prefix.no-rank"))
-            plugin.getConfig().set("prefix.no-rank", "&fUnranked");
+        if (plugin.getConfig().isSet("currency.decimals"))
+            plugin.getConfig().set("currency.decimals", null);
+
         if (plugin.getConfig().isSet("requirement-strikethrough")){
             if (plugin.getConfig().getBoolean("requirement-strikethrough")){
                 plugin.getConfig().set("requirement-completion.before", "&a&m");
@@ -98,23 +86,13 @@ public class ConfigOptions {
             }
             plugin.getConfig().set("requirement-strikethrough", null);
         }
-        if (!plugin.getConfig().isSet("requirement-completion.before"))
-            plugin.getConfig().set("requirement-completion.before", "&a&m");
-        if (!plugin.getConfig().isSet("requirement-completion.prefix"))
-            plugin.getConfig().set("requirement-completion.prefix", "");
-        if (!plugin.getConfig().isSet("requirement-completion.suffix"))
-            plugin.getConfig().set("requirement-completion.suffix", "");
-        if (!plugin.getConfig().isSet("requirement-completion.after"))
-            plugin.getConfig().set("requirement-completion.after", "");
+
         if (plugin.getConfig().isSet("hdb.enabled")){
             plugin.getConfig().set("head.enabled", plugin.getConfig().getBoolean("hdb.enabled"));
             plugin.getConfig().set("head.completed", plugin.getConfig().getString("hdb.completed"));
             plugin.getConfig().set("hdb", null);
         }
-        if (!plugin.getConfig().isSet("head.enabled"))
-            plugin.getConfig().set("head.enabled", true);
-        if (!plugin.getConfig().isSet("head.completed"))
-            plugin.getConfig().set("head.completed", 6269);
+
         if (plugin.getConfig().isInt("number-formatting.type")) {
             switch (plugin.getConfig().getInt("number-formatting.type")) {
                 case 0:
@@ -134,17 +112,7 @@ public class ConfigOptions {
             plugin.getConfig().set("number-formatting.decimal-symbol", null);
             plugin.getConfig().set("currency.decimals", null);
         }
-        if (!plugin.getConfig().isSet("number-formatting.use-divisions"))
-            plugin.getConfig().set("number-formatting.use-divisions", true);
-        if (!plugin.getConfig().isSet("number-formatting.pattern"))
-            plugin.getConfig().set("number-formatting.pattern", "#,###.##");
-        if (!plugin.getConfig().isSet("number-formatting.format-locale"))
-            plugin.getConfig().set("number-formatting.format-locale", "en-US");
-        if (!plugin.getConfig().isConfigurationSection("number-formatting.divisions")) {
-            plugin.getConfig().set("number-formatting.divisions.1000", "K");
-        }
-        if (!plugin.getConfig().isSet("confirmation"))
-            plugin.getConfig().set("confirmation", false);
+
 
         if (!guiFile.exists())
             plugin.saveResource("gui.yml", false);
@@ -351,8 +319,16 @@ public class ConfigOptions {
         }
         guiConfig.save(guiFile);
 
+        // fill in any missing default settings
+        for (String key : Objects.requireNonNull(plugin.getConfig().getDefaults()).getKeys(true)) {
+            // Bukkit.getLogger().info("[key] " + key);
+            if (!plugin.getConfig().isSet(key)) {
+                //Bukkit.getLogger().info("Not set -> " + config.getDefaults().get(key));
+                plugin.getConfig().set(key, plugin.getConfig().getDefaults().get(key));
+            }
+        }
+
         // read config
-        usingPlaceholderCurrency = Objects.requireNonNull(plugin.getConfig().getString("currency.object")).contains("%");
         decimals = plugin.getConfig().getInt("currency.decimals");
         addPrefix = plugin.getConfig().getBoolean("prefix.enabled");
         overwritePrefix = plugin.getConfig().getBoolean("prefix.overwrite-previous");
@@ -367,16 +343,6 @@ public class ConfigOptions {
 
 
         NumberFormatting.setCurrencyOptions(Objects.requireNonNull(plugin.getConfig().getConfigurationSection("currency")), plugin.getConfig().getConfigurationSection("number-formatting"));
-
-
-        if (!usingPlaceholderCurrency) {
-            try {
-                Material.valueOf(currency);
-            } catch (IllegalArgumentException ignored) {
-                Bukkit.getLogger().warning("[NotRanks] Material for currency is not valid! defaulting to DIAMOND.");
-                currency = "DIAMOND";
-            }
-        }
 
         plugin.saveConfig();
     }

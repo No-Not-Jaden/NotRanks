@@ -1,12 +1,14 @@
 package me.jadenp.notranks;
 
-import me.clip.placeholderapi.PlaceholderAPI;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.List;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -29,6 +31,7 @@ public class LanguageOptions {
     public static String prefixReset;
     public static String prefixPath;
     public static String prefixRank;
+    public static List<String> prefixLore;
 
     public static void loadConfig() throws IOException {
         File language = new File(NotRanks.getInstance().getDataFolder() + File.separator + "language.yml");
@@ -38,38 +41,12 @@ public class LanguageOptions {
         }
 
         YamlConfiguration langConf = YamlConfiguration.loadConfiguration(language);
-        if (!langConf.isSet("rankup"))
-            langConf.set("rankup", "&e{player} ranked up to {rank}!'");
-        if (!langConf.isSet("rankup-deny"))
-            langConf.set("rankup-deny", "&cYou do not meet the requirements to rankup!");
-        if (!langConf.isSet("unknown-command"))
-            langConf.set("unknown-command", "&cUnknown Command!");
-        if (!langConf.isSet("no-access"))
-            langConf.set("no-access", "&cYou do not have access to this command!");
-        if (!langConf.isSet("open-gui"))
-            langConf.set("open-gui", "Opening ranks menu.");
-        if (!langConf.isSet("not-on-rank"))
-            langConf.set("not-on-rank", "&cYou are not on this rank!");
-        if (!langConf.isSet("complete-requirement"))
-            langConf.set("complete-requirement", "&eYou've completed a requirement towards your next rank on path {path}! &f/rank {path} &7to view your progress.");
-        if (!langConf.isSet("complete-rank"))
-            langConf.set("complete-rank", "&eA new rank is now available on path {path}!");
-        if (!langConf.isSet("prefix"))
-            langConf.set("prefix", "&7[&cRanks&7] &8> &r");
-        if (!langConf.isSet("max-rank"))
-            langConf.set("max-rank", "&cYou are already at the max rank!");
-        if (!langConf.isSet("unknown-rank-path"))
-            langConf.set("unknown-rank-path", "&cUnknown rank path!");
-        if (!langConf.isSet("already-completed"))
-            langConf.set("already-completed", "&aYou have already completed this rank!");
-        if (!langConf.isSet("unknown-rank"))
-            langConf.set("unknown-rank", "&cUnknown rank!");
-        if (!langConf.isSet("prefix-reset"))
-            langConf.set("prefix-reset", "&fYour prefix has been reset.");
-        if (!langConf.isSet("prefix-path"))
-            langConf.set("prefix-path", "&aYour prefix has been set to follow the path &2{path}");
-        if (!langConf.isSet("prefix-rank"))
-            langConf.set("prefix-rank", "&aYour prefix has been set to &2{rank}");
+        // fill in any default options that aren't present
+        langConf.setDefaults(YamlConfiguration.loadConfiguration(new InputStreamReader(Objects.requireNonNull(NotRanks.getInstance().getResource("language.yml")))));
+        for (String key : Objects.requireNonNull(langConf.getDefaults()).getKeys(true)) {
+            if (!langConf.isSet(key))
+                langConf.set(key, langConf.getDefaults().get(key));
+        }
 
         langConf.save(language);
 
@@ -105,10 +82,15 @@ public class LanguageOptions {
 
         prefixRank = langConf.getString("prefix-rank");
 
+        prefixLore = langConf.getStringList("prefix-lore");
+
     }
 
     public static String parse(String str, OfflinePlayer player){
-        return PlaceholderAPI.setPlaceholders(player, color(str));
+        str = color(str);
+        if (ConfigOptions.papiEnabled)
+            return new PlaceholderAPIClass().parse(player, str);
+        return str;
     }
 
     public static String color(String str){

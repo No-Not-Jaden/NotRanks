@@ -24,7 +24,7 @@ public class CustomItem {
             return null;
         ItemMeta meta = itemStack.getItemMeta();
         assert meta != null;
-        meta.setDisplayName(parse(color(meta.getDisplayName()), player));
+        meta.setDisplayName(parse(meta.getDisplayName(), player));
         if (meta.hasLore()) {
             List<String> lore = meta.getLore();
             assert lore != null;

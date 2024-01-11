@@ -58,8 +58,6 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
         Objects.requireNonNull(getCommand("rankinfo")).setExecutor(commands);
         Bukkit.getServer().getPluginManager().registerEvents(this, this);
         Bukkit.getServer().getPluginManager().registerEvents(new GUI(), this);
-        new RankPlaceholder(this).register();
-        saveDefaultConfig();
         // create logs stuff
         //noinspection ResultOfMethodCallIgnored
         logsFolder.mkdir();
@@ -134,6 +132,8 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        if (papiEnabled)
+            new RankPlaceholder(this).register();
 
         // auto save every 5 minutes
         new BukkitRunnable() {

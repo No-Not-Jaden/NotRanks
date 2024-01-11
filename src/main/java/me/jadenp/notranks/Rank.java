@@ -1,7 +1,6 @@
 package me.jadenp.notranks;
 
 import me.arcaniax.hdb.api.HeadDatabaseAPI;
-import me.clip.placeholderapi.PlaceholderAPI;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -160,8 +159,8 @@ public class Rank {
             String value = requirement.substring(requirement.lastIndexOf(" ") + 1);
             Object parsedValue = parseValue(value);
 
-            if (placeholder.contains("%")) {
-                String parsed = PlaceholderAPI.setPlaceholders(player, placeholder);
+            if (placeholder.contains("%") && papiEnabled) {
+                String parsed = parse(placeholder, player);
                 Object parsedPlaceholder = parseValue(parsed);
 
                 // value types don't match
@@ -176,6 +175,15 @@ public class Rank {
                 }
                 return compareObjects(parsedValue, parsedPlaceholder, operator);
             } else {
+                int customModelData = -1;
+                if (placeholder.contains("<") && placeholder.contains(">"))
+                    try {
+                        customModelData = (int) tryParse(placeholder.substring(placeholder.indexOf("<") + 1, placeholder.indexOf(">")));
+                        placeholder = placeholder.substring(0, placeholder.indexOf("<"));
+                    } catch (NumberFormatException e) {
+                        Bukkit.getLogger().warning("[NotRanks] Could not get custom model data from " + placeholder);
+                        Bukkit.getLogger().warning(e.toString());
+                    }
                 // check if it is a material
                 if (player.isOnline()) {
                     assert player.getPlayer() != null;
@@ -183,7 +191,7 @@ public class Rank {
                     if (m != null) {
                         if (parsedValue instanceof Integer || parsedValue instanceof Double) {
                             int reqValue = parsedValue instanceof Double ? ((Double) parsedValue).intValue() : (int) parsedValue;
-                            int playerValue = checkAmount(player.getPlayer(), m);
+                            int playerValue = checkAmount(player.getPlayer(), m, customModelData);
                             return compareObjects(reqValue, playerValue, operator);
                         }
                     }
@@ -209,6 +217,7 @@ public class Rank {
                 for (String req : requirements) {
                     if (!req.isEmpty()) {
                         boolean result = isRequirementCompleted(req, p);
+
                         progress.add(result);
                         if (log)
                             Bukkit.getLogger().info("[NotRanks] " + req + " -> " + result);
@@ -219,7 +228,8 @@ public class Rank {
 
         // checking cost
         String requirement = currency + " >= " + cost;
-        boolean costReq = isRequirementCompleted(requirement, p);
+
+        boolean costReq = checkBalance(p, cost);
         progress.add(costReq);
         if (log)
             Bukkit.getLogger().info("[NotRanks] " + requirement + " -> " + costReq);
@@ -299,34 +309,18 @@ public class Rank {
 
         if (lore != null)
             for (String str : lore) {
-                str = color(str);
-                str = PlaceholderAPI.setPlaceholders(p, str);
+                str = parse(str, p);
                 if (str.contains("{cost}")) {
-                    double amount = 0;
-                    boolean error = false;
-                    if (usingPlaceholderCurrency) {
-                        try {
-                            amount = Double.parseDouble(PlaceholderAPI.setPlaceholders(p, currency));
-                        } catch (NumberFormatException ignored) {
-                            error = true;
-                        }
-                    } else {
-                        amount = checkAmount(p, Material.valueOf(currency));
-                    }
+                    double amount = getBalance(p);
                     String strCost = formatNumber(cost);
                     String strAmount = formatNumber(amount);
 
 
-                    if (error) {
-                        // use smthn else to replace amount
-                        str = ChatColor.RED + ChatColor.translateAlternateColorCodes('&', substringBefore(str, "{cost}") + currencyPrefix) + ChatColor.YELLOW + currency + ChatColor.translateAlternateColorCodes('&', currencySuffix) + ChatColor.DARK_GRAY + " / " + ChatColor.translateAlternateColorCodes('&', currencyPrefix) + ChatColor.RED + cost + ChatColor.translateAlternateColorCodes('&', currencySuffix + substringAfter(str, "{cost}"));
+                    if (amount < cost && completionStatus != CompletionStatus.COMPLETE) {
+                        str = ChatColor.RED + parse(substringBefore(str, "{cost}") + currencyPrefix, p) + ChatColor.YELLOW + strAmount + parse(currencySuffix, p) + ChatColor.DARK_GRAY + " / " + parse(currencyPrefix, p) + ChatColor.RED + strCost + parse(currencySuffix + substringAfter(str, "{cost}"), p);
                     } else {
-                        if (amount < cost && completionStatus != CompletionStatus.COMPLETE) {
-                            str = ChatColor.RED + ChatColor.translateAlternateColorCodes('&', substringBefore(str, "{cost}") + currencyPrefix) + ChatColor.YELLOW + strAmount + ChatColor.translateAlternateColorCodes('&', currencySuffix) + ChatColor.DARK_GRAY + " / " + ChatColor.translateAlternateColorCodes('&', currencyPrefix) + ChatColor.RED + strCost + ChatColor.translateAlternateColorCodes('&', currencySuffix + substringAfter(str, "{cost}"));
-                        } else {
-                            // Completed
-                            str = color(completionBefore) + ChatColor.stripColor(color( substringBefore(str, "{cost}"))) + color(completionPrefix) + ChatColor.stripColor(color(currencyPrefix)) + strCost + ChatColor.stripColor(color( currencySuffix)) + " / " + ChatColor.stripColor(color(currencyPrefix)) + strCost + ChatColor.stripColor(color( currencySuffix)) + color(completionSuffix)  + ChatColor.stripColor(color(substringAfter(str, "{cost}"))) + color(completionAfter);
-                        }
+                        // Completed
+                        str = parse(completionBefore, p) + ChatColor.stripColor(parse(substringBefore(str, "{cost}"), p)) + parse(completionPrefix, p) + ChatColor.stripColor(parse(currencyPrefix, p)) + strCost + ChatColor.stripColor(parse( currencySuffix, p)) + " / " + ChatColor.stripColor(parse(currencyPrefix, p)) + strCost + ChatColor.stripColor(parse( currencySuffix, p)) + parse(completionSuffix, p)  + ChatColor.stripColor(parse(substringAfter(str, "{cost}"), p)) + parse(completionAfter, p);
                     }
                 } else if (str.contains("{req") && str.contains("}")) {
                     int reqNum = Integer.parseInt(substringBefore(substringAfter(str, "{req"), "}"));
@@ -342,12 +336,12 @@ public class Rank {
                         if (requirements.size() >= reqNum) {
                             str = getRequirementString(reqNum, p, completionStatus == CompletionStatus.COMPLETE, str);
                         } else {
-                            str = ChatColor.DARK_RED + ChatColor.translateAlternateColorCodes('&', substringBefore(str, "{req")) + "{ERROR}" + ChatColor.translateAlternateColorCodes('&', substringAfter(str, "}"));
+                            str = ChatColor.DARK_RED + parse(substringBefore(str, "{req"), p) + "{ERROR}" + parse(substringAfter(str, "}"), p);
                         }
 
                     }
                 } else {
-                    str = ChatColor.translateAlternateColorCodes('&', str);
+                    str = parse(str, p);
                 }
                 text.add(str);
             }
@@ -358,9 +352,9 @@ public class Rank {
 
     public String getRequirementString(int reqNum, OfflinePlayer p, boolean completed, String str) {
         if (!isRequirementCompleted(requirements.get(reqNum - 1), p) && !completed) {
-            str = ChatColor.RED + ChatColor.translateAlternateColorCodes('&', substringBefore(str, "{req" + reqNum + "}")) + getRequirementProgress(reqNum, p, false) + ChatColor.translateAlternateColorCodes('&', substringAfter(str, "{req" + reqNum + "}"));
+            str = ChatColor.RED + parse(substringBefore(str, "{req" + reqNum + "}"), p) + getRequirementProgress(reqNum, p, false) + parse(substringAfter(str, "{req" + reqNum + "}"), p);
         } else {
-            str = color(completionBefore) + ChatColor.stripColor(color(substringBefore(str, "{req" + reqNum + "}"))) + getRequirementProgress(reqNum, p, completed) + ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&', substringAfter(str, "{req" + reqNum + "}"))) + color(completionAfter);
+            str = parse(completionBefore, p) + ChatColor.stripColor(parse(substringBefore(str, "{req" + reqNum + "}"), p)) + getRequirementProgress(reqNum, p, completed) + ChatColor.stripColor(parse(substringAfter(str, "{req" + reqNum + "}"), p)) + parse(completionAfter, p);
         }
         return str;
     }
@@ -385,19 +379,19 @@ public class Rank {
 
                 String placeholder = requirements.get(reqNum - 1).substring(0, requirements.get(reqNum - 1).indexOf(" "));
                 String value = requirements.get(reqNum - 1).substring(requirements.get(reqNum - 1).lastIndexOf(" ") + 1);
-                String parsed = PlaceholderAPI.setPlaceholders(p, placeholder);
+                String parsed = parse(placeholder, p);
 
                 try {
                     // is number
-                    value = formatNumber(Double.parseDouble(value));
-                    parsed = formatNumber(Double.parseDouble(parsed));
+                    value = formatNumber(tryParse(value));
+                    parsed = formatNumber(tryParse(parsed));
                 } catch (NumberFormatException ignored){
                 }
 
                 if (!isRequirementCompleted(requirements.get(reqNum - 1), p) && !completed) {
                     str = ChatColor.YELLOW + parsed + ChatColor.DARK_GRAY + " / " + ChatColor.RED + value;
                 } else {
-                    str = color(completionPrefix) + value + " / " + value + color(completionSuffix);
+                    str = parse(completionPrefix, p) + value + " / " + value + parse(completionSuffix, p);
                 }
             }
         }
@@ -482,16 +476,13 @@ public class Rank {
         return item;
     }
 
-    public ItemStack getPrefixItem(boolean enchanted){
+    public ItemStack getPrefixItem(boolean enchanted, OfflinePlayer player){
         ItemStack item = getBaseItem(false);
         ItemMeta meta = item.getItemMeta();
         assert meta != null;
-        meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', name));
+        meta.setDisplayName(parse(name, player));
         List<String> lore = new ArrayList<>();
-        lore.add("");
-        lore.add(ChatColor.GRAY + "Click to set this");
-        lore.add(ChatColor.GRAY + "rank as your prefix");
-        lore.add("");
+        prefixLore.forEach(str -> lore.add(parse(str, player)));
         meta.setLore(lore);
         if (enchanted) {
             item.addUnsafeEnchantment(Enchantment.ARROW_INFINITE, 1);
@@ -557,10 +548,7 @@ public class Rank {
     }
 
     public void rankup(Player p) {
-        if (!usingPlaceholderCurrency) {
-            removeItem(p, Material.valueOf(currency), (int) cost);
-        }
-        doRemoveCommands(p, cost);
+        doRemoveCommands(p, cost, new ArrayList<>());
         if (commands != null)
             for (String command : commands) {
                 while (command.contains("{player}")) {

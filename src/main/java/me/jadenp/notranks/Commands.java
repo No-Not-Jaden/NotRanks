@@ -156,7 +156,7 @@ public class Commands implements CommandExecutor, TabCompleter {
                         sender.sendMessage(prefix + parse(prefixPath.replaceAll("\\{path}", Matcher.quoteReplacement(path)), (Player) sender));
                         return true;
                     }
-                    int rankNum = getRankNumFromText(path, ChatColor.stripColor(color(args[2])));
+                    int rankNum = getRankNumFromText(path, ChatColor.stripColor(parse(args[2], (Player) sender)));
 
                     switch (rankNum){
                         case -1:
@@ -213,7 +213,7 @@ public class Commands implements CommandExecutor, TabCompleter {
                                     // put this rank number at the top of the rank completion list
                                     rankCompletion.remove((Integer) rankNum);
                                     rankCompletion.add(rankNum);
-                                    sender.sendMessage(prefix + ChatColor.GREEN + "Set " + player.getName() + "'s rank to " + Objects.requireNonNull(getRank(rankNum, path)).getName() + ChatColor.GREEN + ".");
+                                    sender.sendMessage(prefix + ChatColor.GREEN + "Set " + player.getName() + "'s rank to " + parse(Objects.requireNonNull(getRank(rankNum, path)).getName(), player) + ChatColor.GREEN + ".");
                                     break;
                             }
 
