@@ -81,7 +81,7 @@ public class Rank {
             return false;
 
         try{
-            return Double.parseDouble(str);
+            return tryParse(str);
         } catch (NumberFormatException e){
             return str;
         }

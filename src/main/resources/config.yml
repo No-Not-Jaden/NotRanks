@@ -60,7 +60,3 @@ prefix:
   format: '&7[{prefix}&7] &f{name} &8: &r'
   # name of beginning rank
   no-rank: '&fUnranked'
-
-
-
-

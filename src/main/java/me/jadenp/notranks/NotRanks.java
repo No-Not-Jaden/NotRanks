@@ -16,7 +16,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
@@ -63,19 +62,16 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
         logsFolder.mkdir();
         try {
             if (!today.createNewFile()) {
-                try {
                     Scanner scanner = new Scanner(today);
                     while (scanner.hasNextLine()) {
                         String data = scanner.nextLine();
                         logs.add(data);
                     }
                     scanner.close();
-                } catch (FileNotFoundException e) {
-                    Bukkit.getLogger().warning(e.toString());
-                }
+
             }
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            Bukkit.getLogger().warning(e.toString());
         }
         // creating file to store player's ranks if the file hadn't already been created
         try {

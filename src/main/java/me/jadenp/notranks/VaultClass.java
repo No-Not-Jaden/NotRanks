@@ -28,12 +28,8 @@ public class VaultClass {
      */
     private boolean tryRegister(){
         RegisteredServiceProvider<Economy> rsp = getServer().getServicesManager().getRegistration(Economy.class);
-        if (rsp == null) {
-            working = false;
-            Bukkit.getLogger().warning("Could not get registered service provider from Vault");
-        } else {
-            working = true;
-        }
+        //Bukkit.getLogger().warning("Could not get registered service provider from Vault");
+        working = rsp != null;
         return !working;
     }
 
