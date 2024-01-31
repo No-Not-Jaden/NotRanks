@@ -175,7 +175,7 @@ public class Commands implements CommandExecutor, TabCompleter {
                                 return true;
                             }
                             prefixSelections.put(((Player) sender).getUniqueId(), "r:" + rankNum + "p:" + path);
-                            sender.sendMessage(prefix + parse(prefixRank.replaceAll("\\{rank}", Matcher.quoteReplacement(ranks.get(path).get(rankNum).getName())), (Player) sender));
+                            sender.sendMessage(prefix + parse(prefixRank.replaceAll("\\{rank}", Matcher.quoteReplacement(color(ranks.get(path).get(rankNum).getName()))), (Player) sender));
                             break;
                     }
 

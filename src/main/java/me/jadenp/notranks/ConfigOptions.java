@@ -29,6 +29,7 @@ public class ConfigOptions {
     // r:1p:default - rank 1 of default rank path - will not change when player ranks up
     // nothing - prefix changes with last rankup
     public static final Map<UUID, String> prefixSelections = new HashMap<>();
+    public static final Map<String, Boolean> autoRankup = new HashMap<>();
     public static final Map<UUID, String> lastRankPathUsed = new HashMap<>();
     public static boolean HDBEnabled;
     public static int decimals;
@@ -140,6 +141,7 @@ public class ConfigOptions {
 
         // loading rank info from the config
         ranks.clear();
+        autoRankup.clear();
         String completedHead = plugin.getConfig().getString("head.completed");
         for (String key : ranksConfig.getKeys(false)){
             List<Rank> rankPath = new ArrayList<>();
@@ -151,8 +153,12 @@ public class ConfigOptions {
                 if (debug)
                     Bukkit.getLogger().info("[NotRanks] Registered rank: " + key + ".");
             }
+            if (!ranksConfig.isSet(key + ".auto-rankup"))
+                ranksConfig.set(key + ".auto-rankup", false);
+            autoRankup.put(key, ranksConfig.getBoolean(key + ".auto-rankup"));
             ranks.put(key, rankPath);
         }
+        ranksConfig.save(ranksFile);
 
         // migrate gui
         YamlConfiguration guiConfig = YamlConfiguration.loadConfiguration(guiFile);

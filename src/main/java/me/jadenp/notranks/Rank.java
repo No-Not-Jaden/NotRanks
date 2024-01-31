@@ -14,6 +14,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.profile.PlayerProfile;
 import org.bukkit.profile.PlayerTextures;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -207,7 +208,7 @@ public class Rank {
     /**
      * Check rank completion and send a message to the player if there is an update
      * @param p Player to check completion
-     * @param path Path of the rank - this is only used in the completion notification
+     * @param path Path of the rank
      */
     public void checkRankCompletion(Player p, String path, boolean log) {
         List<Boolean> progress;
@@ -256,6 +257,16 @@ public class Rank {
                     // check if all other requirements have been completed
                     if (!completedYet.contains(false)) {
                         p.sendMessage(prefix + parse(completeRank.replaceAll("\\{path}", path), p));
+                        if (autoRankup.get(path)) {
+                            Rank rank = this;
+                            new BukkitRunnable() {
+                                @Override
+                                public void run() {
+                                    NotRanks.getInstance().rankup(p, path, getRankNum(rank));
+                                }
+                            }.runTaskLater(NotRanks.getInstance(), 5);
+                        }
+
                     }
                 }
             }

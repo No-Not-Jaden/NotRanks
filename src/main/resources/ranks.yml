@@ -1,5 +1,6 @@
 # gui that opens with no path specified
 default:
+  auto-rankup: false
   1:
     # I advise not to use spaces in the name, otherwise players will have to use rank numbers instead of names in commands
     name: '&9&lStarter'
@@ -51,6 +52,7 @@ default:
       - 'broadcast &e&lCongrats to &a{player} &e&lfor ranking up to &9&lStarter'
       #- 'lp user {player} promote playerranks'
 example-path:
+  auto-rankup: false
   1:
     name: '&8&lWanderer'
     head: 193
