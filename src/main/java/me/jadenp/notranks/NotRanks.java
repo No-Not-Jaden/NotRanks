@@ -25,9 +25,9 @@ import static me.jadenp.notranks.ConfigOptions.*;
 import static me.jadenp.notranks.LanguageOptions.*;
 
 /**
- * need default permission to use commands - x
- * not on rank lore - x
- * auto rankup
+ * Mythic mobs
+ * worldguard kill mob in specific region
+ * update commands
  */
 
 public final class NotRanks extends JavaPlugin implements CommandExecutor, Listener {
