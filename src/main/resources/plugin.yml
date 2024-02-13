@@ -6,6 +6,8 @@ softdepend:
   - PlaceholderAPI
   - HeadDataBase
   - Vault
+  - MythicMobs
+  - Worldguard
 authors: [ Not_Jaden ]
 description: Simpler way to organize ranks
 commands:

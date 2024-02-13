@@ -11,6 +11,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -99,6 +100,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
         } else {
             // load new config
             if (configuration.isConfigurationSection("data")) {
+                Map<UUID, Map<String, Long>> mythicMobKills = new HashMap<>();
                 for (String uuid : Objects.requireNonNull(configuration.getConfigurationSection("data")).getKeys(false)) {
                     Map<String, List<Integer>> playerRankInfo = new HashMap<>();
                     for (String rankType : Objects.requireNonNull(configuration.getConfigurationSection("data." + uuid)).getKeys(false)) {
@@ -113,6 +115,14 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                             lastRankPathUsed.put(UUID.fromString(uuid), completedRanks);
                             continue;
                         }
+                        if (rankType.equalsIgnoreCase("mythic-mobs-kills")) {
+                            Map<String, Long> mmRecord = new HashMap<>();
+                            for (String mythicMob : Objects.requireNonNull(configuration.getConfigurationSection("data." + uuid + ".mythic-mobs-kills")).getKeys(false)) {
+                                mmRecord.put(mythicMob, configuration.getLong("data." + uuid + ".mythic-mobs-kills." + mythicMob));
+                            }
+                            mythicMobKills.put(UUID.fromString(uuid), mmRecord);
+                            continue;
+                        }
                         String[] separatedRanks = completedRanks.split(",");
                         List<Integer> rankList = new ArrayList<>();
                         for (String separatedRank : separatedRanks) {
@@ -122,6 +132,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                     }
                     rankData.put(UUID.fromString(uuid), playerRankInfo);
                 }
+                MythicMobsClass.loadMobsDefeated(mythicMobKills);
             }
         }
         try {
@@ -231,6 +242,14 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
             if (lastRankPathUsed.containsKey(UUID.fromString(uuid)))
                 configuration.set("data." + uuid + ".last-path", lastRankPathUsed.get(UUID.fromString(uuid)));
         }
+        if (mythicMobsEnabled) {
+            for (Map.Entry<UUID, Map<String, Long>> entry : MythicMobsClass.getMobsDefeated().entrySet()) {
+                String uuid = entry.getKey().toString();
+                for (Map.Entry<String, Long> record : entry.getValue().entrySet()) {
+                    configuration.set("data." + uuid + ".mythic-mobs-kills." + record.getKey(), record.getValue());
+                }
+            }
+        }
         configuration.save(playerdata);
     }
 
@@ -258,6 +277,15 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
         } else {
             event.setFormat(parsedPrefix + event.getFormat());
         }
+    }
+
+    @EventHandler
+    public void entityKilled(EntityDeathEvent event) {
+        Player killer = event.getEntity().getKiller();
+        if (killer == null)
+            return;
+        if (mythicMobsEnabled)
+            MythicMobsClass.killMob(killer, event.getEntity());
     }
 
 

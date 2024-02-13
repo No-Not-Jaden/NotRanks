@@ -175,6 +175,12 @@ public class Rank {
                     return false;
                 }
                 return compareObjects(parsedValue, parsedPlaceholder, operator);
+            } else if (placeholder.startsWith("mythic:")) {
+                if (!mythicMobsEnabled) {
+                    Bukkit.getLogger().warning("[NotRanks] Detected a mythic mob requirement in rank " + name + ", but MythicMobs is not enabled!");
+                    return false;
+                }
+
             } else {
                 int customModelData = -1;
                 if (placeholder.contains("<") && placeholder.contains(">"))
@@ -561,12 +567,7 @@ public class Rank {
     public void rankup(Player p) {
         doRemoveCommands(p, cost, new ArrayList<>());
         if (commands != null)
-            for (String command : commands) {
-                while (command.contains("{player}")) {
-                    command = command.replace("{player}", p.getName());
-                }
-                Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), command);
-            }
+            ActionCommands.execute(p, commands);
     }
 
     public String getName() {

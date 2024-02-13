@@ -47,6 +47,7 @@ public class ConfigOptions {
     public static File ranksFile;
     public static boolean confirmation;
     public static boolean papiEnabled;
+    public static boolean mythicMobsEnabled;
 
     public static void loadConfig() throws IOException {
         // close everyone out of gui
@@ -67,6 +68,7 @@ public class ConfigOptions {
 
         HDBEnabled = plugin.getServer().getPluginManager().isPluginEnabled("HeadDataBase");
         papiEnabled = plugin.getServer().getPluginManager().isPluginEnabled("PlaceholderAPI");
+        mythicMobsEnabled = plugin.getServer().getPluginManager().isPluginEnabled("MythicMobs");
 
         plugin.saveDefaultConfig();
         plugin.reloadConfig();
