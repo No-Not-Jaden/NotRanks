@@ -30,7 +30,7 @@ public class Commands implements CommandExecutor, TabCompleter {
             sender.sendMessage(prefix + parse(noAccess, (Player) sender));
             return true;
         }
-        if (command.getName().equalsIgnoreCase("rankup")) {
+        if (command.getName().equalsIgnoreCase("notrankup")) {
             if (!(sender instanceof Player)) {
                 sender.sendMessage(prefix + ChatColor.RED + "Only players can use this command!");
                 return true;
@@ -107,7 +107,7 @@ public class Commands implements CommandExecutor, TabCompleter {
                 // confirmation gui
                 GUI.openGUI((Player) sender, "confirmation", 1, getRankFormat(nextRank, rankType));
             }
-        } else if (command.getName().equalsIgnoreCase("ranks")) {
+        } else if (command.getName().equalsIgnoreCase("notranks")) {
             if (args.length > 0)
                 if (args[0].equalsIgnoreCase("reload")) {
                     if (sender.hasPermission("notranks.admin")) {
@@ -321,7 +321,7 @@ public class Commands implements CommandExecutor, TabCompleter {
             GUI.openGUI((Player) sender, rankType, 1);
             sender.sendMessage(prefix + parse(guiOpen, (Player) sender));
             return true;
-        } else if (command.getName().equalsIgnoreCase("rankinfo")) {
+        } else if (command.getName().equalsIgnoreCase("notrankinfo")) {
             if (!(sender instanceof Player)) {
                 sender.sendMessage(prefix + ChatColor.RED + "Only players can use this command!");
                 return true;
@@ -386,7 +386,7 @@ public class Commands implements CommandExecutor, TabCompleter {
     @Override
     public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, @NotNull String[] args) {
         List<String> tab = new ArrayList<>();
-        if (command.getName().equalsIgnoreCase("ranks")) {
+        if (command.getName().equalsIgnoreCase("notranks")) {
             if (args.length == 1) {
                 if (sender.hasPermission("notranks.admin")) {
                     tab.add("reload");
@@ -442,13 +442,13 @@ public class Commands implements CommandExecutor, TabCompleter {
             }
 
 
-        } else if (command.getName().equalsIgnoreCase("rankinfo") || command.getName().equalsIgnoreCase("rankup")) {
+        } else if (command.getName().equalsIgnoreCase("notrankinfo") || command.getName().equalsIgnoreCase("notrankup")) {
             if (args.length == 1) {
                 if (sender.hasPermission("notranks.default")) {
                     for (Map.Entry<String, List<Rank>> entry : ranks.entrySet()) {
                         tab.add(entry.getKey());
                     }
-                    if (command.getName().equalsIgnoreCase("rankup")) {
+                    if (command.getName().equalsIgnoreCase("notrankup")) {
                         tab.add("--confirm");
                     }
                 }
@@ -459,7 +459,7 @@ public class Commands implements CommandExecutor, TabCompleter {
                             tab.add(ChatColor.stripColor(rank.getName()));
                         }
                 }
-            } else if (args.length == 3 && command.getName().equalsIgnoreCase("rankup") && sender.hasPermission("notranks.default")) {
+            } else if (args.length == 3 && command.getName().equalsIgnoreCase("notrankup") && sender.hasPermission("notranks.default")) {
                 tab.add("--confirm");
             }
         }

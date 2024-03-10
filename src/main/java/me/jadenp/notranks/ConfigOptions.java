@@ -6,6 +6,8 @@ import me.jadenp.notranks.gui.GUIOptions;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.command.CommandMap;
+import org.bukkit.command.PluginCommand;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.enchantments.Enchantment;
@@ -17,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.*;
 
 
@@ -47,7 +50,7 @@ public class ConfigOptions {
     public static File ranksFile;
     public static boolean confirmation;
     public static boolean papiEnabled;
-    public static boolean mythicMobsEnabled;
+    private static boolean firstStart = true;
 
     public static void loadConfig() throws IOException {
         // close everyone out of gui
@@ -68,7 +71,6 @@ public class ConfigOptions {
 
         HDBEnabled = plugin.getServer().getPluginManager().isPluginEnabled("HeadDataBase");
         papiEnabled = plugin.getServer().getPluginManager().isPluginEnabled("PlaceholderAPI");
-        mythicMobsEnabled = plugin.getServer().getPluginManager().isPluginEnabled("MythicMobs");
 
         plugin.saveDefaultConfig();
         plugin.reloadConfig();
@@ -349,10 +351,42 @@ public class ConfigOptions {
         confirmation = plugin.getConfig().getBoolean("confirmation");
         usingHeads = plugin.getConfig().getBoolean("head.enabled");
 
-
         NumberFormatting.setCurrencyOptions(Objects.requireNonNull(plugin.getConfig().getConfigurationSection("currency")), plugin.getConfig().getConfigurationSection("number-formatting"));
 
         plugin.saveConfig();
+
+        // if the config is loading for the first time
+        if (firstStart) {
+            firstStart = false;
+            // load some custom aliases to use
+            List<String> rankAliases = plugin.getConfig().getStringList("command-aliases.notranks");
+            List<String> rankupAliases = plugin.getConfig().getStringList("command-aliases.notrankup");
+            List<String> rankInfoAliases = plugin.getConfig().getStringList("command-aliases.notrankinfo");
+            setAliases("notranks", rankAliases);
+            setAliases("notrankup", rankupAliases);
+            setAliases("notrankinfo", rankInfoAliases);
+        }
+    }
+
+    private static void setAliases(String commandName, List<String> aliases) {
+        PluginCommand command = NotRanks.getInstance().getCommand(commandName);
+        if (command == null) {
+            Bukkit.getLogger().warning("[NotRanks] Unknown command name: " + commandName);
+            return;
+        }
+        try {
+            final Field bukkitCommandMap = Bukkit.getServer().getClass().getDeclaredField("commandMap");
+
+            bukkitCommandMap.setAccessible(true);
+            CommandMap commandMap = (CommandMap) bukkitCommandMap.get(Bukkit.getServer());
+
+            for (String alias : aliases) {
+                commandMap.register(alias, "notranks", command);
+            }
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            Bukkit.getLogger().warning("[NotRanks] Error adding command aliases");
+            Bukkit.getLogger().warning(e.toString());
+        }
     }
 
 

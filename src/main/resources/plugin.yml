@@ -6,22 +6,18 @@ softdepend:
   - PlaceholderAPI
   - HeadDataBase
   - Vault
-  - MythicMobs
-  - Worldguard
 authors: [ Not_Jaden ]
 description: Simpler way to organize ranks
 commands:
-  ranks:
-    usage: /ranks
-    aliases:
-      - rank
-    description: opens up the rank gui
-  rankup:
-    usage: /rankup
-    description: ranks you up to the next level
-  rankinfo:
-    usage: /rankinfo
-    description: shows a chat message on your current rank
+  notranks:
+    usage: /notranks
+    description: Opens up the rank GUI.
+  notrankup:
+    usage: /notrankup
+    description: Ranks you up to the next level.
+  notrankinfo:
+    usage: /notrankinfo
+    description: Shows a chat message on your current rank.
 permissions:
   notranks.default:
     default: true

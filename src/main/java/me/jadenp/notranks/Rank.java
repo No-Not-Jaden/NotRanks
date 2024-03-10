@@ -38,8 +38,12 @@ public class Rank {
     private final Material material;
     private final boolean completionLoreEnabled;
     private final List<String> completionLore;
+    private final String completionHead;
+    private final Material completionMaterial;
     private final boolean notOnRankLoreEnabled;
     private final List<String> notOnRankLore;
+    private final String notOnRankHead;
+    private final Material notOnRankMaterial;
     private final boolean hideNBT;
 
     public enum CompletionStatus {
@@ -53,21 +57,41 @@ public class Rank {
         requirements = configurationSection.isSet("requirements") ? configurationSection.getStringList("requirements") : new ArrayList<>();
         cost = configurationSection.isSet("cost") ? configurationSection.getInt("cost") : 0;
         commands = configurationSection.isSet("commands") ? configurationSection.getStringList("commands") : new ArrayList<>();
-        head = configurationSection.isSet("head") ? configurationSection.getString("head") : "1";
-        String item = configurationSection.isSet("item") ? configurationSection.getString("item") : "EMERALD_BLOCK";
+        head = configurationSection.isSet("head") ? configurationSection.getString("head") : "-1";
+        String item = configurationSection.isSet("item") ? configurationSection.getString("item") : "LIME_CONCRETE";
         try {
             assert item != null;
             material1 = Material.valueOf(item.toUpperCase());
         } catch (IllegalArgumentException e) {
-            Bukkit.getLogger().warning("Could not get material \"" + item + "\" for rank: " + name);
-            material1 = Material.EMERALD_BLOCK;
+            Bukkit.getLogger().warning("[NotRanks] Could not get material \"" + item + "\" for rank: " + name);
+            material1 = Material.LIME_CONCRETE;
         }
         material = material1;
         completionLoreEnabled = configurationSection.isSet("completion-lore.enabled") && configurationSection.getBoolean("completion-lore.enabled");
+        completionHead = configurationSection.isSet("completion-lore.head") ? configurationSection.getString("completion-lore.head") : "-1";
         completionLore = configurationSection.isSet("completion-lore.lore") ? configurationSection.getStringList("completion-lore.lore") : new ArrayList<>();
+        item = configurationSection.isSet("completion-lore.item") ? configurationSection.getString("completion-lore.item") : "EMERALD_BLOCK";
+        try {
+            assert item != null;
+            material1 = Material.valueOf(item.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            Bukkit.getLogger().warning("[NotRanks] Could not get completion material \"" + item + "\" for rank: " + name);
+            material1 = Material.EMERALD_BLOCK;
+        }
+        completionMaterial = material1;
         hideNBT = configurationSection.isSet("hide-nbt") && configurationSection.getBoolean("hide-nbt");
         notOnRankLoreEnabled = configurationSection.isSet("not-on-rank.enabled") && configurationSection.getBoolean("not-on-rank.enabled");
+        notOnRankHead = configurationSection.isSet("not-on-rank.head") ? configurationSection.getString("not-on-rank.head") : "-1";
         notOnRankLore = configurationSection.isSet("not-on-rank.lore") ? configurationSection.getStringList("not-on-rank.lore") : new ArrayList<>();
+        item = configurationSection.isSet("not-on-rank.item") ? configurationSection.getString("not-on-rank.item") : "SCULK";
+        try {
+            assert item != null;
+            material1 = Material.valueOf(item.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            Bukkit.getLogger().warning("[NotRanks] Could not get not on rank material \"" + item + "\" for rank: " + name);
+            material1 = Material.SCULK;
+        }
+        notOnRankMaterial = material1;
         finishedHead = completedHead;
     }
 
@@ -175,12 +199,6 @@ public class Rank {
                     return false;
                 }
                 return compareObjects(parsedValue, parsedPlaceholder, operator);
-            } else if (placeholder.startsWith("mythic:")) {
-                if (!mythicMobsEnabled) {
-                    Bukkit.getLogger().warning("[NotRanks] Detected a mythic mob requirement in rank " + name + ", but MythicMobs is not enabled!");
-                    return false;
-                }
-
             } else {
                 int customModelData = -1;
                 if (placeholder.contains("<") && placeholder.contains(">"))
@@ -469,7 +487,7 @@ public class Rank {
     }
 
     public ItemStack getItem(Player p, CompletionStatus completionStatus) {
-        ItemStack item = getBaseItem(completionStatus == CompletionStatus.COMPLETE);
+        ItemStack item = getBaseItem(completionStatus);
 
         ItemMeta meta = item.getItemMeta();
         assert meta != null;
@@ -493,15 +511,15 @@ public class Rank {
         return item;
     }
 
-    public ItemStack getPrefixItem(boolean enchanted, OfflinePlayer player){
-        ItemStack item = getBaseItem(false);
+    public ItemStack getPrefixItem(CompletionStatus completionStatus, OfflinePlayer player){
+        ItemStack item = getBaseItem(completionStatus);
         ItemMeta meta = item.getItemMeta();
         assert meta != null;
         meta.setDisplayName(parse(name, player));
         List<String> lore = new ArrayList<>();
         prefixLore.forEach(str -> lore.add(parse(str, player)));
         meta.setLore(lore);
-        if (enchanted) {
+        if (completionStatus == CompletionStatus.COMPLETE) {
             item.addUnsafeEnchantment(Enchantment.ARROW_INFINITE, 1);
             meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
         }
@@ -510,19 +528,30 @@ public class Rank {
     }
 
 
-    private ItemStack getBaseItem(boolean enchanted){
+    private ItemStack getBaseItem(CompletionStatus completionStatus){
         ItemStack item = null;
-        if (usingHeads){
-            if (enchanted){
-                item = createPlayerSkull(finishedHead);
-            } else {
+        if (completionStatus == CompletionStatus.COMPLETE) {
+            if (usingHeads) {
+                if (completionLoreEnabled && !completionHead.equals("-1")) {
+                    item = createPlayerSkull(completionHead);
+                } else if (!finishedHead.equals("-1")) {
+                    item = createPlayerSkull(finishedHead);
+                }
+            }
+            if (item == null && completionLoreEnabled)
+                item = new ItemStack(completionMaterial);
+        } else if (completionStatus == CompletionStatus.INCOMPLETE) {
+            if (usingHeads && !head.equals("-1"))
                 item = createPlayerSkull(head);
+        } else if (completionStatus == CompletionStatus.NO_ACCESS) {
+            if (usingHeads) {
+                if (notOnRankLoreEnabled && !notOnRankHead.equals("-1")) {
+                    item = createPlayerSkull(notOnRankHead);
+                }
             }
-            if (debug && item == null){
-                Bukkit.getLogger().info("[NotRanks] Could not get head.");
-            }
+            if (item == null & notOnRankLoreEnabled)
+                item = new ItemStack(notOnRankMaterial);
         }
-
         if (item == null)
             item = new ItemStack(material);
         return item;

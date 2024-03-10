@@ -1,5 +1,16 @@
 # whether the player needs to confirm to rankup
 confirmation: true
+# different commands that people can use instead of the default one
+# a restart is required to load new aliases
+command-aliases:
+  # command name
+  notranks:
+    - rank
+    - ranks
+  notrankup:
+    - rankup
+  notrankinfo:
+    - rankinfo
 # this is used with the cost feature
 currency:
   # Use the specified currency below over Vault if Vault is enabled

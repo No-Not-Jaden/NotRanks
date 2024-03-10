@@ -7,7 +7,7 @@ default:
     # If HeadDataBase is installed, this will try and get a head ID, otherwise Base64
     head: 193
     # this item will be used if heads is disabled
-    item: EMERALD_BLOCK
+    item: LIME_CONCRETE
     # {cost} to get x/total - with prefix & suffix around each number
     # {req1} to get the first requirement x/total ({req2} {req3} etc.)
     # lore will change from red to green after completion if there is ^^ included
@@ -19,17 +19,22 @@ default:
       - '&7￫ &fStone Broken: {req2}'
       - '&e<△> &c&lREWARDS &e<△>'
       - '&7￫ &9&lStarter &ftitle.'
-    # this will change the lore when the rank is completed
+    # this will change the lore and item when the rank is completed
     # this could be useful if you want to unlock lore or add a secret message
     completion-lore:
       enabled: false
+      # this will override the completed head
+      head: 21771
+      item: EMERALD_BLOCK
       lore:
         - '&7<&m                      &7>'
         - '&a&l&nRank Completed'
         - '&7<&m                      &7>'
-    # this will change the lore if the player cannot rankup to the rank
+    # this will change the lore and item if the player cannot rankup to the rank
     not-on-rank:
       enabled: false
+      head: 69288
+      item: SCULK
       lore:
         - '&7<&m                      &7>'
         - '&cYou do not have access'
@@ -75,6 +80,8 @@ example-path:
     hide-nbt: true
     completion-lore:
       enabled: true
+      head: 74737
+      item: SMOOTH_STONE
       lore:
         - '&7<&m                      &7>'
         - '&a&l&nRank Completed'
@@ -107,6 +114,8 @@ example-path:
     hide-nbt: true
     completion-lore:
       enabled: true
+      head: 74738
+      item: QUARTZ_BRICKS
       lore:
         - '&7<&m                      &7>'
         - '&a&l&nRank Completed'
@@ -117,6 +126,8 @@ example-path:
         - '&7<&m                      &7>'
     not-on-rank:
       enabled: true
+      head: 44101
+      item: SCULK_VEIN
       lore:
         - '&7<&m                      &7>'
         - '&cYou do not have access'
@@ -144,6 +155,8 @@ example-path:
     hide-nbt: true
     completion-lore:
       enabled: true
+      head: 74739
+      item: SMITHING_TABLE
       lore:
         - '&7<&m                      &7>'
         - '&a&l&nRank Completed'
@@ -153,6 +166,8 @@ example-path:
         - '&7<&m                      &7>'
     not-on-rank:
       enabled: true
+      head: 44101
+      item: SCULK_VEIN
       lore:
         - '&7<&m                      &7>'
         - '&cYou do not have access'
@@ -163,7 +178,7 @@ example-path:
   4:
     name: '&d&lMerchant'
     head: 196
-    item: GOLD_BLOCK
+    item: RAW_GOLD
     lore:
       - '&e<△> &c&lREWARDS &e<△>'
       - '&7￫ &fPrefix: &7[&d&lMerchant&7] '
@@ -180,6 +195,8 @@ example-path:
     hide-nbt: true
     completion-lore:
       enabled: true
+      head: 74740
+      item: GOLD_BLOCK
       lore:
         - '&7<&m                      &7>'
         - '&a&l&nRank Completed'
@@ -189,6 +206,8 @@ example-path:
         - '&7<&m                      &7>'
     not-on-rank:
       enabled: true
+      head: 44101
+      item: SCULK_VEIN
       lore:
         - '&7<&m                      &7>'
         - '&cYou do not have access'
@@ -216,6 +235,8 @@ example-path:
     hide-nbt: true
     completion-lore:
       enabled: true
+      head: 74741
+      item: TRIDENT
       lore:
         - '&7<&m                      &7>'
         - '&a&l&nRank Completed'
@@ -225,6 +246,8 @@ example-path:
         - '&7<&m                      &7>'
     not-on-rank:
       enabled: true
+      head: 44101
+      item: SCULK_VEIN
       lore:
         - '&7<&m                      &7>'
         - '&cYou do not have access'
@@ -252,6 +275,8 @@ example-path:
     hide-nbt: true
     completion-lore:
       enabled: true
+      head: 74742
+      item: ENCHANTING_TABLE
       lore:
         - '&7<&m                      &7>'
         - '&a&l&nRank Completed'
@@ -261,6 +286,8 @@ example-path:
         - '&7<&m                      &7>'
     not-on-rank:
       enabled: true
+      head: 44101
+      item: SCULK_VEIN
       lore:
         - '&7<&m                      &7>'
         - '&cYou do not have access'
@@ -290,6 +317,8 @@ example-path:
     hide-nbt: true
     completion-lore:
       enabled: true
+      head: 74743
+      item: LECTERN
       lore:
         - '&7<&m                      &7>'
         - '&a&l&nRank Completed'
@@ -299,6 +328,8 @@ example-path:
         - '&7<&m                      &7>'
     not-on-rank:
       enabled: true
+      head: 44101
+      item: SCULK_VEIN
       lore:
         - '&7<&m                      &7>'
         - '&cYou do not have access'
@@ -328,6 +359,8 @@ example-path:
     hide-nbt: true
     completion-lore:
       enabled: true
+      head: 74744
+      item: ELYTRA
       lore:
         - '&7<&m                      &7>'
         - '&a&l&nRank Completed'
@@ -335,6 +368,8 @@ example-path:
         - '&7<&m                      &7>'
     not-on-rank:
       enabled: true
+      head: 44101
+      item: SCULK_VEIN
       lore:
         - '&7<&m                      &7>'
         - '&cYou do not have access'
