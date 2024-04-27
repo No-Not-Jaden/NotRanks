@@ -39,7 +39,8 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
     final File today = new File(logsFolder + File.separator + format.format(now) + ".txt");
     public final ArrayList<String> logs = new ArrayList<>();
 
-
+    public static int serverVersion = 20;
+    public static int serverSubVersion = 0;
     public static NotRanks instance;
 
 
@@ -51,6 +52,23 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
     public void onEnable() {
         // Plugin startup logic
         instance = this;
+        // try to get the server version
+        try {
+            // get the text version - ex: 1.20.3
+            String fullServerVersion = Bukkit.getBukkitVersion().substring(0, Bukkit.getBukkitVersion().indexOf("-"));
+            fullServerVersion = fullServerVersion.substring(2); // remove the '1.' in the version
+            if (fullServerVersion.contains(".")) {
+                // get the subversion - ex: 3
+                serverSubVersion = Integer.parseInt(fullServerVersion.substring(fullServerVersion.indexOf(".") + 1));
+                fullServerVersion = fullServerVersion.substring(0, fullServerVersion.indexOf(".")); // remove the subversion
+            }
+            serverVersion = Integer.parseInt(fullServerVersion);
+        } catch (NumberFormatException | IndexOutOfBoundsException e) {
+            Bukkit.getLogger().warning("[NotRanks] Could not get the server version. Some features may not function properly.");
+            serverVersion = 20;
+            serverSubVersion = 0;
+        }
+
         Commands commands = new Commands();
         Objects.requireNonNull(getCommand("notranks")).setExecutor(commands);
         Objects.requireNonNull(getCommand("notrankup")).setExecutor(commands);
@@ -76,7 +94,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
         // creating file to store player's ranks if the file hadn't already been created
         try {
             if (playerdata.createNewFile()) {
-                Bukkit.getLogger().info("Creating a new player data file.");
+                Bukkit.getLogger().info("[NotRanks] Creating a new player data file.");
             }
         } catch (IOException e) {
             Bukkit.getLogger().warning(e.toString());
@@ -274,5 +292,15 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
 
     public void writeLog(String text) {
         logs.add("[" + formatExact.format(now) + "] " + text);
+    }
+
+    /**
+     * Returns if the server version is above the specified version
+     * @param majorVersion Major version of the server. In 1.20.4, the major version is 20
+     * @param subVersion Sub version of the server. In 1.20.4, the sub version is 4
+     * @return True if the current server version is higher than the specified one
+     */
+    public static boolean isAboveVersion(int majorVersion, int subVersion) {
+        return serverVersion > majorVersion || (majorVersion == serverVersion && subVersion < serverSubVersion);
     }
 }

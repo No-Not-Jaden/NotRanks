@@ -1,10 +1,14 @@
 package me.jadenp.notranks;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 import me.arcaniax.hdb.api.HeadDatabaseAPI;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
@@ -490,24 +494,34 @@ public class Rank {
         ItemStack item = getBaseItem(completionStatus);
 
         ItemMeta meta = item.getItemMeta();
-        assert meta != null;
+        if (meta == null)
+            return item;
         meta.setDisplayName(parse(name, p));
         meta.setLore(getLore(p, completionStatus));
         if (hideNBT) {
+            meta.getItemFlags().clear();
+            Multimap<Attribute, AttributeModifier> attributes = HashMultimap.create();
+            meta.setAttributeModifiers(attributes);
             meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
             meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
             meta.addItemFlags(ItemFlag.HIDE_DESTROYS);
             meta.addItemFlags(ItemFlag.HIDE_DYE);
             meta.addItemFlags(ItemFlag.HIDE_PLACED_ON);
             meta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE);
-            meta.addItemFlags(ItemFlag.HIDE_POTION_EFFECTS);
+            meta.addItemFlags(ItemFlag.values()[5]); // hide potion effect / advanced tooltips
         }
-        if (!hideNBT && completionStatus == CompletionStatus.COMPLETE){
-            meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+        if (completionStatus == CompletionStatus.COMPLETE) {
+            if (NotRanks.isAboveVersion(20, 4)) {
+                if (!meta.hasEnchantmentGlintOverride())
+                    meta.setEnchantmentGlintOverride(true);
+            } else if (!hideNBT) {
+                meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+            }
+
         }
         item.setItemMeta(meta);
-        if (completionStatus == CompletionStatus.COMPLETE)
-            item.addUnsafeEnchantment(Enchantment.ARROW_INFINITE, 1);
+        if (completionStatus == CompletionStatus.COMPLETE && !NotRanks.isAboveVersion(20, 4))
+            item.addUnsafeEnchantment(Enchantment.CHANNELING, 1);
         return item;
     }
 
@@ -520,7 +534,7 @@ public class Rank {
         prefixLore.forEach(str -> lore.add(parse(str, player)));
         meta.setLore(lore);
         if (completionStatus == CompletionStatus.COMPLETE) {
-            item.addUnsafeEnchantment(Enchantment.ARROW_INFINITE, 1);
+            item.addUnsafeEnchantment(Enchantment.CHANNELING, 1);
             meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
         }
         item.setItemMeta(meta);

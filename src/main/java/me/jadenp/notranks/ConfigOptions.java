@@ -1,11 +1,15 @@
 package me.jadenp.notranks;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 import me.jadenp.notranks.gui.CustomItem;
 import me.jadenp.notranks.gui.GUI;
 import me.jadenp.notranks.gui.GUIOptions;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.command.CommandMap;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.configuration.ConfigurationSection;
@@ -290,13 +294,24 @@ public class ConfigOptions {
                 }
                 if (guiConfig.isSet("custom-items." + key + ".enchanted")) {
                     if (guiConfig.getBoolean("custom-items." + key + ".enchanted")) {
-                        itemStack.addUnsafeEnchantment(Enchantment.DURABILITY, 1);
+                        itemStack.addUnsafeEnchantment(Enchantment.CHANNELING, 1);
                         itemMeta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
                     }
                 }
                 if (guiConfig.getBoolean("custom-items." + key + ".hide-nbt")) {
+                    itemMeta.getItemFlags().clear();
+                    Multimap<Attribute, AttributeModifier> attributes = HashMultimap.create();
+                    itemMeta.setAttributeModifiers(attributes);
                     itemMeta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
-                    itemMeta.addItemFlags(ItemFlag.HIDE_POTION_EFFECTS);
+                    itemMeta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+                    itemMeta.addItemFlags(ItemFlag.HIDE_DESTROYS);
+                    itemMeta.addItemFlags(ItemFlag.HIDE_DYE);
+                    itemMeta.addItemFlags(ItemFlag.HIDE_PLACED_ON);
+                    itemMeta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE);
+                    itemMeta.addItemFlags(ItemFlag.values()[5]);
+                }
+                if (guiConfig.getBoolean("custom-items." + key + ".hide-tooltip") && NotRanks.isAboveVersion(20, 4)) {
+                    itemMeta.setHideTooltip(true);
                 }
                 itemStack.setItemMeta(itemMeta);
 
