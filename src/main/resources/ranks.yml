@@ -19,6 +19,8 @@ default:
       - '&7￫ &fStone Broken: {req2}'
       - '&e<△> &c&lREWARDS &e<△>'
       - '&7￫ &9&lStarter &ftitle.'
+    # add custom model data to the rank item for a resource pack
+    custom-model-data: 123
     # this will change the lore and item when the rank is completed
     # this could be useful if you want to unlock lore or add a secret message
     completion-lore:
@@ -30,6 +32,7 @@ default:
         - '&7<&m                      &7>'
         - '&a&l&nRank Completed'
         - '&7<&m                      &7>'
+      custom-model-data: 123
     # this will change the lore and item if the player cannot rankup to the rank
     not-on-rank:
       enabled: false
@@ -40,6 +43,7 @@ default:
         - '&cYou do not have access'
         - '&cto this rank yet'
         - '&7<&m                      &7>'
+      custom-model-data: 123
     hide-nbt: true
     requirements:
       #                        vv operator - can be "<=" ">=" "!=" "=" ">" "<" ||| true/false & text can only use "!=" & "="

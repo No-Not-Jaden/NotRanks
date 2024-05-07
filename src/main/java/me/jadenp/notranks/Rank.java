@@ -32,6 +32,7 @@ import static me.jadenp.notranks.NumberFormatting.*;
 public class Rank {
     private final String name;
     private final List<String> lore;
+    private final int customModelData;
     private final List<String> requirements;
     private final double cost;
     private final List<String> commands;
@@ -42,10 +43,12 @@ public class Rank {
     private final Material material;
     private final boolean completionLoreEnabled;
     private final List<String> completionLore;
+    private final int completionCustomModelData;
     private final String completionHead;
     private final Material completionMaterial;
     private final boolean notOnRankLoreEnabled;
     private final List<String> notOnRankLore;
+    private final int notOnRankCustomModelData;
     private final String notOnRankHead;
     private final Material notOnRankMaterial;
     private final boolean hideNBT;
@@ -58,6 +61,7 @@ public class Rank {
         Material material1;
         name = configurationSection.isSet("name") ? configurationSection.getString("name") : "&6&lUnnamed Rank";
         lore = configurationSection.isSet("lore") ? configurationSection.getStringList("lore") : new ArrayList<>();
+        customModelData = configurationSection.isSet("custom-model-data") ? configurationSection.getInt("custom-model-data") : -1;
         requirements = configurationSection.isSet("requirements") ? configurationSection.getStringList("requirements") : new ArrayList<>();
         cost = configurationSection.isSet("cost") ? configurationSection.getInt("cost") : 0;
         commands = configurationSection.isSet("commands") ? configurationSection.getStringList("commands") : new ArrayList<>();
@@ -74,6 +78,7 @@ public class Rank {
         completionLoreEnabled = configurationSection.isSet("completion-lore.enabled") && configurationSection.getBoolean("completion-lore.enabled");
         completionHead = configurationSection.isSet("completion-lore.head") ? configurationSection.getString("completion-lore.head") : "-1";
         completionLore = configurationSection.isSet("completion-lore.lore") ? configurationSection.getStringList("completion-lore.lore") : new ArrayList<>();
+        completionCustomModelData = configurationSection.isSet("completion-lore.custom-model-data") ? configurationSection.getInt("completion-lore.custom-model-data") : -1;
         item = configurationSection.isSet("completion-lore.item") ? configurationSection.getString("completion-lore.item") : "EMERALD_BLOCK";
         try {
             assert item != null;
@@ -87,6 +92,7 @@ public class Rank {
         notOnRankLoreEnabled = configurationSection.isSet("not-on-rank.enabled") && configurationSection.getBoolean("not-on-rank.enabled");
         notOnRankHead = configurationSection.isSet("not-on-rank.head") ? configurationSection.getString("not-on-rank.head") : "-1";
         notOnRankLore = configurationSection.isSet("not-on-rank.lore") ? configurationSection.getStringList("not-on-rank.lore") : new ArrayList<>();
+        notOnRankCustomModelData = configurationSection.isSet("not-on-rank.custom-model-data") ? configurationSection.getInt("not-on-rank.custom-model-data") : -1;
         item = configurationSection.isSet("not-on-rank.item") ? configurationSection.getString("not-on-rank.item") : "SCULK";
         try {
             assert item != null;
@@ -510,14 +516,26 @@ public class Rank {
             meta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE);
             meta.addItemFlags(ItemFlag.values()[5]); // hide potion effect / advanced tooltips
         }
-        if (completionStatus == CompletionStatus.COMPLETE) {
-            if (NotRanks.isAboveVersion(20, 4)) {
-                if (!meta.hasEnchantmentGlintOverride())
-                    meta.setEnchantmentGlintOverride(true);
-            } else if (!hideNBT) {
-                meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
-            }
-
+        switch (completionStatus) {
+            case COMPLETE:
+                if (completionLoreEnabled && completionCustomModelData != -1)
+                    meta.setCustomModelData(completionCustomModelData);
+                if (NotRanks.isAboveVersion(20, 4)) {
+                    if (!meta.hasEnchantmentGlintOverride())
+                        meta.setEnchantmentGlintOverride(true);
+                } else if (!hideNBT) {
+                    meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+                }
+                break;
+            case INCOMPLETE:
+                if (customModelData != -1) {
+                    meta.setCustomModelData(customModelData);
+                }
+                break;
+            case NO_ACCESS:
+                if (notOnRankLoreEnabled && notOnRankCustomModelData != -1)
+                    meta.setCustomModelData(notOnRankCustomModelData);
+                break;
         }
         item.setItemMeta(meta);
         if (completionStatus == CompletionStatus.COMPLETE && !NotRanks.isAboveVersion(20, 4))
@@ -528,7 +546,8 @@ public class Rank {
     public ItemStack getPrefixItem(CompletionStatus completionStatus, OfflinePlayer player){
         ItemStack item = getBaseItem(completionStatus);
         ItemMeta meta = item.getItemMeta();
-        assert meta != null;
+        if (meta == null)
+            return item;
         meta.setDisplayName(parse(name, player));
         List<String> lore = new ArrayList<>();
         prefixLore.forEach(str -> lore.add(parse(str, player)));
@@ -536,6 +555,20 @@ public class Rank {
         if (completionStatus == CompletionStatus.COMPLETE) {
             item.addUnsafeEnchantment(Enchantment.CHANNELING, 1);
             meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+        }
+        switch (completionStatus) {
+            case COMPLETE:
+                if (completionLoreEnabled && completionCustomModelData != -1)
+                    meta.setCustomModelData(completionCustomModelData);
+                break;
+            case INCOMPLETE:
+                if (customModelData != -1)
+                    meta.setCustomModelData(customModelData);
+                break;
+            case NO_ACCESS:
+                if (notOnRankLoreEnabled && notOnRankCustomModelData != -1)
+                    meta.setCustomModelData(notOnRankCustomModelData);
+                break;
         }
         item.setItemMeta(meta);
         return item;
@@ -552,8 +585,10 @@ public class Rank {
                     item = createPlayerSkull(finishedHead);
                 }
             }
-            if (item == null && completionLoreEnabled)
-                item = new ItemStack(completionMaterial);
+            if (completionLoreEnabled) {
+                if (item == null)
+                    item = new ItemStack(completionMaterial);
+            }
         } else if (completionStatus == CompletionStatus.INCOMPLETE) {
             if (usingHeads && !head.equals("-1"))
                 item = createPlayerSkull(head);

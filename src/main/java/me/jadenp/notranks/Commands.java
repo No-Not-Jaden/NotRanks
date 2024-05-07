@@ -36,7 +36,7 @@ public class Commands implements CommandExecutor, TabCompleter {
                 return true;
             }
 
-            String rankType = args.length > 0 && !args[0].equalsIgnoreCase("--confirm") ? args[0] : "default";
+            String rankType = args.length > 0 && !containsIgnoreCase("confirm", args[0]) ? args[0] : "default";
             List<Rank> rankPath = ranks.get(rankType);
             List<Integer> rankProgress = getRankCompletion((Player) sender, rankType);
             if (rankPath == null) {
@@ -100,7 +100,7 @@ public class Commands implements CommandExecutor, TabCompleter {
                 ((Player) sender).playSound(((Player) sender).getLocation(), Sound.ENTITY_VILLAGER_NO, 1, 1);
                 return true;
             }
-            if (!confirmation || (args.length > 0 && args[args.length - 1].equalsIgnoreCase("--confirm"))) {
+            if (!confirmation || (args.length > 0 && containsIgnoreCase("confirm", args[args.length - 1]))) {
                 // rankup
                 NotRanks.getInstance().rankup((Player) sender, rankType, nextRank);
             } else {
@@ -122,7 +122,7 @@ public class Commands implements CommandExecutor, TabCompleter {
                             sender.sendMessage(prefix + parse(noAccess, (Player) sender));
                     }
                     return true;
-                } else if (args[0].equalsIgnoreCase("prefix")) {
+                } else if (containsIgnoreCase("prefix", args[0])) {
                     if (debug) {
                         if (prefixSelections.containsKey(((Player) sender).getUniqueId()))
                             Bukkit.getLogger().info("[NotRanks] Prefix string for " + sender.getName() + " is " + prefixSelections.get(((Player) sender).getUniqueId()));
@@ -138,7 +138,7 @@ public class Commands implements CommandExecutor, TabCompleter {
                         GUI.openGUI((Player) sender, "choose-prefix", 1);
                         return true;
                     }
-                    if (args[1].equalsIgnoreCase("reset")) {
+                    if (containsIgnoreCase("reset", args[1])) {
                         // reset prefix
                         prefixSelections.remove(((Player) sender).getUniqueId());
                         sender.sendMessage(prefix + parse(prefixReset, (Player) sender));
@@ -180,7 +180,7 @@ public class Commands implements CommandExecutor, TabCompleter {
                     }
 
                     return true;
-                } else if (args[0].equalsIgnoreCase("set")) {
+                } else if (containsIgnoreCase("set", args[0])) {
                     // /ranks set (player) (path) (rank/#)
                     if (sender.hasPermission("notranks.admin")) {
                         if (args.length > 2) {
@@ -219,25 +219,25 @@ public class Commands implements CommandExecutor, TabCompleter {
 
                             setRankCompletion(player, path, rankCompletion);
                         } else {
-                            sender.sendMessage(prefix + ChatColor.GOLD + ChatColor.BOLD + "Usage: " + ChatColor.YELLOW + "/ranks set (player) <path> (#/rank)");
+                            sender.sendMessage(prefix + ChatColor.GOLD + ChatColor.BOLD + "Usage: " + ChatColor.YELLOW + "/ranks " + argumentAliases.get("set").get(0) + " (player) <path> (#/rank)");
                         }
                     } else {
                         sender.sendMessage(prefix + parse(noAccess, (Player) sender));
                     }
                     return true;
-                } else if (args[0].equalsIgnoreCase("help")) {
+                } else if (containsIgnoreCase("help", args[0])) {
                     sender.sendMessage(prefix + ChatColor.YELLOW + "/ranks <path>" + ChatColor.GOLD + "  Opens the rank GUI");
                     sender.sendMessage(prefix + ChatColor.YELLOW + "/rankinfo <path> <#/rank>" + ChatColor.GOLD + "  Opens the rank GUI");
                     sender.sendMessage(prefix + ChatColor.YELLOW + "/rankup <path> <#/rank>" + ChatColor.GOLD + "  Ranks yourself up");
-                    sender.sendMessage(prefix + ChatColor.YELLOW + "/ranks prefix" + ChatColor.GOLD + "  Open rank prefix GUI");
-                    sender.sendMessage(prefix + ChatColor.YELLOW + "/ranks prefix <path/reset> <#/rank>" + ChatColor.GOLD + "  Changes your prefix");
+                    sender.sendMessage(prefix + ChatColor.YELLOW + "/ranks " + argumentAliases.get("prefix").get(0) + ChatColor.GOLD + "  Open rank prefix GUI");
+                    sender.sendMessage(prefix + ChatColor.YELLOW + "/ranks " + argumentAliases.get("prefix").get(0) + " <path/reset> <#/rank>" + ChatColor.GOLD + "  Changes your prefix");
                     if (sender.hasPermission("notranks.admin")) {
                         sender.sendMessage(prefix + ChatColor.RED + "/ranks reload" + ChatColor.DARK_RED + "  Reloads the plugin");
-                        sender.sendMessage(prefix + ChatColor.RED + "/ranks set (player) <path> (#/rank)" + ChatColor.DARK_RED + "  Sets the player's rank");
-                        sender.sendMessage(prefix + ChatColor.RED + "/ranks remove (player) <path> (#/rank)" + ChatColor.DARK_RED + "  Removes a player's rank");
+                        sender.sendMessage(prefix + ChatColor.RED + "/ranks " + argumentAliases.get("set").get(0) + " (player) <path> (#/rank)" + ChatColor.DARK_RED + "  Sets the player's rank");
+                        sender.sendMessage(prefix + ChatColor.RED + "/ranks " + argumentAliases.get("remove").get(0) + " (player) <path> (#/rank)" + ChatColor.DARK_RED + "  Removes a player's rank");
 
                     }
-                    sender.sendMessage(prefix + ChatColor.RED + "/ranks help" + ChatColor.DARK_RED + "  What you just typed in");
+                    sender.sendMessage(prefix + ChatColor.RED + "/ranks " + argumentAliases.get("help").get(0)  + ChatColor.DARK_RED + "  What you just typed in");
                     return true;
                 } else if (args[0].equalsIgnoreCase("debug") && sender.hasPermission("notranks.admin")) {
                     debug = !debug;
@@ -245,7 +245,7 @@ public class Commands implements CommandExecutor, TabCompleter {
                     if (debug)
                         sender.sendMessage(prefix + ChatColor.YELLOW + "Do" + ChatColor.WHITE + " /ranks reload" + ChatColor.YELLOW + " to check the ranks and gui.");
                     return true;
-                } else if (args[0].equalsIgnoreCase("remove")) {
+                } else if (containsIgnoreCase("remove", args[0])) {
                     // /rank remove (player) <path> <rank/#>
                     if (sender.hasPermission("notranks.admin")) {
                         if (args.length > 2) {
@@ -383,6 +383,13 @@ public class Commands implements CommandExecutor, TabCompleter {
         return true;
     }
 
+    private static boolean containsIgnoreCase(String argumentName, String arg) {
+        for (String string : argumentAliases.get(argumentName))
+            if (string.equalsIgnoreCase(arg))
+                return true;
+        return false;
+    }
+
     @Override
     public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, @NotNull String[] args) {
         List<String> tab = new ArrayList<>();
@@ -390,54 +397,54 @@ public class Commands implements CommandExecutor, TabCompleter {
             if (args.length == 1) {
                 if (sender.hasPermission("notranks.admin")) {
                     tab.add("reload");
-                    tab.add("set");
-                    tab.add("remove");
+                    tab.addAll(argumentAliases.get("set"));
+                    tab.addAll(argumentAliases.get("remove"));
                 }
                 if (sender.hasPermission("notranks.default")) {
-                    tab.add("help");
-                    tab.add("prefix");
+                    tab.addAll(argumentAliases.get("help"));
+                    tab.addAll(argumentAliases.get("prefix"));
                     for (Map.Entry<String, List<Rank>> entry : ranks.entrySet()) {
                         tab.add(entry.getKey());
                     }
                 }
             } else if (args.length == 2) {
-                if (args[0].equalsIgnoreCase("prefix") && sender.hasPermission("notranks.default")){
-                    tab.add("reset");
+                if (containsIgnoreCase("prefix", args[0]) && sender.hasPermission("notranks.default")){
+                    tab.addAll(argumentAliases.get("reset"));
                     for (Map.Entry<String, List<Rank>> entry : ranks.entrySet()) {
                         tab.add(entry.getKey());
                     }
                 }
-                if ((args[0].equalsIgnoreCase("set") || args[0].equalsIgnoreCase("remove")) && sender.hasPermission("notranks.admin")) {
+                if ((containsIgnoreCase("set", args[0]) || containsIgnoreCase("remove", args[0])) && sender.hasPermission("notranks.admin")) {
                     for (Player player : Bukkit.getOnlinePlayers()) {
                         tab.add(player.getName());
                     }
                 }
             } else if (args.length == 3) {
-                if (args[0].equalsIgnoreCase("prefix") && sender.hasPermission("notranks.default")){
+                if (containsIgnoreCase("prefix", args[0]) && sender.hasPermission("notranks.default")){
                     List<Rank> rankList = ranks.containsKey(args[1]) ? ranks.get(args[1]) : new ArrayList<>();
                     for (int i = 0; i < rankList.size(); i++) {
                         if (isRankUnlocked((OfflinePlayer) sender, args[1].toLowerCase(), i) == Rank.CompletionStatus.COMPLETE)
                             tab.add(ChatColor.stripColor(color(rankList.get(i).getName())));
                     }
                 }
-                if ((args[0].equalsIgnoreCase("set") || args[0].equalsIgnoreCase("remove")) && sender.hasPermission("notranks.admin")) {
+                if ((containsIgnoreCase("set", args[0]) || containsIgnoreCase("remove", args[0])) && sender.hasPermission("notranks.admin")) {
                     for (Map.Entry<String, List<Rank>> entry : ranks.entrySet()) {
                         tab.add(entry.getKey());
                     }
                     List<Rank> rankList = ranks.containsKey(args[1]) ? ranks.get(args[1]) : new ArrayList<>();
                     for (Rank rank : rankList)
                         tab.add(ChatColor.stripColor(color(rank.getName())));
-                    if (args[0].equalsIgnoreCase("set"))
-                        tab.add("none");
+                    if (containsIgnoreCase("set", args[0]))
+                        tab.addAll(argumentAliases.get("none"));
                 }
             } else if (args.length == 4) {
-                if ((args[0].equalsIgnoreCase("set") || args[0].equalsIgnoreCase("remove")) && sender.hasPermission("notranks.admin")) {
+                if ((containsIgnoreCase("set", args[0]) || containsIgnoreCase("remove", args[0])) && sender.hasPermission("notranks.admin")) {
                     if (ranks.containsKey(args[2]))
                         for (Rank rank : ranks.get(args[2])) {
                             tab.add(ChatColor.stripColor(color(rank.getName())));
                         }
-                    if (args[0].equalsIgnoreCase("set"))
-                        tab.add("none");
+                    if (containsIgnoreCase("set", args[0]))
+                        tab.addAll(argumentAliases.get("none"));
                 }
             }
 
@@ -449,7 +456,7 @@ public class Commands implements CommandExecutor, TabCompleter {
                         tab.add(entry.getKey());
                     }
                     if (command.getName().equalsIgnoreCase("notrankup")) {
-                        tab.add("--confirm");
+                        tab.addAll(argumentAliases.get("confirm"));
                     }
                 }
             } else if (args.length == 2) {
@@ -460,7 +467,7 @@ public class Commands implements CommandExecutor, TabCompleter {
                         }
                 }
             } else if (args.length == 3 && command.getName().equalsIgnoreCase("notrankup") && sender.hasPermission("notranks.default")) {
-                tab.add("--confirm");
+                tab.addAll(argumentAliases.get("none"));
             }
         }
         String typed = args[args.length - 1];
@@ -489,7 +496,7 @@ public class Commands implements CommandExecutor, TabCompleter {
         }
         if (rankNum == -1) {
             // cannot find rank from string
-            if (text.equalsIgnoreCase("none") || text.equalsIgnoreCase("0") || text.equalsIgnoreCase("reset")) {
+            if (containsIgnoreCase("none", text) || text.equalsIgnoreCase("0") || containsIgnoreCase("reset", text)) {
                 // no rank
                 return -2;
             } else {

@@ -63,7 +63,7 @@ custom-items:
     amount: 1
     name: '&a&lConfirm'
     commands:
-      - '[p] rankup {slot13} --confirm'
+      - '[p] notrankup {slot13} --confirm'
       - '[close]'
   cancel:
     material: RED_STAINED_GLASS_PANE
@@ -81,7 +81,7 @@ custom-items:
       - '&6&odefault rank path'
       - ''
     commands:
-      - '[p] rank prefix default'
+      - '[p] notranks prefix default'
       - '[close]'
   reset-prefix:
     material: WATER_BUCKET
@@ -93,7 +93,7 @@ custom-items:
       - '&7match your last rank'
       - ''
     commands:
-      - '[p] rank prefix reset'
+      - '[p] notranks prefix reset'
       - '[close]'
 default:
   # name of the gui that opens when you do /ranks

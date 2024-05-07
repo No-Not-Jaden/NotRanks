@@ -11,6 +11,24 @@ command-aliases:
     - rankup
   notrankinfo:
     - rankinfo
+  # command arguments
+  arguments:
+    # these are different from the command names in the fact that if you change it, the original will not display
+    prefix: # /rank prefix
+      - prefix
+    reset: # /rank prefix reset
+      - reset
+    help: # /rank help
+      - help
+    set: # /rank set {player} {rank}
+      - set
+    remove: # /rank remove {player}
+      - remove
+    none: # the name of the no rank
+      - none
+    confirm: # /rankup --confirm
+      - '--confirm'
+
 # this is used with the cost feature
 currency:
   # Use the specified currency below over Vault if Vault is enabled

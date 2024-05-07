@@ -38,6 +38,7 @@ public class ConfigOptions {
     public static final Map<UUID, String> prefixSelections = new HashMap<>();
     public static final Map<String, Boolean> autoRankup = new HashMap<>();
     public static final Map<UUID, String> lastRankPathUsed = new HashMap<>();
+    public static final Map<String, List<String>> argumentAliases = new HashMap<>();
     public static boolean HDBEnabled;
     public static int decimals;
     public static boolean addPrefix;
@@ -381,6 +382,16 @@ public class ConfigOptions {
             setAliases("notrankup", rankupAliases);
             setAliases("notrankinfo", rankInfoAliases);
         }
+        // load some argument aliases
+        argumentAliases.clear();
+        for (String key : Objects.requireNonNull(plugin.getConfig().getConfigurationSection("command-aliases.arguments")).getKeys(false)) {
+            if (plugin.getConfig().isList("command-aliases.arguments." + key)) {
+                argumentAliases.put(key, plugin.getConfig().getStringList("command-aliases.arguments." + key));
+            } else {
+                argumentAliases.put(key, new ArrayList<>());
+            }
+        }
+
     }
 
     private static void setAliases(String commandName, List<String> aliases) {
@@ -512,9 +523,12 @@ public class ConfigOptions {
             List<Integer> completedRanks = rankData.get(p.getUniqueId()).get(rankType);
             if (completedRanks.contains(index))
                 return Rank.CompletionStatus.COMPLETE;
-            if (!GUI.getGUI(rankType).isOrderlyProgression() || completedRanks.contains(index-1))
+            if (completedRanks.contains(index-1))
                 return Rank.CompletionStatus.INCOMPLETE;
         }
+        GUIOptions gui = GUI.getGUI(rankType);
+        if(gui != null && (!gui.isOrderlyProgression() || index == 0))
+            return Rank.CompletionStatus.INCOMPLETE;
         return Rank.CompletionStatus.NO_ACCESS;
     }
 
