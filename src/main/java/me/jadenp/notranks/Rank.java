@@ -23,6 +23,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
+import java.util.stream.IntStream;
 
 import static me.jadenp.notranks.ConfigOptions.*;
 import static me.jadenp.notranks.LanguageOptions.*;
@@ -52,6 +53,7 @@ public class Rank {
     private final String notOnRankHead;
     private final Material notOnRankMaterial;
     private final boolean hideNBT;
+    private final Map<Integer, List<String>> requirementCommands = new HashMap<>();
 
     public enum CompletionStatus {
         COMPLETE, INCOMPLETE, NO_ACCESS
@@ -103,6 +105,19 @@ public class Rank {
         }
         notOnRankMaterial = material1;
         finishedHead = completedHead;
+        if (configurationSection.isConfigurationSection("requirement-commands")) {
+            for (String reqNumber : Objects.requireNonNull(configurationSection.getConfigurationSection("requirement-commands")).getKeys(false)) {
+                if (configurationSection.isList("requirement-commands." + reqNumber)) {
+                    try {
+                        requirementCommands.put(Integer.parseInt(reqNumber), configurationSection.getStringList("requirement-commands." + reqNumber));
+                    } catch (NumberFormatException e) {
+                        Bukkit.getLogger().warning(() -> "[NotRanks] Requirement command \"" + reqNumber + "\" for rank: " + name + " is not a number.");
+                    }
+                } else {
+                    Bukkit.getLogger().warning(() -> "[NotRanks] Requirement command #" + reqNumber + " for rank: " + name + " is not in list format");
+                }
+            }
+        }
     }
 
     public double getCost() {
@@ -285,12 +300,18 @@ public class Rank {
                     if (!sentMessage) {
                         CompleteRequirementEvent event = new CompleteRequirementEvent(p, this, req.get(i));
                         Bukkit.getPluginManager().callEvent(event);
-                        p.sendMessage(prefix + parse(completeRequirement.replaceAll("\\{path}", path), p));
+                        p.sendMessage(prefix + parse(completeRequirement.replace("{path}", path), p));
                         sentMessage = true;
+                    }
+                    // run requirement commands
+                    if (requirementCommands.containsKey(i+1)) {
+                        List<String> commands = requirementCommands.get(i+1);
+                        IntStream.range(0, commands.size()).forEach(j -> commands.set(j, commands.get(j).replace("{path}", path)));
+                        ActionCommands.execute(p, commands);
                     }
                     // check if all other requirements have been completed
                     if (!completedYet.contains(false)) {
-                        p.sendMessage(prefix + parse(completeRank.replaceAll("\\{path}", path), p));
+                        p.sendMessage(prefix + parse(completeRank.replace("{path}", path), p));
                         if (autoRankup.get(path)) {
                             Rank rank = this;
                             new BukkitRunnable() {

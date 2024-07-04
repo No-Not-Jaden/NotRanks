@@ -25,8 +25,7 @@ import static me.jadenp.notranks.ConfigOptions.*;
 import static me.jadenp.notranks.LanguageOptions.*;
 
 /**
- * Command aliases
- * completion and not on rank items
+ * Specific commands for specific requirements
  */
 
 public final class NotRanks extends JavaPlugin implements CommandExecutor, Listener {

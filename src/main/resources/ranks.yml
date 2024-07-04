@@ -62,6 +62,14 @@ default:
       # does not need a '/' in front of the command
       - 'broadcast &e&lCongrats to &a{player} &e&lfor ranking up to &9&lStarter'
       #- 'lp user {player} promote playerranks'
+    # These commands are run for each completed requirement
+    requirement-commands:
+      # requirement number in the order they are displayed in the requirements section
+      1:
+        - '[message_player] &6You''ve defeated 100 mobs.'
+      2:
+        - '[message_player] &6You''ve mined 500 stone. As your reward, have 500 more.'
+        - 'minecraft:give {player} stone 500'
 example-path:
   auto-rankup: false
   1:
