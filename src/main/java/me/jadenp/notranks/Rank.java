@@ -537,6 +537,9 @@ public class Rank {
             meta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE);
             meta.addItemFlags(ItemFlag.values()[5]); // hide potion effect / advanced tooltips
         }
+        if (customModelData != -1) {
+            meta.setCustomModelData(customModelData);
+        }
         switch (completionStatus) {
             case COMPLETE:
                 if (completionLoreEnabled && completionCustomModelData != -1)
@@ -549,9 +552,7 @@ public class Rank {
                 }
                 break;
             case INCOMPLETE:
-                if (customModelData != -1) {
-                    meta.setCustomModelData(customModelData);
-                }
+                // custom model data already set
                 break;
             case NO_ACCESS:
                 if (notOnRankLoreEnabled && notOnRankCustomModelData != -1)
