@@ -54,6 +54,7 @@ public class Rank {
     private final Material notOnRankMaterial;
     private final boolean hideNBT;
     private final Map<Integer, List<String>> requirementCommands = new HashMap<>();
+    private final String prefix;
 
     public enum CompletionStatus {
         COMPLETE, INCOMPLETE, NO_ACCESS
@@ -117,6 +118,11 @@ public class Rank {
                     Bukkit.getLogger().warning(() -> "[NotRanks] Requirement command #" + reqNumber + " for rank: " + name + " is not in list format");
                 }
             }
+        }
+        if (configurationSection.isSet("prefix")) {
+            prefix = configurationSection.getString("prefix");
+        } else {
+            prefix = name;
         }
     }
 
@@ -571,9 +577,9 @@ public class Rank {
         if (meta == null)
             return item;
         meta.setDisplayName(parse(name, player));
-        List<String> lore = new ArrayList<>();
-        prefixLore.forEach(str -> lore.add(parse(str, player)));
-        meta.setLore(lore);
+        List<String> itemLore = new ArrayList<>();
+        prefixLore.forEach(str -> itemLore.add(parse(str, player)));
+        meta.setLore(itemLore);
         if (completionStatus == CompletionStatus.COMPLETE) {
             item.addUnsafeEnchantment(Enchantment.CHANNELING, 1);
             meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
@@ -595,6 +601,7 @@ public class Rank {
         item.setItemMeta(meta);
         return item;
     }
+
 
 
     private ItemStack getBaseItem(CompletionStatus completionStatus){
@@ -620,7 +627,7 @@ public class Rank {
                     item = createPlayerSkull(notOnRankHead);
                 }
             }
-            if (item == null & notOnRankLoreEnabled)
+            if (item == null && notOnRankLoreEnabled)
                 item = new ItemStack(notOnRankMaterial);
         }
         if (item == null)
@@ -674,6 +681,7 @@ public class Rank {
         return name;
     }
 
-
-
+    public String getPrefix() {
+        return prefix;
+    }
 }

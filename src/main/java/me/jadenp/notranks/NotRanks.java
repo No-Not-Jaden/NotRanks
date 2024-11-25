@@ -263,9 +263,9 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
             return;
         String parsedPrefix = prefixFormat;
         Rank rank = getPrefixRank(event.getPlayer()); //getRank(event.getPlayer(), "default");
-        String rankName = rank != null ? rank.getName() : noRank;
-        parsedPrefix = parsedPrefix.replaceAll("\\{prefix}", rankName);
-        parsedPrefix = parsedPrefix.replaceAll("\\{name}", "%s");
+        String rankName = rank != null ? rank.getPrefix() : noRank;
+        parsedPrefix = parsedPrefix.replace("{prefix}", rankName);
+        parsedPrefix = parsedPrefix.replace("{name}", "%s");
         if (overwritePrefix)
             parsedPrefix += "%s";
         parsedPrefix = parse(parsedPrefix, event.getPlayer()) + ChatColor.WHITE;

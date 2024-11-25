@@ -148,7 +148,7 @@ public class RankPlaceholder extends PlaceholderExpansion {
             Rank rank = getPrefixRank(player);
             if (rank == null)
                 return LanguageOptions.parse(noRank, player);
-            return rank.getName();
+            return rank.getPrefix();
         }
 
 

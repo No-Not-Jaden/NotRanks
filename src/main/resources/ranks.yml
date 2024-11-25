@@ -3,7 +3,11 @@ default:
   auto-rankup: false
   1:
     # I advise not to use spaces in the name, otherwise players will have to use rank numbers instead of names in commands
+    # This is used in the GUI
     name: '&9&lStarter'
+    # This is used with the prefix feature or the %notranks_prefix% placeholder
+    # You can remove this option, and the default prefix will be the rank name.
+    prefix: '&7[&9&lStarter&7]'
     # If HeadDataBase is installed, this will try and get a head ID, otherwise Base64
     head: 193
     # this item will be used if heads is disabled
