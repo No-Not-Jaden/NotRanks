@@ -29,7 +29,7 @@ import java.util.*;
 
 public class ConfigOptions {
     public static final Map<String, List<Rank>> ranks = new HashMap<>();
-    // <Player UUID, <Rank Type, Completed Rank Index (starting from 0)>>
+    // <Player UUID, <Rank Path, Completed Rank Index (starting from 0)>>
     public static final Map<UUID, Map<String, List<Integer>>> rankData = new HashMap<>();
     // p:PathName - prefix changes as player ranks up through the path
     // r:(rankNum) - shouldn't be used on its own, but will be default rank path
@@ -152,22 +152,19 @@ public class ConfigOptions {
         ranks.clear();
         autoRankup.clear();
         String completedHead = plugin.getConfig().getString("head.completed");
-        for (String key : ranksConfig.getKeys(false)){
+        for (String path : ranksConfig.getKeys(false)){
             List<Rank> rankPath = new ArrayList<>();
-            for (int i = 1; ranksConfig.isSet(key + "." + i); i++) {
-                ConfigurationSection configurationSection = ranksConfig.getConfigurationSection(key + "." + i);
-
-                assert configurationSection != null;
-                rankPath.add(new Rank(configurationSection, completedHead));
-                if (debug)
-                    Bukkit.getLogger().info("[NotRanks] Registered rank: " + key + ".");
+            for (String rankName : Objects.requireNonNull(ranksConfig.getConfigurationSection(path)).getKeys(false)) {
+                if (ranksConfig.isConfigurationSection(path + "." + rankName)) {
+                    // rank
+                    rankPath.add(new Rank(ranksConfig.getConfigurationSection(path + "." + rankName), completedHead));
+                    if (debug)
+                        Bukkit.getLogger().info(() -> "[NotRanks] Registered rank: " + path + ":" + rankName);
+                }
             }
-            if (!ranksConfig.isSet(key + ".auto-rankup"))
-                ranksConfig.set(key + ".auto-rankup", false);
-            autoRankup.put(key, ranksConfig.getBoolean(key + ".auto-rankup"));
-            ranks.put(key, rankPath);
+            autoRankup.put(path, ranksConfig.getBoolean(path + ".auto-rankup"));
+            ranks.put(path, rankPath);
         }
-        ranksConfig.save(ranksFile);
 
         // migrate gui
         YamlConfiguration guiConfig = YamlConfiguration.loadConfiguration(guiFile);

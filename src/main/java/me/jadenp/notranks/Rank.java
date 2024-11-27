@@ -55,6 +55,7 @@ public class Rank {
     private final boolean hideNBT;
     private final Map<Integer, List<String>> requirementCommands = new HashMap<>();
     private final String prefix;
+    private final String configurationName;
 
     public enum CompletionStatus {
         COMPLETE, INCOMPLETE, NO_ACCESS
@@ -62,6 +63,7 @@ public class Rank {
 
     public Rank(ConfigurationSection configurationSection, String completedHead) {
         Material material1;
+        configurationName = configurationSection.getName();
         name = configurationSection.isSet("name") ? configurationSection.getString("name") : "&6&lUnnamed Rank";
         lore = configurationSection.isSet("lore") ? configurationSection.getStringList("lore") : new ArrayList<>();
         customModelData = configurationSection.isSet("custom-model-data") ? configurationSection.getInt("custom-model-data") : -1;
@@ -683,5 +685,9 @@ public class Rank {
 
     public String getPrefix() {
         return prefix;
+    }
+
+    public String getConfigurationName() {
+        return configurationName;
     }
 }

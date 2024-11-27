@@ -1,8 +1,8 @@
 # gui that opens with no path specified
 default:
   auto-rankup: false
-  1:
-    # I advise not to use spaces in the name, otherwise players will have to use rank numbers instead of names in commands
+  # The name of the configuration section is what players can use in commands
+  Starter:
     # This is used in the GUI
     name: '&9&lStarter'
     # This is used with the prefix feature or the %notranks_prefix% placeholder
@@ -76,7 +76,7 @@ default:
         - 'minecraft:give {player} stone 500'
 example-path:
   auto-rankup: false
-  1:
+  Wanderer:
     name: '&8&lWanderer'
     head: 193
     item: STONE
@@ -110,7 +110,7 @@ example-path:
         - 'doesn''t matter because this is the first rank'
     commands:
       - 'broadcast &e&lCongrats to &a{player} &e&lfor ranking up to &8&lWanderer'
-  2:
+  Citizen:
     name: '&a&lCitizen'
     head: 194
     item: BRICKS
@@ -151,7 +151,7 @@ example-path:
         - '&7<&m                      &7>'
     commands:
       - 'broadcast &e&lCongrats to &a{player} &e&lfor ranking up to &a&lCitizen'
-  3:
+  Apprentice:
     name: '&2&lApprentice'
     head: 195
     item: ANVIL
@@ -191,7 +191,7 @@ example-path:
         - '&7<&m                      &7>'
     commands:
       - 'broadcast &e&lCongrats to &a{player} &e&lfor ranking up to &2&lApprentice'
-  4:
+  Merchant:
     name: '&d&lMerchant'
     head: 196
     item: RAW_GOLD
@@ -231,7 +231,7 @@ example-path:
         - '&7<&m                      &7>'
     commands:
       - 'broadcast &e&lCongrats to &a{player} &e&lfor ranking up to &d&lMerchant'
-  5:
+  Master:
     name: '&6&lMaster'
     head: 197
     item: DIAMOND_SWORD
@@ -271,7 +271,7 @@ example-path:
         - '&7<&m                      &7>'
     commands:
       - 'broadcast &e&lCongrats to &a{player} &e&lfor ranking up to &6&lMaster'
-  6:
+  Elder:
     name: '&e&lElder'
     head: 198
     item: EXPERIENCE_BOTTLE
@@ -311,7 +311,7 @@ example-path:
         - '&7<&m                      &7>'
     commands:
       - 'broadcast &e&lCongrats to &a{player} &e&lfor ranking up to &e&lElder'
-  7:
+  Chief:
     name: '&4&lChief'
     head: 199
     item: BELL
@@ -353,7 +353,7 @@ example-path:
         - '&7<&m                      &7>'
     commands:
       - 'broadcast &e&lCongrats to &a{player} &e&lfor ranking up to &4&lChief'
-  8:
+  Champion:
     name: '&b&lC&3&lh&b&la&3&lm&b&lp&3&li&b&lo&3&ln'
     head: 200
     item: NETHERITE_CHESTPLATE
