@@ -25,46 +25,36 @@ public class Commands implements CommandExecutor, TabCompleter {
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
         if (!sender.hasPermission("notranks.default") && !sender.hasPermission("notranks.admin")) {
-            sender.sendMessage(prefix + parse(noAccess, (Player) sender));
+            sender.sendMessage(parse(prefix + noAccess, (Player) sender));
             return true;
         }
         if (command.getName().equalsIgnoreCase("notrankup")) {
             if (!(sender instanceof Player)) {
-                sender.sendMessage(prefix + ChatColor.RED + "Only players can use this command!");
+                sender.sendMessage(parse(prefix + ChatColor.RED + "Only players can use this command!", null));
                 return true;
             }
 
-            String rankType = args.length > 0 && !args[0].equalsIgnoreCase("confirm") ? args[0] : "default";
+            String rankType = args.length > 0 && !argumentAliases.get("confirm").contains(args[0].toLowerCase()) ? args[0] : "default";
             List<Rank> rankPath = ranks.get(rankType);
             List<Integer> rankProgress = getRankCompletion((Player) sender, rankType);
             if (rankPath == null) {
                 // unknown rank path
-                sender.sendMessage(prefix + parse(unknownRankPath, (Player) sender));
+                sender.sendMessage(parse(prefix + unknownRankPath, (Player) sender));
                 return true;
             }
             GUIOptions guiOptions = GUI.getGUI(rankType);
             // check if they have permission
             if (!sender.hasPermission("notranks." + rankType) && guiOptions.isPermissionRequired() && !sender.hasPermission("notranks.admin")) {
-                sender.sendMessage(prefix + parse(noAccess, (Player) sender));
+                sender.sendMessage(parse(prefix + noAccess, (Player) sender));
                 return true;
             }
             // get next rank num, if none is specified, +1 last rank
             int nextRank = -1;
-            if (args.length > 1) {
-                try {
-                    nextRank = Integer.parseInt(args[1]);
-                } catch (NumberFormatException e) {
-                    // try and find rank from name
-                    for (int i = 0; i < rankPath.size(); i++) {
-                        Rank rank = rankPath.get(i);
-                        if (ChatColor.stripColor(rank.getName()).equalsIgnoreCase(args[1])) {
-                            nextRank = i;
-                            break;
-                        }
-                    }
-                }
+            if (args.length > 1 && !argumentAliases.get("confirm").contains(args[1].toLowerCase())) {
+                nextRank = getRankNumFromText(rankType, args[1]);
             }
-            if (nextRank == -1)
+            if (nextRank < 0)
+                // get next rank
                 nextRank = rankProgress == null || rankProgress.isEmpty() ? 0 : rankProgress.get(rankProgress.size() - 1) + 1;
 
             if (nextRank > rankPath.size()) {
@@ -77,28 +67,28 @@ public class Commands implements CommandExecutor, TabCompleter {
                 Bukkit.getLogger().info("[NotRanks] Attempting to rankup " + sender.getName() + " to " + rankType + ":" + nextRank);
             if (ConfigOptions.isRankUnlocked((Player) sender, rankType, nextRank) == Rank.CompletionStatus.COMPLETE) {
                 // rank already unlocked
-                sender.sendMessage(prefix + LanguageOptions.parse(LanguageOptions.alreadyCompleted, (Player) sender));
+                sender.sendMessage(parse(prefix + LanguageOptions.alreadyCompleted, (Player) sender));
                 return true;
             }
             if (rankPath.size() == nextRank) {
                 if (debug)
                     Bukkit.getLogger().info("[NotRanks] Rank path size: " + rankPath.size());
                 // max rank
-                sender.sendMessage(prefix + parse(maxRank, (Player) sender));
+                sender.sendMessage(parse(prefix + maxRank, (Player) sender));
                 return true;
             }
             if (getRankNum((Player) sender, rankType) + 1 != nextRank && GUI.getGUI(rankType).isOrderlyProgression()) {
                 // cant skip ranks
-                sender.sendMessage(prefix + parse(notOnRank, (Player) sender));
+                sender.sendMessage(parse(prefix + notOnRank, (Player) sender));
                 return true;
             }
             if (rankPath.get(nextRank).checkUncompleted((Player) sender, rankType)) {
                 // requirements not completed
-                sender.sendMessage(prefix + parse(rankUpDeny, (Player) sender));
+                sender.sendMessage(parse(prefix + rankUpDeny, (Player) sender));
                 ((Player) sender).playSound(((Player) sender).getLocation(), Sound.ENTITY_VILLAGER_NO, 1, 1);
                 return true;
             }
-            if (!confirmation || (args.length > 0 && args[args.length - 1].equalsIgnoreCase("confirm"))) {
+            if (!confirmation || (args.length > 0 && argumentAliases.get("confirm").contains(args[args.length - 1].toLowerCase()))) {
                 // rankup
                 NotRanks.getInstance().rankup((Player) sender, rankType, nextRank);
             } else {
@@ -118,7 +108,7 @@ public class Commands implements CommandExecutor, TabCompleter {
                         }
                     } else {
                         if (sender instanceof Player)
-                            sender.sendMessage(prefix + parse(noAccess, (Player) sender));
+                            sender.sendMessage(parse(prefix + noAccess, (Player) sender));
                     }
                     return true;
                 } else if (args[0].equalsIgnoreCase("prefix")) {
@@ -141,41 +131,41 @@ public class Commands implements CommandExecutor, TabCompleter {
                     if (args[1].equalsIgnoreCase("reset")) {
                         // reset prefix
                         prefixSelections.remove(((Player) sender).getUniqueId());
-                        sender.sendMessage(prefix + parse(prefixReset, (Player) sender));
+                        sender.sendMessage(parse(prefix + prefixReset, (Player) sender));
                         return true;
                     }
                     String path = args[1];
                     if (!ranks.containsKey(path)) {
                         // no path found
-                        sender.sendMessage(prefix + parse(unknownRankPath, (Player) sender));
+                        sender.sendMessage(parse(prefix + unknownRankPath, (Player) sender));
                         return true;
                     }
                     if (args.length == 2){
                         // only path
                         prefixSelections.put(((Player) sender).getUniqueId(), "p:" + path);
-                        sender.sendMessage(prefix + parse(prefixPath.replace("{path}", path), (Player) sender));
+                        sender.sendMessage(parse(prefix + prefixPath.replace("{path}", path), (Player) sender));
                         return true;
                     }
                     int rankNum = getRankNumFromText(path, ChatColor.stripColor(parse(args[2], (Player) sender)));
 
                     switch (rankNum){
-                        case -1:
-                            // unknown rank
-                            sender.sendMessage(prefix + parse(unknownRank, (Player) sender));
-                            break;
                         case -2:
+                            // unknown rank
+                            sender.sendMessage(parse(prefix + unknownRank, (Player) sender));
+                            break;
+                        case -1:
                             // reset prefix
                             prefixSelections.remove(((Player) sender).getUniqueId());
-                            sender.sendMessage(prefix + parse(prefixReset, (Player) sender));
+                            sender.sendMessage(parse(prefix + prefixReset, (Player) sender));
                             break;
                         default:
                             if (isRankUnlocked((Player) sender, path, rankNum) != Rank.CompletionStatus.COMPLETE){
                                 // haven't completed the rank
-                                sender.sendMessage(prefix + parse(notOnRank, (Player) sender));
+                                sender.sendMessage(parse(prefix + notOnRank, (Player) sender));
                                 return true;
                             }
                             prefixSelections.put(((Player) sender).getUniqueId(), "r:" + rankNum + "p:" + path);
-                            sender.sendMessage(prefix + parse(prefixRank.replace("{rank}", color(ranks.get(path).get(rankNum).getName())), (Player) sender));
+                            sender.sendMessage(parse(prefix + prefixRank.replace("{rank}", color(ranks.get(path).get(rankNum).getName())), (Player) sender));
                             break;
                     }
 
@@ -193,18 +183,18 @@ public class Commands implements CommandExecutor, TabCompleter {
                             String rankArg = args.length == 4 ? args[3] : args[2];
                             if (!ranks.containsKey(path)) {
                                 // no path found
-                                sender.sendMessage(prefix + parse(unknownRankPath, (Player) sender));
+                                sender.sendMessage(parse(prefix + unknownRankPath, (Player) sender));
                                 return true;
                             }
                             int rankNum = getRankNumFromText(path, rankArg);
 
                             List<Integer> rankCompletion = getRankCompletion(player, path);
                             switch (rankNum){
-                                case -1:
-                                    // unknown rank
-                                    sender.sendMessage(prefix + parse(unknownRank, null));
-                                    break;
                                 case -2:
+                                    // unknown rank
+                                    sender.sendMessage(parse(prefix + unknownRank, null));
+                                    break;
+                                case -1:
                                     // clear ranks
                                     rankCompletion.clear();
                                     sender.sendMessage(prefix + ChatColor.GREEN + "Cleared " + player.getName() + "'s rank progress on " + ChatColor.GRAY + path + ChatColor.GREEN + ".");
@@ -222,7 +212,7 @@ public class Commands implements CommandExecutor, TabCompleter {
                             sender.sendMessage(prefix + ChatColor.GOLD + ChatColor.BOLD + "Usage: " + ChatColor.YELLOW + "/ranks " + argumentAliases.get("set").get(0) + " (player) <path> (#/rank)");
                         }
                     } else {
-                        sender.sendMessage(prefix + parse(noAccess, (Player) sender));
+                        sender.sendMessage(parse(prefix + noAccess, (Player) sender));
                     }
                     return true;
                 } else if (args[0].equalsIgnoreCase("help")) {
@@ -258,32 +248,15 @@ public class Commands implements CommandExecutor, TabCompleter {
                             String rankArg = args.length == 4 ? args[3] : args[2];
                             if (!ranks.containsKey(path)) {
                                 // no path found
-                                sender.sendMessage(prefix + parse(unknownRankPath, (Player) sender));
+                                sender.sendMessage(parse(prefix + unknownRankPath, (Player) sender));
                                 return true;
                             }
                             List<Rank> validRanks = ranks.get(path);
                             List<Integer> rankCompletion = getRankCompletion(player, path);
-                            int rankNum = -1;
-                            for (Rank rank : validRanks) {
-                                if (ChatColor.stripColor(rank.getName()).equalsIgnoreCase(rankArg)) {
-                                    rankNum = validRanks.indexOf(rank);
-                                    break;
-                                }
-                            }
-                            if (rankNum == -1) {
-                                // cannot find rank from string
-                                try {
-                                    rankNum = Integer.parseInt(rankArg);
-                                } catch (NumberFormatException ignored) {
-                                    // not a number
-                                    sender.sendMessage(prefix + ChatColor.RED + "Unknown Rank");
-                                    return true;
-                                }
-                                if (rankNum < 0 || rankNum >= validRanks.size()) {
-                                    // number out of bounds
-                                    sender.sendMessage(prefix + ChatColor.RED + "Unknown Rank");
-                                    return true;
-                                }
+                            int rankNum = getRankNumFromText(path, rankArg);
+                            if (rankNum < 0) {
+                                sender.sendMessage(prefix + ChatColor.RED + "Unknown Rank");
+                                return true;
                             }
 
                             if (rankCompletion.remove((Integer) rankNum)) {
@@ -297,7 +270,7 @@ public class Commands implements CommandExecutor, TabCompleter {
                         }
                     } else {
                         if (sender instanceof Player)
-                            sender.sendMessage(prefix + parse(noAccess, (Player) sender));
+                            sender.sendMessage(parse(prefix + noAccess, (Player) sender));
                     }
                     return true;
                 }
@@ -309,17 +282,17 @@ public class Commands implements CommandExecutor, TabCompleter {
             String rankType = args.length > 0 ? args[0].toLowerCase() : "default";
             // check if the path exists
             if (!ranks.containsKey(rankType)) {
-                sender.sendMessage(prefix + parse(unknownRankPath, (Player) sender));
+                sender.sendMessage(parse(prefix + unknownRankPath, (Player) sender));
                 return true;
             }
             GUIOptions guiOptions = GUI.getGUI(rankType);
             // check if they have permission
             if (!sender.hasPermission("notranks." + rankType) && guiOptions.isPermissionRequired() && !sender.hasPermission("notranks.admin")) {
-                sender.sendMessage(prefix + parse(noAccess, (Player) sender));
+                sender.sendMessage(parse(prefix + noAccess, (Player) sender));
                 return true;
             }
             GUI.openGUI((Player) sender, rankType, 1);
-            sender.sendMessage(prefix + parse(guiOpen, (Player) sender));
+            sender.sendMessage(parse(prefix + guiOpen, (Player) sender));
             return true;
         } else if (command.getName().equalsIgnoreCase("notrankinfo")) {
             if (!(sender instanceof Player)) {
@@ -332,52 +305,42 @@ public class Commands implements CommandExecutor, TabCompleter {
             List<Integer> rankProgress = getRankCompletion((Player) sender, rankType);
             if (rankPath == null) {
                 // unknown rank path
-                sender.sendMessage(prefix + parse(unknownRankPath, (Player) sender));
+                sender.sendMessage(parse(prefix + unknownRankPath, (Player) sender));
                 return true;
             }
             GUIOptions guiOptions = GUI.getGUI(rankType);
             // check if they have permission
             if (!sender.hasPermission("notranks." + rankType) && guiOptions.isPermissionRequired() && !sender.hasPermission("notranks.admin")) {
-                sender.sendMessage(prefix + parse(noAccess, (Player) sender));
+                sender.sendMessage(parse(prefix + noAccess, (Player) sender));
                 return true;
             }
             // get next rank num, if none is specified, +1 last rank
             int nextRank = -1;
             if (args.length > 1) {
-                try {
-                    nextRank = Integer.parseInt(args[1]);
-                } catch (NumberFormatException e) {
-                    // try and find rank from name
-                    for (int i = 0; i < rankPath.size(); i++) {
-                        Rank rank = rankPath.get(i);
-                        if (ChatColor.stripColor(rank.getName()).equalsIgnoreCase(args[1])) {
-                            nextRank = i;
-                            break;
-                        }
-                    }
-                }
+                nextRank = getRankNumFromText(rankType, args[1]);
             }
-            if (nextRank == -1)
+            if (nextRank < 0)
                 nextRank = rankProgress == null || rankProgress.isEmpty() ? 0 : rankProgress.get(rankProgress.size() - 1) + 1;
 
             if (rankPath.size() > nextRank) { // check if they are on the max rank
                 // display the next rank
                 Rank rank = rankPath.get(nextRank);
                 List<String> chat = rank.getLore((Player) sender, Rank.CompletionStatus.INCOMPLETE);
-                String name = rank.getName();
-                sender.sendMessage(ChatColor.GRAY + "" + ChatColor.STRIKETHROUGH + "            " + ChatColor.RESET + " " + name + ChatColor.RESET + " " + ChatColor.GRAY + ChatColor.STRIKETHROUGH + "            ");
+                String name = parse(rank.getName(), (Player) sender);
+                String fill = new String(new char[11]).replace("\0", " ");
+                sender.sendMessage(ChatColor.GRAY + "" + ChatColor.STRIKETHROUGH + fill + ChatColor.RESET + " " + name + ChatColor.RESET + " " + ChatColor.GRAY + ChatColor.STRIKETHROUGH + fill);
 
                 for (String str : chat) {
                     sender.sendMessage(str);
                 }
                 StringBuilder str = new StringBuilder("                        ");
-                int multiplier = name.contains("&l") ? 2 : 1;
+                int multiplier = name.contains(ChatColor.BOLD + "") ? 2 : 1;
                 for (int i = 0; i < ChatColor.stripColor(name).length() * multiplier; i++) {
                     str.append(" ");
                 }
                 sender.sendMessage(ChatColor.GRAY + "" + ChatColor.STRIKETHROUGH + str);
             } else {
-                sender.sendMessage(prefix + parse(maxRank, (Player) sender));
+                sender.sendMessage(parse(prefix + maxRank, (Player) sender));
             }
         }
         return true;
@@ -436,9 +399,14 @@ public class Commands implements CommandExecutor, TabCompleter {
             } else if (args.length == 2) {
                 if (sender.hasPermission("notranks.default")) {
                     tab.addAll(getRankAliases(args[0]));
+                    if (command.getName().equalsIgnoreCase("notrankup")) {
+                        tab.addAll(argumentAliases.get("confirm"));
+                    }
                 }
             } else if (args.length == 3 && command.getName().equalsIgnoreCase("notrankup") && sender.hasPermission("notranks.default")) {
-                tab.addAll(argumentAliases.get("none"));
+                if (command.getName().equalsIgnoreCase("notrankup")) {
+                    tab.addAll(argumentAliases.get("confirm"));
+                }
             }
         }
         String typed = args[args.length - 1];
@@ -489,10 +457,10 @@ public class Commands implements CommandExecutor, TabCompleter {
 
     /**
      * Get a rank number from either a number as a string, or the name of the rank.
-     * Note: if a number is used, the rank number returned will be 1 fewer
+     * Note: if a number is used, the rank number returned will be 1 fewer. Ex: rank 1 will return index 0.
      * @param path Rank path
      * @param text Text to parse
-     * @return rank number, -1 if no rank exists, or -2 if the rank is no-rank
+     * @return rank number, -1 if the rank is no-rank, or -2 if no rank exists
      */
     public static int getRankNumFromText(String path, String text){
         List<Rank> validRanks = ranks.get(path);
@@ -507,17 +475,17 @@ public class Commands implements CommandExecutor, TabCompleter {
         // cannot find rank from string
         if (text.equalsIgnoreCase("none") || text.equalsIgnoreCase("0") || text.equalsIgnoreCase("reset")) {
             // no rank
-            return -2;
+            return -1;
         } else {
             try {
                 rankNum = Integer.parseInt(text) - 1;
             } catch (NumberFormatException ignored) {
                 // not a number
-                return -1;
+                return -2;
             }
             if (rankNum < 0 || rankNum >= validRanks.size()) {
                 // number out of bounds
-                return -1;
+                return -2;
             }
         }
         return rankNum;

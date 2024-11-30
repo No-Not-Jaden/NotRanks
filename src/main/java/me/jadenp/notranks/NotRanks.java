@@ -202,6 +202,9 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
 
 
     public void rankup(Player p, String rankType, int newRankIndex) {
+        if (debug) {
+            Bukkit.getLogger().info("[NotRanks] Ranking player up...");
+        }
         Rank newRank = getRank(newRankIndex, rankType);
         if (newRank == null){
             Bukkit.getLogger().warning("[NotRanks] " + p.getName() + " is trying to rankup to a rank that doesn't exist! " + rankType + ":" + newRankIndex + "\nThis is a bug. Please contact the developer Not_Jaden.");
@@ -212,16 +215,18 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
         if (!event.isCancelled()) {
             if (!rankUp.isEmpty()) {
                 String text = rankUp;
-                text = text.replaceAll("\\{player}", p.getName());
-                text = text.replaceAll("\\{rank}", newRank.getName());
+                text = text.replace("{player}", p.getName());
+                text = text.replace("{rank}", newRank.getName());
 
-                Bukkit.broadcastMessage(prefix + parse(text, p));
+                Bukkit.broadcastMessage(parse(prefix + text, p));
             }
             p.playSound(p.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 1, 1);
             newRank.rankup(p);
             logs.add("[" + formatExact.format(now) + "] " + p.getName() + " ranked up to " + newRank.getName() + ".");
             addRank(p, rankType, newRankIndex);
             lastRankPathUsed.put(p.getUniqueId(), rankType);
+        } else if (debug) {
+            Bukkit.getLogger().info("[NotRanks] Event was canceled.");
         }
     }
 

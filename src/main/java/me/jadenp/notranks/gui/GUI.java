@@ -155,7 +155,7 @@ public class GUI implements Listener {
             if (gui.getType().equalsIgnoreCase("choose-prefix")){
                 List<Rank> completedRanks = getAllCompletedRanks((OfflinePlayer) event.getWhoClicked());
                 if (completedRanks.size() <= rankNum) {
-                    event.getWhoClicked().sendMessage(prefix + parse(unknownRank, (Player) event.getWhoClicked()));
+                    event.getWhoClicked().sendMessage(parse(prefix + unknownRank, (Player) event.getWhoClicked()));
                     if (debug)
                         Bukkit.getLogger().info("[NotRanks] Completed ranks is smaller than rank number! " + completedRanks + "<=" + rankNum);
                     return;
@@ -164,13 +164,13 @@ public class GUI implements Listener {
                 String path = getRankPath(rank);
                 int rankIndex = getRankNum(rank);
                 if (path.isEmpty() || rankIndex == -1) {
-                    event.getWhoClicked().sendMessage(prefix + parse(unknownRank, (Player) event.getWhoClicked()));
+                    event.getWhoClicked().sendMessage(parse(prefix + unknownRank, (Player) event.getWhoClicked()));
                     if (debug)
                         Bukkit.getLogger().info("[NotRanks] Could not find rank path or number from rank " + path + ":" + rankIndex);
                     return;
                 }
                 prefixSelections.put(event.getWhoClicked().getUniqueId(), "r:" + rankIndex + "p:" + path);
-                event.getWhoClicked().sendMessage(prefix + parse(prefixRank.replaceAll("\\{rank}", Matcher.quoteReplacement(rank.getName())), (OfflinePlayer) event.getWhoClicked()));
+                event.getWhoClicked().sendMessage(parse(prefix + prefixRank.replaceAll("\\{rank}", Matcher.quoteReplacement(rank.getName())), (OfflinePlayer) event.getWhoClicked()));
                 event.getView().close();
                 return;
             }

@@ -308,7 +308,7 @@ public class Rank {
                     if (!sentMessage) {
                         CompleteRequirementEvent event = new CompleteRequirementEvent(p, this, req.get(i));
                         Bukkit.getPluginManager().callEvent(event);
-                        p.sendMessage(prefix + parse(completeRequirement.replace("{path}", path), p));
+                        p.sendMessage(parse(prefix + completeRequirement.replace("{path}", path), p));
                         sentMessage = true;
                     }
                     // run requirement commands
@@ -319,7 +319,7 @@ public class Rank {
                     }
                     // check if all other requirements have been completed
                     if (!completedYet.contains(false)) {
-                        p.sendMessage(prefix + parse(completeRank.replace("{path}", path), p));
+                        p.sendMessage(parse(prefix + completeRank.replace("{path}", path), p));
                         if (autoRankup.get(path)) {
                             Rank rank = this;
                             new BukkitRunnable() {
