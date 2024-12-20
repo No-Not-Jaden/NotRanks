@@ -679,6 +679,12 @@ public class NumberFormatting {
         player.getInventory().setContents(contents);
     }
 
+    /**
+     * Checks the player's balance to see if they have greater than or equal to the amount of currency.
+     * @param player Player to check the balance of.
+     * @param amount Amount that the player needs.
+     * @return True if the player has at least the specified amount of currency.
+     */
     public static boolean checkBalance(Player player, double amount) {
         if (vaultEnabled && !overrideVault)
             return vaultClass.checkBalance(player, amount);

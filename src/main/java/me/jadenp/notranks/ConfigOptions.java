@@ -422,7 +422,7 @@ public class ConfigOptions {
 
     public static @Nullable Rank getRank(int index, String rankType){
         if (ranks.isEmpty()) {
-            Bukkit.getLogger().warning("[NotRanks] No ranks found! Is ranks.yml formatted correctly?");
+            Bukkit.getLogger().warning("[NotRanks] Rank " + rankType + ":" + index + " does not exist. Is ranks.yml formatted correctly?");
             return null;
         }
         List<Rank> ranksList = ranks.get(rankType);

@@ -6,7 +6,7 @@
 
     <groupId>me.jadenp</groupId>
     <artifactId>NotRanks</artifactId>
-    <version>1.6.10</version>
+    <version>1.6.11</version>
     <packaging>jar</packaging>
 
     <name>NotRanks</name>

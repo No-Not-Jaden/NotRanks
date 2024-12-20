@@ -132,7 +132,7 @@ public class Rank {
         return cost;
     }
 
-    private Object parseValue(String str) {
+    private static Object parseValue(String str) {
         if (str.equalsIgnoreCase("true"))
             return true;
         if (str.equalsIgnoreCase("false"))
@@ -145,7 +145,7 @@ public class Rank {
         }
     }
 
-    private boolean compareObjects(Object parsedValue, Object parsedPlaceholder, String operator) {
+    private static boolean compareObjects(Object parsedValue, Object parsedPlaceholder, String operator) {
         if (parsedValue instanceof Boolean) {
             boolean a = (boolean) parsedValue;
             boolean b = (boolean) parsedPlaceholder;
@@ -210,7 +210,7 @@ public class Rank {
 
 
 
-    public boolean isRequirementCompleted(String requirement, OfflinePlayer player) {
+    public static boolean isRequirementCompleted(String requirement, OfflinePlayer player) {
         try {
             String placeholder = requirement.substring(0, requirement.indexOf(" "));
             String operator = requirement.substring(requirement.indexOf(" ") + 1, requirement.lastIndexOf(" "));
@@ -222,36 +222,31 @@ public class Rank {
                 Object parsedPlaceholder = parseValue(parsed);
 
                 // value types don't match
-                if (parsedValue instanceof Boolean && !(parsedPlaceholder instanceof Boolean)) {
-                    return false;
-                } else if (parsedValue instanceof Integer && !(parsedPlaceholder instanceof Integer)) {
-                    return false;
-                } else if (parsedValue instanceof Double && !(parsedPlaceholder instanceof Double)) {
-                    return false;
-                } else if (parsedValue instanceof String && !(parsedPlaceholder instanceof String)) {
+                if (parsedValue instanceof Boolean && !(parsedPlaceholder instanceof Boolean)
+                || parsedValue instanceof Integer && !(parsedPlaceholder instanceof Integer)
+                || parsedValue instanceof Double && !(parsedPlaceholder instanceof Double)
+                || parsedValue instanceof String && !(parsedPlaceholder instanceof String)) {
                     return false;
                 }
                 return compareObjects(parsedValue, parsedPlaceholder, operator);
             } else {
-                int customModelData = -1;
+                // item requirement
+                int itemCustomModelData = -1;
                 if (placeholder.contains("<") && placeholder.contains(">"))
                     try {
-                        customModelData = (int) tryParse(placeholder.substring(placeholder.indexOf("<") + 1, placeholder.indexOf(">")));
+                        itemCustomModelData = (int) tryParse(placeholder.substring(placeholder.indexOf("<") + 1, placeholder.indexOf(">")));
                         placeholder = placeholder.substring(0, placeholder.indexOf("<"));
                     } catch (NumberFormatException e) {
                         Bukkit.getLogger().warning("[NotRanks] Could not get custom model data from " + placeholder);
                         Bukkit.getLogger().warning(e.toString());
                     }
                 // check if it is a material
-                if (player.isOnline()) {
-                    assert player.getPlayer() != null;
+                if (player.isOnline() && player.getPlayer() != null) {
                     Material m = Material.getMaterial(placeholder);
-                    if (m != null) {
-                        if (parsedValue instanceof Integer || parsedValue instanceof Double) {
-                            int reqValue = parsedValue instanceof Double ? ((Double) parsedValue).intValue() : (int) parsedValue;
-                            int playerValue = checkAmount(player.getPlayer(), m, customModelData);
-                            return compareObjects(reqValue, playerValue, operator);
-                        }
+                    if (m != null && (parsedValue instanceof Integer || parsedValue instanceof Double)) {
+                        int reqValue = parsedValue instanceof Double ? ((Double) parsedValue).intValue() : (int) parsedValue;
+                        int playerValue = checkAmount(player.getPlayer(), m, itemCustomModelData);
+                        return compareObjects(reqValue, playerValue, operator);
                     }
                 }
             }
@@ -285,7 +280,8 @@ public class Rank {
         }
 
         // checking cost
-        String requirement = currency + " >= " + cost;
+        String requirement = vaultEnabled && !overrideVault ? "%vault_eco_balance% >= " + cost : currency + " >= " + cost;
+
 
         boolean costReq = checkBalance(p, cost);
         progress.add(costReq);
