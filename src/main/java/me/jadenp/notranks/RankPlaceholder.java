@@ -45,6 +45,7 @@ public class RankPlaceholder extends PlaceholderExpansion {
 
         // %notranks_rank_<path>%
         // %notranks_prefix%
+        // %notranks_prefix_raw%
         // %notranks_rank_number_<path>%
         // %notranks_requirement_<x>_<path>%
         // %notranks_rank_progress_<path>%
@@ -146,9 +147,12 @@ public class RankPlaceholder extends PlaceholderExpansion {
             }
         } else if (identifier.startsWith("prefix")) {
             Rank rank = getPrefixRank(player);
-            if (rank == null)
-                return LanguageOptions.parse(noRank, player);
-            return rank.getPrefix();
+            String prefix = rank == null ? noRank : rank.getPrefix();
+            if (identifier.equalsIgnoreCase("prefix_raw")) {
+                return prefix;
+            } else {
+                return LanguageOptions.parse(prefix, player);
+            }
         }
 
 

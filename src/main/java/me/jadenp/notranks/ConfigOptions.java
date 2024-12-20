@@ -426,6 +426,11 @@ public class ConfigOptions {
             return null;
         }
         List<Rank> ranksList = ranks.get(rankType);
+        if (ranksList == null) {
+            if (debug)
+                Bukkit.getLogger().info("[NotRanks] " + rankType + " does not exist!");
+            return null;
+        }
         if (index >= ranksList.size()){
             if (debug)
                 Bukkit.getLogger().info("[NotRanks] Rank " + index + " of " + rankType + " does not exist! There are not that many ranks.");
