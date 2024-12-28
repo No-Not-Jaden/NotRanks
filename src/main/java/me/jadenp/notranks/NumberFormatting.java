@@ -728,6 +728,8 @@ public class NumberFormatting {
      * @return Balance of player
      */
     public static double getBalance(Player player) {
+        if (vaultEnabled && !overrideVault)
+            return vaultClass.getBalance(player);
         if (currency.isEmpty()){
             Bukkit.getLogger().warning("[NotRanks] Cannot get balance of player because there is nothing setup for currency!");
         }

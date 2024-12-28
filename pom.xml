@@ -6,7 +6,7 @@
 
     <groupId>me.jadenp</groupId>
     <artifactId>NotRanks</artifactId>
-    <version>1.6.11</version>
+    <version>1.6.12</version>
     <packaging>jar</packaging>
 
     <name>NotRanks</name>
@@ -95,7 +95,7 @@
         <dependency>
             <groupId>me.clip</groupId>
             <artifactId>placeholderapi</artifactId>
-            <version>2.11.2</version>
+            <version>2.11.6</version>
             <scope>provided</scope>
         </dependency>
         <dependency>

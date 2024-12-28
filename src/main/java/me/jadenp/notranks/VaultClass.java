@@ -50,7 +50,12 @@ public class VaultClass {
     public boolean checkBalance(OfflinePlayer player, double amount) {
         if (!working && tryRegister())
             return false;
-        //Bukkit.getLogger().info(economy.getBalance(player) + " >= " + amount);
         return economy.getBalance(player) >= amount;
+    }
+
+    public double getBalance(OfflinePlayer player) {
+        if (!working && tryRegister())
+            return 0;
+        return economy.getBalance(player);
     }
 }
