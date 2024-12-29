@@ -345,14 +345,20 @@ public class Rank {
     }
 
     public float getCompletionPercent(OfflinePlayer player) {
-        if (!firstTimeCompletion.containsKey(player.getUniqueId().toString()))
-            return 0;
-        List<Boolean> completion = firstTimeCompletion.get(player.getUniqueId().toString());
-        int tru = 0;
-        for (boolean b : completion)
-            if (b)
-                tru++;
-        return (float) tru / completion.size();
+        if (requirements == null)
+            return 1;
+        int numRequirements = requirements.size();
+        if (cost != 0)
+            numRequirements++;
+        float totalCompletion = 0;
+        for (int i = 0; i < requirements.size(); i++) {
+            totalCompletion += getRequirementCompletionPercent(i, player) / numRequirements;
+        }
+        if (cost != 0 && player.isOnline()) {
+            float completion = (float) (getBalance(player.getPlayer()) / cost);
+            totalCompletion += Math.min(completion / numRequirements, (float) 1 / numRequirements);
+        }
+        return totalCompletion;
     }
 
     public List<String> getLore(Player p, CompletionStatus completionStatus) {
@@ -441,10 +447,7 @@ public class Rank {
         if (reqNum == 0)
             reqNum = 1;
         if (requirements != null) {
-            for (int i = 0; i < 100; i++) {
-                if (requirements.get(reqNum - 1).isEmpty())
-                    reqNum++;
-            }
+            while (reqNum <= requirements.size() && requirements.get(reqNum-1).isEmpty()) reqNum++;
             if (requirements.size() >= reqNum) {
 
                 String placeholder = requirements.get(reqNum - 1).substring(0, requirements.get(reqNum - 1).indexOf(" "));
@@ -466,6 +469,33 @@ public class Rank {
             }
         }
         return str;
+    }
+
+    private float getRequirementCompletionPercent(int reqNum, OfflinePlayer p) {
+        if (requirements != null) {
+            while (reqNum < requirements.size() && requirements.get(reqNum).isEmpty()) reqNum++;
+            if (requirements.size() >= reqNum) {
+                String placeholder = requirements.get(reqNum).substring(0, requirements.get(reqNum).indexOf(" "));
+                String value = requirements.get(reqNum).substring(requirements.get(reqNum).lastIndexOf(" ") + 1);
+                String parsed = parse(placeholder, p);
+
+                try {
+                    // is number
+                    double valueNum = tryParse(value);
+                    double parsedNum = tryParse(parsed);
+                    if (valueNum == 0)
+                        return 0;
+                    if (parsedNum > valueNum)
+                        return 1;
+                    return (float) (parsedNum / valueNum);
+                } catch (NumberFormatException e){
+                    // not a number
+                    if (value.equals(parsed))
+                        return 1;
+                }
+            }
+        }
+        return 0;
     }
 
 

@@ -1,6 +1,7 @@
 package me.jadenp.notranks;
 
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
+import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
 import org.jetbrains.annotations.NotNull;
 
@@ -49,6 +50,7 @@ public class RankPlaceholder extends PlaceholderExpansion {
         // %notranks_rank_number_<path>%
         // %notranks_requirement_<x>_<path>%
         // %notranks_rank_progress_<path>%
+        // %notranks_rank_progress_bar<length>_<path>%
         // %notranks_rank_cost_<path>%
         // %notranks_ranks_unlocked_<path>%
         if (identifier.startsWith("rank_number")) {
@@ -107,22 +109,7 @@ public class RankPlaceholder extends PlaceholderExpansion {
                 return "";
             }
         } else if (identifier.startsWith("rank_progress")) {
-            try {
-                String path;
-                if (identifier.length() > 14) {
-                    // has path
-                    path = identifier.substring(identifier.lastIndexOf("_") + 1);
-                } else {
-                    path = "default";
-                }
-                int nextRank = getRankNum(player, path) + 1;
-                Rank rank = getRank(nextRank, path);
-                if (rank == null)
-                    return "";
-                return (Math.round(rank.getCompletionPercent(player) * 100)) + "";
-            } catch (NumberFormatException | IndexOutOfBoundsException e) {
-                return "";
-            }
+            return parseProgress(identifier, player);
         } else if (identifier.startsWith("rank_cost")) {
             try {
                 String path;
@@ -157,5 +144,65 @@ public class RankPlaceholder extends PlaceholderExpansion {
 
 
         return null;
+    }
+
+    private String parseProgress(String identifier, OfflinePlayer player) {
+        // %notranks_rank_progress<_bar(x)_<path>/_<path>>%
+        if (identifier.startsWith("rank_progress_bar")) {
+            int barLength;
+            String path;
+            if (identifier.length() == 17) {
+                barLength = 20;
+                path = "default";
+            } else if (identifier.substring(17).contains("_")) {
+                String lengthString = identifier.substring(17, identifier.indexOf("_", 17));
+                path = identifier.substring(18 + lengthString.length());
+                barLength = Integer.parseInt(lengthString);
+            } else {
+                String lengthString = identifier.substring(17);
+                path = "default";
+                barLength = Integer.parseInt(lengthString);
+            }
+            int nextRank = getRankNum(player, path) + 1;
+            Rank rank = getRank(nextRank, path);
+            if (rank == null)
+                return "";
+            float progress = rank.getCompletionPercent(player);
+            return generateProgressBar(progress, barLength);
+        } else {
+            String path = identifier.length() <= 14 ? "default" : identifier.substring(14);
+            int nextRank = getRankNum(player, path) + 1;
+            Rank rank = getRank(nextRank, path);
+            if (rank == null)
+                return "";
+            return (int) (rank.getCompletionPercent(player) * 100) + "";
+        }
+    }
+
+
+    /**
+     * Generate a progress bar of '|' characters.
+     * @param percent Percentage represented on the progress bar. (0-1)
+     * @param length Number of characters used in the progress bar.
+     * @return A progress bar representing the percent.
+     */
+    private String generateProgressBar(double percent, int length) {
+        StringBuilder progressBar = new StringBuilder();
+        percent = Math.min(percent, 1);
+        int greenBars = (int) (percent * length);
+        int grayBars = length - greenBars;
+        if (greenBars > 0) {
+            progressBar.append(ChatColor.GREEN);
+            for (int i = 0; i < greenBars; i++) {
+                progressBar.append("|");
+            }
+        }
+        if (grayBars > 0) {
+            progressBar.append(ChatColor.DARK_GRAY);
+            for (int i = 0; i < grayBars; i++) {
+                progressBar.append("|");
+            }
+        }
+        return progressBar.toString();
     }
 }
