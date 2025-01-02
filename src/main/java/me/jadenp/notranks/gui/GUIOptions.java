@@ -2,6 +2,7 @@ package me.jadenp.notranks.gui;
 
 import me.jadenp.notranks.NotRanks;
 import me.jadenp.notranks.Rank;
+import me.jadenp.notranks.RankManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
@@ -41,11 +42,11 @@ public class GUIOptions {
         name = color(settings.getString("gui-name"));
         boolean autoSize = settings.getBoolean("auto-size");
         addPage = settings.getBoolean("add-page");
-        removePageItems = settings.getBoolean("remove-page-items");
-        orderlyProgression = settings.getBoolean("orderly-progression");
+        removePageItems = !settings.isSet("remove-page-items") || settings.getBoolean("remove-page-items");
+        orderlyProgression = !settings.isSet("orderly-progression") || settings.getBoolean("orderly-progression");
         requirePermission = settings.getBoolean("require-permission");
         if (autoSize){
-            int rankSize = ranks.get(type).size();
+            int rankSize = RankManager.getRanks(type).size();
             int rows = rankSize / 7;
             if (rankSize % 7 > 0)
                 rows++;
@@ -73,9 +74,9 @@ public class GUIOptions {
             // setup auto-size format
             customItems = new CustomItem[size];
             Arrays.fill(customItems, GUI.getCustomItem("fill"));
-            customItems[customItems.length-5] = exit;
-            customItems[customItems.length-1] = next;
-            customItems[customItems.length-9] = back;
+            customItems[customItems.length-5] = GUI.getCustomItem("exit");
+            customItems[customItems.length-1] = GUI.getCustomItem("next");
+            customItems[customItems.length-9] = GUI.getCustomItem("back");
             pageReplacements.add(GUI.getCustomItem("fill"));
             pageReplacements.add(GUI.getCustomItem("fill"));
         } else {
@@ -91,11 +92,9 @@ public class GUIOptions {
             for (String key : Objects.requireNonNull(settings.getConfigurationSection("layout")).getKeys(false)) {
                 String item = settings.getString("layout." + key + ".item");
                 int[] slots = getRange(settings.getString("layout." + key + ".slot"));
-                //Bukkit.getLogger().info(item);
                 if (GUI.customItems.containsKey(item)) {
                     CustomItem customItem = GUI.customItems.get(item);
                     for (int i : slots){
-                        //Bukkit.getLogger().info(i + "");
                         if (customItems[i] != null){
                             if (getPageType(customItem.getCommands()) > 0){
                                 pageReplacements.add(customItems[i]);
@@ -105,7 +104,7 @@ public class GUIOptions {
                     }
                 } else {
                     // unknown item
-                    Bukkit.getLogger().warning("Unknown item \"" + item + "\" in gui: " + settings.getName());
+                    Bukkit.getLogger().warning(() -> "Unknown item \"" + item + "\" in gui: " + settings.getName());
                 }
 
             }
@@ -120,8 +119,7 @@ public class GUIOptions {
                 denyClickItem1 = "DISABLE";
             }
         denyClickItem = denyClickItem1;
-        if (debug)
-            Bukkit.getLogger().info("[NotRanks] Loaded deny click item: " + denyClickItem1 + " for " + type + " gui");
+        NotRanks.debugMessage("Loaded deny click item: " + denyClickItem1 + " for " + type + " gui", false);
         denyClickItem1 = settings.isSet("completed-deny-click-item") ? Objects.requireNonNull(settings.getString("completed-deny-click-item")).toUpperCase() : denyClickItem;
         if (!denyClickItem1.equals("DISABLE") && !denyClickItem1.equals("RANK"))
             try {
@@ -131,11 +129,10 @@ public class GUIOptions {
                 denyClickItem1 = "DISABLE";
             }
         completedDenyClickItem = denyClickItem1;
-        if (debug)
-            Bukkit.getLogger().info("[NotRanks] Loaded completed deny click item: " + denyClickItem1 + " for " + type + " gui");
+        NotRanks.debugMessage("Loaded completed deny click item: " + denyClickItem1 + " for " + type + " gui", false);
 
         if (rankSlots.isEmpty()){
-            Bukkit.getLogger().warning("[NotRanks] No slots for ranks in the " + name + " GUI!");
+            Bukkit.getLogger().warning(() -> "[NotRanks] No slots for ranks in the " + name + " GUI!");
         }
     }
 
@@ -157,17 +154,17 @@ public class GUIOptions {
         }
         Rank[] displayRanks = new Rank[formattedRanks.length];
         for (int i = 0; i < formattedRanks.length; i++) {
-            displayRanks[i] = getRank(formattedRanks[i], player);
+            displayRanks[i] = RankManager.getRank(formattedRanks[i], player);
         }
-        List<Rank> guiRanks = type.equalsIgnoreCase("choose-prefix") ? getAllCompletedRanks(player) : getRanks();
+        List<Rank> guiRanks = type.equalsIgnoreCase("choose-prefix") ? RankManager.getAllCompletedRanks(player) : getRanks();
         int ranksSize = guiRanks.size();
         while ((page-1) * rankSlots.size() >= ranksSize && page != 1){
             page--;
             playerInfo.put(player.getUniqueId(), new PlayerInfo(page, type, formattedRanks));
         }
-        String name = addPage ? this.name + " " + page : this.name;
-        name = parse(name, player);
-        Inventory inventory = Bukkit.createInventory(player, size, name);
+        String title = addPage ? this.name + " " + page : this.name;
+        title = parse(title, player);
+        Inventory inventory = Bukkit.createInventory(player, size, title);
         ItemStack[] contents = inventory.getContents();
         // set up regular items
         int replacementIndex = 0;
@@ -199,11 +196,11 @@ public class GUIOptions {
             }
         }
         // set up player slots - i = index of rank in rank list
-        Rank prefixRank = getPrefixRank(player);
+        Rank prefixRank = RankManager.getPrefixRank(player);
         for (int i = (page-1) * rankSlots.size(); i < Math.min(page * rankSlots.size(), ranksSize); i++){
             Rank rank = guiRanks.get(i);
             Rank.CompletionStatus prefixSelected = rank.equals(prefixRank) ? Rank.CompletionStatus.COMPLETE : Rank.CompletionStatus.INCOMPLETE;
-            ItemStack item = type.equalsIgnoreCase("choose-prefix") ? rank.getPrefixItem(prefixSelected, player) : rank.getItem(player, isRankUnlocked(player, type, i));
+            ItemStack item = type.equalsIgnoreCase("choose-prefix") ? rank.getPrefixItem(prefixSelected, player) : rank.getItem(player, RankManager.isRankUnlocked(player, type, i));
             contents[rankSlots.get(i % rankSlots.size())] = item;
         }
         inventory.setContents(contents);
@@ -217,7 +214,7 @@ public class GUIOptions {
     public List<Rank> getRanks(){
         if (type.equalsIgnoreCase("confirmation"))
             return new ArrayList<>();
-        return ranks.get(type);
+        return RankManager.getRanks(type);
     }
 
     public boolean isPermissionRequired(){
@@ -255,7 +252,6 @@ public class GUIOptions {
             int[] result = new int[Math.abs(bound1 - bound2) + 1];
 
             for (int i = Math.min(bound1, bound2); i < Math.max(bound1, bound2) + 1; i++) {
-                //Bukkit.getLogger().info(i + "");
                 result[i-Math.min(bound1, bound2)] = i;
             }
             return result;

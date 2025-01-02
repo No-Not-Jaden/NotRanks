@@ -38,8 +38,8 @@ public class Rank {
     private final double cost;
     private final List<String> commands;
     private final String head;
-    private final Map<String, List<Boolean>> completed = new HashMap<>();
-    private final Map<String, List<Boolean>> firstTimeCompletion = new HashMap<>();
+    private final Map<UUID, List<Boolean>> completed = new HashMap<>();
+    private final Map<UUID, List<Boolean>> firstTimeCompletion = new HashMap<>();
     private final String finishedHead;
     private final Material material;
     private final boolean completionLoreEnabled;
@@ -291,11 +291,12 @@ public class Rank {
         List<String> req = requirements != null ? new ArrayList<>(requirements) : new ArrayList<>();
         req.add(requirement);
 
+        boolean rankup = false;
 
 
         // go through and see if any change?
-        if (firstTimeCompletion.containsKey(p.getUniqueId().toString())) {
-            List<Boolean> completedYet = firstTimeCompletion.get(p.getUniqueId().toString());
+        if (firstTimeCompletion.containsKey(p.getUniqueId())) {
+            List<Boolean> completedYet = firstTimeCompletion.get(p.getUniqueId());
             boolean sentMessage = false;
             for (int i = 0; i < progress.size(); i++) {
                 if (progress.get(i) && !completedYet.get(i)) {
@@ -304,7 +305,7 @@ public class Rank {
                     if (!sentMessage) {
                         CompleteRequirementEvent event = new CompleteRequirementEvent(p, this, req.get(i));
                         Bukkit.getPluginManager().callEvent(event);
-                        p.sendMessage(parse(prefix + completeRequirement.replace("{path}", path), p));
+                        p.sendMessage(parse(LanguageOptions.prefix + completeRequirement.replace("{path}", path), p));
                         sentMessage = true;
                     }
                     // run requirement commands
@@ -315,15 +316,9 @@ public class Rank {
                     }
                     // check if all other requirements have been completed
                     if (!completedYet.contains(false)) {
-                        p.sendMessage(parse(prefix + completeRank.replace("{path}", path), p));
-                        if (autoRankup.get(path)) {
-                            Rank rank = this;
-                            new BukkitRunnable() {
-                                @Override
-                                public void run() {
-                                    NotRanks.getInstance().rankup(p, path, getRankNum(rank));
-                                }
-                            }.runTaskLater(NotRanks.getInstance(), 5);
+                        p.sendMessage(parse(LanguageOptions.prefix + completeRank.replace("{path}", path), p));
+                        if (RankManager.isAutoRankup(path)) {
+                            rankup = true;
                         }
 
                     }
@@ -331,17 +326,31 @@ public class Rank {
             }
             if (log)
                 Bukkit.getLogger().info("[NotRanks] Total Rank Progress: " + completedYet.toString());
-            firstTimeCompletion.replace(p.getUniqueId().toString(), completedYet);
+            firstTimeCompletion.replace(p.getUniqueId(), completedYet);
         } else {
-            firstTimeCompletion.put(p.getUniqueId().toString(), progress);
+            firstTimeCompletion.put(p.getUniqueId(), progress);
+            if (!progress.contains(false)) {
+                p.sendMessage(parse(LanguageOptions.prefix + completeRank.replace("{path}", path), p));
+                if (RankManager.isAutoRankup(path)) {
+                    rankup = true;
+                }
+            }
         }
 
-        if (completed.containsKey(p.getUniqueId().toString())) {
-            completed.replace(p.getUniqueId().toString(), progress);
+        if (completed.containsKey(p.getUniqueId())) {
+            completed.replace(p.getUniqueId(), progress);
         } else {
-            completed.put(p.getUniqueId().toString(), progress);
+            completed.put(p.getUniqueId(), progress);
         }
 
+        if (rankup)
+            NotRanks.getInstance().rankup(p, path, RankManager.getRankNum(this));
+
+    }
+
+    public void clearRankData(UUID uuid) {
+        firstTimeCompletion.remove(uuid);
+        completed.remove(uuid);
     }
 
     public float getCompletionPercent(OfflinePlayer player) {
@@ -522,15 +531,13 @@ public class Rank {
             profile.setTextures(textures);
             return profile;
         } catch (IllegalArgumentException | MalformedURLException e){
-            if (debug)
-                Bukkit.getLogger().warning(e.toString());
+            NotRanks.debugMessage(e.toString(), true);
             return null;
         }
     }
 
     public ItemStack createPlayerSkull(String data){
-        if (debug)
-            Bukkit.getLogger().info("[NotRanks] Attempting to get player skull from: " + data);
+        NotRanks.debugMessage("Attempting to get player skull from: " + data, false);
         ItemStack item = null;
         if (usingBase64(data)){
             item = new ItemStack(Material.PLAYER_HEAD);
@@ -543,8 +550,7 @@ public class Rank {
             try {
                 item = hdb.getItemHead(data);
             } catch (NullPointerException e) {
-                if (debug)
-                    Bukkit.getLogger().warning(e.toString());
+                NotRanks.debugMessage(e.toString(), true);
                 return null;
             }
         }
@@ -689,11 +695,10 @@ public class Rank {
      * @return true if a player has at least one uncompleted requirement
      */
     public boolean checkUncompleted(Player p, String path) {
-        if (debug)
-            Bukkit.getLogger().info("[NotRanks] Checking rank completion for " + p.getName() + " in path " + path + ".");
-        checkRankCompletion(p, path, debug);
-        if (completed.containsKey(p.getUniqueId().toString())) {
-            return completed.get(p.getUniqueId().toString()).contains(false);
+        NotRanks.debugMessage("Checking rank completion for " + p.getName() + " in path " + path + ".", false);
+        checkRankCompletion(p, path, NotRanks.isDebug());
+        if (completed.containsKey(p.getUniqueId())) {
+            return completed.get(p.getUniqueId()).contains(false);
         } else {
             return true;
         }

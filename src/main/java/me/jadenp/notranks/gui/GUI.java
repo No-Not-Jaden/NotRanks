@@ -1,19 +1,31 @@
 package me.jadenp.notranks.gui;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 import me.jadenp.notranks.*;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeModifier;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.*;
 import java.util.regex.Matcher;
 
@@ -26,10 +38,10 @@ public class GUI implements Listener {
     public static final Map<UUID, Long> notifyThroughGUIDelay = new HashMap<>();
     private static final Map<String, GUIOptions> customGuis = new HashMap<>();
     public static Map<String, CustomItem> customItems = new HashMap<>();
-    public static CustomItem exit;
-    public static CustomItem next;
-    public static CustomItem back;
-    public static CustomItem fill;
+    private static CustomItem exit;
+    private static CustomItem next;
+    private static CustomItem back;
+    private static CustomItem fill;
 
     public static void addGUI(GUIOptions gui, String name){
         customGuis.put(name, gui);
@@ -43,37 +55,179 @@ public class GUI implements Listener {
         return customGuis.get(type);
     }
 
+    private static void fillOldOptions(YamlConfiguration guiConfig, File guiFile) throws IOException {
+        if (!guiConfig.isConfigurationSection("choose-prefix")){
+            // add choose-prefix gui
+            guiConfig.set("choose-prefix.gui-name", "&d&lChoose Prefix");
+            guiConfig.set("choose-prefix.require-permission", false);
+            guiConfig.set("choose-prefix.add-page", false);
+            guiConfig.set("choose-prefix.auto-size", false);
+            guiConfig.set("choose-prefix.remove-page-items", true);
+            guiConfig.set("choose-prefix.deny-click-item", "DISABLE");
+            guiConfig.set("choose-prefix.completed-deny-click-item", "DISABLE");
+            guiConfig.set("choose-prefix.size", 27);
+            guiConfig.set("choose-prefix.orderly-progression", false);
+            guiConfig.set("choose-prefix.rank-slots", Collections.singletonList("0-17"));
+            guiConfig.set("choose-prefix.layout.1.slot", "18-26");
+            guiConfig.set("choose-prefix.layout.1.item", "fill");
+            guiConfig.set("choose-prefix.layout.2.slot", "22");
+            guiConfig.set("choose-prefix.layout.2.item", "exit");
+            guiConfig.set("choose-prefix.layout.3.slot", "18");
+            guiConfig.set("choose-prefix.layout.3.item", "back");
+            guiConfig.set("choose-prefix.layout.4.slot", "26");
+            guiConfig.set("choose-prefix.layout.4.item", "next");
+            guiConfig.set("choose-prefix.layout.5.slot", "19");
+            guiConfig.set("choose-prefix.layout.5.item", "default-prefix");
+            guiConfig.set("choose-prefix.layout.6.slot", "25");
+            guiConfig.set("choose-prefix.layout.6.item", "reset-prefix");
+
+            if (!guiConfig.isConfigurationSection("custom-item.reset-prefix")){
+                guiConfig.set("custom-items.default-prefix.material", "DIRT");
+                guiConfig.set("custom-items.default-prefix.amount", 1);
+                guiConfig.set("custom-items.default-prefix.name", "&#6b4616Default Path");
+                guiConfig.set("custom-items.default-prefix.lore", Arrays.asList("", "&6&oClick to follow the", "&6&odefault rank path", ""));
+                guiConfig.set("custom-items.default-prefix.commands", Arrays.asList("[p] rank prefix default", "[close]"));
+                guiConfig.set("custom-items.reset-prefix.material", "WATER_BUCKET");
+                guiConfig.set("custom-items.reset-prefix.amount", 1);
+                guiConfig.set("custom-items.reset-prefix.name", "&fReset Prefix");
+                guiConfig.set("custom-items.reset-prefix.lore", Arrays.asList("", "&7Your prefix will", "&7match your last rank", ""));
+                guiConfig.set("custom-items.reset-prefix.commands", Arrays.asList("[p] rank prefix reset", "[close]"));
+            }
+        }
+        guiConfig.save(guiFile);
+    }
+
+    private static void loadGUI(ConfigurationSection guiConfig) {
+        // read custom items
+        if (guiConfig.isConfigurationSection("custom-items")){
+            Map<String, CustomItem> customItems = new HashMap<>();
+            for (String key : Objects.requireNonNull(guiConfig.getConfigurationSection("custom-items")).getKeys(false)){
+                Material material = Material.STONE;
+                String mat = guiConfig.getString("custom-items." + key + ".material");
+                if (mat != null)
+                    try {
+                        material = Material.valueOf(mat.toUpperCase(Locale.ROOT));
+                    } catch (IllegalArgumentException e) {
+                        Bukkit.getLogger().warning("Unknown material \"" + mat + "\" in " + guiConfig.getName());
+                    }
+                int amount = guiConfig.isInt("custom-items." + key + ".amount") ? guiConfig.getInt("custom-items." + key + ".amount") : 1;
+
+                ItemStack itemStack = new ItemStack(material, amount);
+                ItemMeta itemMeta = itemStack.getItemMeta();
+                assert itemMeta != null;
+                if (guiConfig.isSet("custom-items." + key + ".name")) {
+                    itemMeta.setDisplayName(guiConfig.getString("custom-items." + key + ".name"));
+                }
+                if (guiConfig.isSet("custom-items." + key + ".custom-model-data")) {
+                    itemMeta.setCustomModelData(guiConfig.getInt("custom-items." + key + ".custom-model-data"));
+                }
+                if (guiConfig.isSet("custom-items." + key + ".lore")) {
+                    itemMeta.setLore(guiConfig.getStringList("custom-items." + key + ".lore"));
+                }
+                if (guiConfig.isSet("custom-items." + key + ".enchanted")) {
+                    if (guiConfig.getBoolean("custom-items." + key + ".enchanted")) {
+                        itemStack.addUnsafeEnchantment(Enchantment.CHANNELING, 1);
+                        itemMeta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+                    }
+                }
+                if (guiConfig.getBoolean("custom-items." + key + ".hide-nbt")) {
+                    itemMeta.getItemFlags().clear();
+                    Multimap<Attribute, AttributeModifier> attributes = HashMultimap.create();
+                    itemMeta.setAttributeModifiers(attributes);
+                    itemMeta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
+                    itemMeta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+                    itemMeta.addItemFlags(ItemFlag.HIDE_DESTROYS);
+                    itemMeta.addItemFlags(ItemFlag.HIDE_DYE);
+                    itemMeta.addItemFlags(ItemFlag.HIDE_PLACED_ON);
+                    itemMeta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE);
+                    itemMeta.addItemFlags(ItemFlag.values()[5]);
+                }
+                if (guiConfig.getBoolean("custom-items." + key + ".hide-tooltip") && NotRanks.isAboveVersion(20, 4)) {
+                    itemMeta.setHideTooltip(true);
+                }
+                itemStack.setItemMeta(itemMeta);
+
+                List<String> itemCommands = guiConfig.isSet("custom-items." + key + ".commands") ? guiConfig.getStringList("custom-items." + key + ".commands") : new ArrayList<>();
+                CustomItem customItem = new CustomItem(itemStack, itemCommands);
+                customItems.put(key, customItem);
+                NotRanks.debugMessage("Read custom item: " + key + ".", false);
+            }
+            GUI.setCustomItems(customItems);
+        }
+
+        // read customGUIs
+        GUI.clearGUIs();
+        for (String key : guiConfig.getKeys(false)){
+            if (key.equals("custom-items"))
+                continue;
+            GUIOptions guiOptions = new GUIOptions(Objects.requireNonNull(guiConfig.getConfigurationSection(key)));
+            GUI.addGUI(guiOptions, key);
+            NotRanks.debugMessage("[NotRanks] Registered GUI " + key + ".", false);
+        }
+    }
+
+    public static void readConfig(Plugin plugin) throws IOException {
+        playerInfo.clear();
+        File guiFile = new File(plugin.getDataFolder() + File.separator + "gui.yml");
+        if (!guiFile.exists()) {
+            plugin.saveResource("gui.yml", false);
+        }
+        YamlConfiguration guiConfig = YamlConfiguration.loadConfiguration(guiFile);
+        if (guiConfig.getKeys(true).size() <= 2) {
+            Bukkit.getLogger().severe("[NotBounties] Loaded an empty configuration for the gui.yml file. Fix the YAML formatting errors, or the GUI may not work!\nFor more information on YAML formatting, see here: https://spacelift.io/blog/yaml");
+            if (plugin.getResource("gui.yml") != null) {
+                guiConfig = YamlConfiguration.loadConfiguration(new InputStreamReader(Objects.requireNonNull(plugin.getResource("gui.yml"))));
+                loadGUI(guiConfig);
+            }
+        } else {
+            fillOldOptions(guiConfig, guiFile);
+            loadGUI(guiConfig);
+        }
+    }
+
     public static void setCustomItems(Map<String, CustomItem> customItems){
-        GUI.customItems = customItems;
 
         // create some preset custom items for auto-size
-        ItemStack item = new ItemStack(Material.BARRIER);
-        ItemMeta meta = item.getItemMeta();
-        assert meta != null;
-        meta.setDisplayName(net.md_5.bungee.api.ChatColor.RED + "" + net.md_5.bungee.api.ChatColor.BOLD + "Exit");
-        item.setItemMeta(meta);
-        exit = new CustomItem(item, Collections.singletonList("[close]"));
+        ItemStack item;
+        ItemMeta meta;
 
-        item = new ItemStack(Material.SPECTRAL_ARROW);
-        meta = item.getItemMeta();
-        assert meta != null;
-        meta.setDisplayName(net.md_5.bungee.api.ChatColor.DARK_GRAY + "Next Page");
-        item.setItemMeta(meta);
-        next = new CustomItem(item, Collections.singletonList("[next]"));
+        if (!customItems.containsKey("exit")) {
+            item = new ItemStack(Material.BARRIER);
+            meta = item.getItemMeta();
+            assert meta != null;
+            meta.setDisplayName(net.md_5.bungee.api.ChatColor.RED + "" + net.md_5.bungee.api.ChatColor.BOLD + "Exit");
+            item.setItemMeta(meta);
+            customItems.put("exit", new CustomItem(item, Collections.singletonList("[close]")));
+        }
 
-        item = new ItemStack(Material.TIPPED_ARROW);
-        meta = item.getItemMeta();
-        assert meta != null;
-        meta.setDisplayName(ChatColor.DARK_GRAY + "Last Page");
-        item.setItemMeta(meta);
-        back = new CustomItem(item, Collections.singletonList("[back]"));
+        if (!customItems.containsKey("next")) {
+            item = new ItemStack(Material.SPECTRAL_ARROW);
+            meta = item.getItemMeta();
+            assert meta != null;
+            meta.setDisplayName(net.md_5.bungee.api.ChatColor.DARK_GRAY + "Next Page");
+            item.setItemMeta(meta);
+            customItems.put("next", new CustomItem(item, Collections.singletonList("[next]")));
+        }
 
-        item = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
-        meta = item.getItemMeta();
-        assert meta != null;
-        meta.setDisplayName(ChatColor.DARK_GRAY + "");
-        item.setItemMeta(meta);
-        fill = new CustomItem(item, new ArrayList<>());
+        if (!customItems.containsKey("back")) {
+            item = new ItemStack(Material.TIPPED_ARROW);
+            meta = item.getItemMeta();
+            assert meta != null;
+            meta.setDisplayName(ChatColor.DARK_GRAY + "Last Page");
+            item.setItemMeta(meta);
+            customItems.put("back", new CustomItem(item, Collections.singletonList("[back]")));
+        }
+
+        if (!customItems.containsKey("fill")) {
+            item = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
+            meta = item.getItemMeta();
+            assert meta != null;
+            meta.setDisplayName(ChatColor.DARK_GRAY + "");
+            item.setItemMeta(meta);
+            customItems.put("fill", new CustomItem(item, new ArrayList<>()));
+        }
+
+        GUI.customItems = customItems;
     }
 
 
@@ -153,37 +307,35 @@ public class GUI implements Listener {
         if (gui.getRankSlots().contains(event.getSlot()) && !gui.getType().equalsIgnoreCase("confirmation")){
             int rankNum = gui.getRankSlots().indexOf(event.getSlot()) + (info.getPage() - 1) * gui.getRankSlots().size();
             if (gui.getType().equalsIgnoreCase("choose-prefix")){
-                List<Rank> completedRanks = getAllCompletedRanks((OfflinePlayer) event.getWhoClicked());
+                List<Rank> completedRanks = RankManager.getAllCompletedRanks((OfflinePlayer) event.getWhoClicked());
                 if (completedRanks.size() <= rankNum) {
                     event.getWhoClicked().sendMessage(parse(prefix + unknownRank, (Player) event.getWhoClicked()));
-                    if (debug)
-                        Bukkit.getLogger().info("[NotRanks] Completed ranks is smaller than rank number! " + completedRanks + "<=" + rankNum);
+                    NotRanks.debugMessage("Completed ranks is smaller than rank number! " + completedRanks + "<=" + rankNum, false);
                     return;
                 }
                 Rank rank = completedRanks.get(rankNum);
-                String path = getRankPath(rank);
-                int rankIndex = getRankNum(rank);
+                String path = RankManager.getRankPath(rank);
+                int rankIndex = RankManager.getRankNum(rank);
                 if (path.isEmpty() || rankIndex == -1) {
                     event.getWhoClicked().sendMessage(parse(prefix + unknownRank, (Player) event.getWhoClicked()));
-                    if (debug)
-                        Bukkit.getLogger().info("[NotRanks] Could not find rank path or number from rank " + path + ":" + rankIndex);
+                    NotRanks.debugMessage("Could not find rank path or number from rank " + path + ":" + rankIndex, false);
                     return;
                 }
-                prefixSelections.put(event.getWhoClicked().getUniqueId(), "r:" + rankIndex + "p:" + path);
-                event.getWhoClicked().sendMessage(parse(prefix + prefixRank.replaceAll("\\{rank}", Matcher.quoteReplacement(rank.getName())), (OfflinePlayer) event.getWhoClicked()));
+                RankManager.setPrefix(event.getWhoClicked().getUniqueId(), path, rankIndex);
+                event.getWhoClicked().sendMessage(parse(prefix + prefixRank.replace("{rank}", rank.getName()), (OfflinePlayer) event.getWhoClicked()));
                 event.getView().close();
                 return;
             }
 
-            Rank rank = ConfigOptions.getRank(rankNum, guiType);
-            if (ConfigOptions.isRankUnlocked((OfflinePlayer) event.getWhoClicked(), guiType, rankNum) == Rank.CompletionStatus.COMPLETE) {
+            Rank rank = RankManager.getRank(rankNum, guiType);
+            if (RankManager.isRankUnlocked((OfflinePlayer) event.getWhoClicked(), guiType, rankNum) == Rank.CompletionStatus.COMPLETE) {
                 // rank already unlocked
                 gui.notifyThroughGUI(event, LanguageOptions.parse(LanguageOptions.alreadyCompleted, (Player) event.getWhoClicked()), true);
                 return;
             }
             if (gui.isOrderlyProgression()){
                 // check if it is the next rank
-                if (ConfigOptions.getRankNum((Player) event.getWhoClicked(), guiType) != rankNum - 1){
+                if (RankManager.getRankNum((Player) event.getWhoClicked(), guiType) != rankNum - 1){
                     // not the next rank
                     gui.notifyThroughGUI(event, LanguageOptions.parse(LanguageOptions.notOnRank, (Player) event.getWhoClicked()), false);
                     return;
@@ -197,7 +349,7 @@ public class GUI implements Listener {
                 return;
             }
             if (confirmation){
-                openGUI((Player) event.getWhoClicked(), "confirmation", 1, getRankFormat(rankNum, guiType));
+                openGUI((Player) event.getWhoClicked(), "confirmation", 1, RankManager.getRankFormat(rankNum, guiType));
             } else {
                 NotRanks.getInstance().rankup((Player) event.getWhoClicked(), gui.getType(), rankNum);
                 event.getView().close();

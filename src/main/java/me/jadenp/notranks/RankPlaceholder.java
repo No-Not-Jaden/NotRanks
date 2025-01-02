@@ -55,32 +55,32 @@ public class RankPlaceholder extends PlaceholderExpansion {
         // %notranks_ranks_unlocked_<path>%
         if (identifier.startsWith("rank_number")) {
             if (identifier.equalsIgnoreCase("rank_number"))
-                return getRankNum(player, "default") + "";
+                return RankManager.getRankNum(player, "default") + "";
             try {
-                return getRankNum(player, identifier.substring(identifier.lastIndexOf("_") + 1)) + "";
+                return RankManager.getRankNum(player, identifier.substring(identifier.lastIndexOf("_") + 1)) + "";
             } catch (IndexOutOfBoundsException e) {
                 return "-1";
             }
         } else if (identifier.startsWith("ranks_unlocked")) {
             if (identifier.equals("ranks_unlocked"))
-                return getAllCompletedRanks(player).size() + "";
+                return RankManager.getAllCompletedRanks(player).size() + "";
 
             String path;
             if (identifier.length() > 15)
                 path = identifier.substring(15);
             else
                 path = "default";
-            return getRankCompletion(player, path).size() + "";
+            return RankManager.getRankCompletion(player, path).size() + "";
 
         } else if (identifier.startsWith("rank") && !identifier.startsWith("rank_progress") && !identifier.startsWith("rank_cost")) {
             if (identifier.equalsIgnoreCase("rank")) {
-                Rank rank = getRank(player, "default");
+                Rank rank = RankManager.getRank(player, "default");
                 if (rank == null)
                     return LanguageOptions.parse(noRank, player);
                 return LanguageOptions.parse(rank.getName(), player);
             }
             try {
-                Rank rank = getRank(player, identifier.substring(identifier.lastIndexOf("_") + 1));
+                Rank rank = RankManager.getRank(player, identifier.substring(identifier.lastIndexOf("_") + 1));
                 if (rank == null)
                     return LanguageOptions.parse(noRank, player);
                 return LanguageOptions.parse(rank.getName(), player);
@@ -100,8 +100,8 @@ public class RankPlaceholder extends PlaceholderExpansion {
                     reqNum = Integer.parseInt(parameters);
                     path = "default";
                 }
-                int nextRank = getRankNum(player, path) + 1;
-                Rank rank = getRank(nextRank, path);
+                int nextRank = RankManager.getRankNum(player, path) + 1;
+                Rank rank = RankManager.getRank(nextRank, path);
                 if (rank == null)
                     return "";
                 return LanguageOptions.parse(rank.getRequirementProgress(reqNum, player, false), player);
@@ -119,8 +119,8 @@ public class RankPlaceholder extends PlaceholderExpansion {
                 } else {
                     path = "default";
                 }
-                int nextRank = getRankNum(player, path) + 1;
-                Rank rank = getRank(nextRank, path);
+                int nextRank = RankManager.getRankNum(player, path) + 1;
+                Rank rank = RankManager.getRank(nextRank, path);
                 if (rank == null)
                     return "";
                 String strAmount = (rank.getCost() * Math.pow(10, decimals)) / Math.pow(10, decimals) + "";
@@ -133,7 +133,7 @@ public class RankPlaceholder extends PlaceholderExpansion {
                 return "";
             }
         } else if (identifier.startsWith("prefix")) {
-            Rank rank = getPrefixRank(player);
+            Rank rank = RankManager.getPrefixRank(player);
             String prefix = rank == null ? noRank : rank.getPrefix();
             if (identifier.equalsIgnoreCase("prefix_raw")) {
                 return prefix;
@@ -163,16 +163,16 @@ public class RankPlaceholder extends PlaceholderExpansion {
                 path = "default";
                 barLength = Integer.parseInt(lengthString);
             }
-            int nextRank = getRankNum(player, path) + 1;
-            Rank rank = getRank(nextRank, path);
+            int nextRank = RankManager.getRankNum(player, path) + 1;
+            Rank rank = RankManager.getRank(nextRank, path);
             if (rank == null)
                 return "";
             float progress = rank.getCompletionPercent(player);
             return generateProgressBar(progress, barLength);
         } else {
             String path = identifier.length() <= 14 ? "default" : identifier.substring(14);
-            int nextRank = getRankNum(player, path) + 1;
-            Rank rank = getRank(nextRank, path);
+            int nextRank = RankManager.getRankNum(player, path) + 1;
+            Rank rank = RankManager.getRank(nextRank, path);
             if (rank == null)
                 return "";
             return (int) (rank.getCompletionPercent(player) * 100) + "";

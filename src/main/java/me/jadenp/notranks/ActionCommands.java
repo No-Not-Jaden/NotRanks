@@ -29,8 +29,7 @@ public class ActionCommands {
 
     public static void execute(Player player, String command) {
         // config.yml
-        if (debug)
-            Bukkit.getLogger().info("[NotRanks] Executing command: " + command);
+        NotRanks.debugMessage("Executing command: " + command, false);
         command = command.replace("{player}", player.getName());
 
         int loops = 100; // to stop an infinite loop if the command isn't formatted correctly
@@ -89,16 +88,16 @@ public class ActionCommands {
                         if (info.getRankFormat().length > 0) {
                             // for confirmation GUI
                             String rankFormat = info.getRankFormat()[0];
-                            Rank rank = getRank(rankFormat);
+                            Rank rank = RankManager.getRank(rankFormat);
                             if (rank != null) {
-                                replacement = getRankPath(rank) + " " + (getRankNum(rank) + 1);
+                                replacement = RankManager.getRankPath(rank) + " " + (RankManager.getRankNum(rank) + 1);
                             }
                         } else if (gui.getRankSlots().contains(slot)) {
                             // for rank displays
                             int rankNum = gui.getRankSlots().indexOf(slot) + gui.getRankSlots().size() * (info.getPage() - 1);
-                            Rank rank = getRank(rankNum, info.getGuiType());
+                            Rank rank = RankManager.getRank(rankNum, info.getGuiType());
                             if (rank != null)
-                                replacement = getRankPath(rank) + " " + rankNum;
+                                replacement = RankManager.getRankPath(rank) + " " + rankNum;
                         }
                         if (replacement.isEmpty()) {
                             ItemMeta meta = item.getItemMeta();
@@ -127,8 +126,8 @@ public class ActionCommands {
             }
         }
 
-        if (debug)
-            Bukkit.getLogger().info("[NotRanks] parsed command: " + command);
+
+        NotRanks.debugMessage("parsed command: " + command ,false);
 
         if (command.startsWith("[close]")) {
             player.getOpenInventory().close();

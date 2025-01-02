@@ -12,6 +12,8 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -30,27 +32,32 @@ import static me.jadenp.notranks.LanguageOptions.*;
 
 public final class NotRanks extends JavaPlugin implements CommandExecutor, Listener {
 
-    public final File playerdata = new File(this.getDataFolder() + File.separator + "playerdata.yml");
-    public final File logsFolder = new File(this.getDataFolder() + File.separator + "logs");
-    final Date now = new Date();
-    final SimpleDateFormat format = new SimpleDateFormat("dd-MM-yyyy");
-    final SimpleDateFormat formatExact = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
-    final File today = new File(logsFolder + File.separator + format.format(now) + ".txt");
-    public final ArrayList<String> logs = new ArrayList<>();
+    private static File logsFolder;
+    private static final Date now = new Date();
+    private static final SimpleDateFormat format = new SimpleDateFormat("dd-MM-yyyy");
+    private static final SimpleDateFormat formatExact = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
+    private static File today;
+    private static final List<String> logs = new ArrayList<>();
 
     public static int serverVersion = 20;
     public static int serverSubVersion = 0;
-    public static NotRanks instance;
 
+    private static boolean debug = false;
+
+    private static NotRanks instance;
 
     public static NotRanks getInstance() {
         return instance;
     }
 
+    public static void setInstance(NotRanks instance) {
+        NotRanks.instance = instance;
+    }
+
     @Override
     public void onEnable() {
         // Plugin startup logic
-        instance = this;
+        setInstance(this);
         // try to get the server version
         try {
             // get the text version - ex: 1.20.3
@@ -75,6 +82,8 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
         Bukkit.getServer().getPluginManager().registerEvents(this, this);
         Bukkit.getServer().getPluginManager().registerEvents(new GUI(), this);
         // create logs stuff
+        logsFolder = new File(this.getDataFolder() + File.separator + "logs");
+        today = new File(logsFolder + File.separator + format.format(now) + ".txt");
         //noinspection ResultOfMethodCallIgnored
         logsFolder.mkdir();
         try {
@@ -90,94 +99,18 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
         } catch (IOException e) {
             Bukkit.getLogger().warning(e.toString());
         }
-        // creating file to store player's ranks if the file hadn't already been created
-        try {
-            if (playerdata.createNewFile()) {
-                Bukkit.getLogger().info("[NotRanks] Creating a new player data file.");
-            }
-        } catch (IOException e) {
-            Bukkit.getLogger().warning(e.toString());
-        }
 
-        YamlConfiguration configuration = YamlConfiguration.loadConfiguration(playerdata);
-        if (!configuration.isSet("version")) {
-            // load old config
-            for (int i = 1; configuration.isSet(i + ".uuid"); i++) {
-                List<Integer> completedRanks = new ArrayList<>();
-                int currentRank = configuration.getInt(i + ".rank");
-                for (int j = 0; j < currentRank; j++) {
-                    completedRanks.add(i);
-                }
-                Map<String, List<Integer>> completedRank = new HashMap<>();
-                completedRank.put("default", completedRanks);
-                rankData.put(UUID.fromString(Objects.requireNonNull(configuration.getString(i + ".uuid"))), completedRank);
-            }
-        } else {
-            // load new config
-            if (configuration.isConfigurationSection("data")) {
-                for (String uuid : Objects.requireNonNull(configuration.getConfigurationSection("data")).getKeys(false)) {
-                    Map<String, List<Integer>> playerRankInfo = new HashMap<>();
-                    for (String rankType : Objects.requireNonNull(configuration.getConfigurationSection("data." + uuid)).getKeys(false)) {
-                        String completedRanks = configuration.getString("data." + uuid + "." + rankType);
-                        assert completedRanks != null;
-                        // completed ranks will be prefix selection or last rank path if that is the rankType
-                        if (rankType.equalsIgnoreCase("prefix")){
-                            prefixSelections.put(UUID.fromString(uuid), completedRanks);
-                            continue;
-                        }
-                        if (rankType.equalsIgnoreCase("last-path")){
-                            lastRankPathUsed.put(UUID.fromString(uuid), completedRanks);
-                            continue;
-                        }
-                        String[] separatedRanks = completedRanks.split(",");
-                        List<Integer> rankList = new ArrayList<>();
-                        for (String separatedRank : separatedRanks) {
-                            rankList.add(Integer.parseInt(separatedRank));
-                        }
-                        playerRankInfo.put(rankType, rankList);
-                    }
-                    rankData.put(UUID.fromString(uuid), playerRankInfo);
-                }
-            }
-        }
         try {
-            this.loadConfig();
+            ConfigOptions.loadConfig(this);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+
+        RankManager.readPlayerData(this);
+
         if (papiEnabled)
             new RankPlaceholder(this).register();
 
-        // auto save every 5 minutes
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                try {
-                    saveRanks();
-                } catch (IOException e) {
-                    Bukkit.getLogger().warning(e.toString());
-                }
-                // clean out notifyThroughGUIDelay
-                GUI.notifyThroughGUIDelay.entrySet().removeIf(entries -> entries.getValue() < System.currentTimeMillis());
-            }
-        }.runTaskTimer(this, 6000L, 6000L);
-
-        // check if they completed a rank requirement
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                for (Player p : Bukkit.getOnlinePlayers()) {
-                    for (Map.Entry<String, List<Rank>> rankPaths : ranks.entrySet()) {
-                        int rankNum = getRankNum(p, rankPaths.getKey());
-                        if (rankNum < rankPaths.getValue().size() - 1) { // make sure they aren't on the max rank
-                             Rank rank = getRank(rankNum + 1, rankPaths.getKey());
-                             if (rank != null)
-                                rank.checkRankCompletion(p, rankPaths.getKey(), false); // check completion on next rank
-                        }
-                    }
-                }
-            }
-        }.runTaskTimer(this, 500L, 60);
         new BukkitRunnable() {
             @Override
             public void run() {
@@ -193,7 +126,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
         // Plugin shutdown logic
         logs.add("[" + formatExact.format(now) + "] Plugin disabling.");
         try {
-            saveRanks();
+            RankManager.saveRanks(this);
         } catch (IOException e) {
             Bukkit.getLogger().warning(e.toString());
         }
@@ -205,12 +138,12 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
         if (debug) {
             Bukkit.getLogger().info("[NotRanks] Ranking player up...");
         }
-        Rank newRank = getRank(newRankIndex, rankType);
+        Rank newRank = RankManager.getRank(newRankIndex, rankType);
         if (newRank == null){
             Bukkit.getLogger().warning("[NotRanks] " + p.getName() + " is trying to rankup to a rank that doesn't exist! " + rankType + ":" + newRankIndex + "\nThis is a bug. Please contact the developer Not_Jaden.");
             return;
         }
-        RankupEvent event = new RankupEvent(p, newRank, getRank(p, rankType), newRankIndex);
+        RankupEvent event = new RankupEvent(p, newRank, RankManager.getRank(p, rankType), newRankIndex);
         Bukkit.getPluginManager().callEvent(event);
         if (!event.isCancelled()) {
             if (!rankUp.isEmpty()) {
@@ -223,43 +156,34 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
             p.playSound(p.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 1, 1);
             newRank.rankup(p);
             logs.add("[" + formatExact.format(now) + "] " + p.getName() + " ranked up to " + newRank.getName() + ".");
-            addRank(p, rankType, newRankIndex);
-            lastRankPathUsed.put(p.getUniqueId(), rankType);
+            RankManager.addRank(p.getUniqueId(), rankType, newRankIndex);
+            RankManager.setLastRankPathUsed(p.getUniqueId(), rankType);
         } else if (debug) {
             Bukkit.getLogger().info("[NotRanks] Event was canceled.");
         }
     }
 
-
-    public void saveRanks() throws IOException {
-        YamlConfiguration configuration = new YamlConfiguration();
-        configuration.set("version", 1);
-        for (Map.Entry<UUID, Map<String, List<Integer>>> playerEntry : rankData.entrySet()) {
-            String uuid = playerEntry.getKey().toString();
-            for (Map.Entry<String, List<Integer>> rankEntry : playerEntry.getValue().entrySet()) {
-                StringBuilder builder = new StringBuilder();
-                List<Integer> completedRanks = rankEntry.getValue();
-                for (int i = 0; i < completedRanks.size() - 1; i++) {
-                    builder.append(completedRanks.get(i)).append(",");
-                }
-                if (!completedRanks.isEmpty()) {
-                    builder.append(completedRanks.get(completedRanks.size() - 1));
-                    configuration.set("data." + uuid + "." + rankEntry.getKey(), builder.toString());
+    @EventHandler
+    public void onJoin(PlayerJoinEvent event) {
+        // check auto rankup
+        for (String path : RankManager.getAllRankPaths()) {
+            if (RankManager.isAutoRankup(path)) {
+                int rankNum = RankManager.getRankNum(event.getPlayer(), path);
+                Rank rank = RankManager.getRank(rankNum + 1, path);
+                if (rank != null && !rank.checkUncompleted(event.getPlayer(), path)) {
+                    new BukkitRunnable() {
+                        @Override
+                        public void run() {
+                            NotRanks.getInstance().rankup(event.getPlayer(), path, RankManager.getRankNum(rank));
+                        }
+                    }.runTaskLater(NotRanks.getInstance(), 5);
                 }
             }
-            if (prefixSelections.containsKey(UUID.fromString(uuid)))
-                configuration.set("data." + uuid + ".prefix", prefixSelections.get(UUID.fromString(uuid)));
-            if (lastRankPathUsed.containsKey(UUID.fromString(uuid)))
-                configuration.set("data." + uuid + ".last-path", lastRankPathUsed.get(UUID.fromString(uuid)));
         }
-        configuration.save(playerdata);
     }
 
-    public void loadConfig() throws IOException {
-        log();
-        LanguageOptions.loadConfig();
-        ConfigOptions.loadConfig();
-    }
+
+
 
     // control chat if enabled
     @EventHandler(priority = EventPriority.HIGH)
@@ -267,7 +191,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
         if (!addPrefix)
             return;
         String parsedPrefix = prefixFormat;
-        Rank rank = getPrefixRank(event.getPlayer()); //getRank(event.getPlayer(), "default");
+        Rank rank = RankManager.getPrefixRank(event.getPlayer());
         String rankName = rank != null ? rank.getPrefix() : noRank;
         parsedPrefix = parsedPrefix.replace("{prefix}", rankName);
         parsedPrefix = parsedPrefix.replace("{name}", "%s");
@@ -282,7 +206,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
     }
 
 
-    public void log() {
+    public static void log() {
         try {
             PrintWriter writer = new PrintWriter(today.getPath(), "UTF-8");
             for (String s : logs) {
@@ -294,7 +218,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
         }
     }
 
-    public void writeLog(String text) {
+    public static void writeLog(String text) {
         logs.add("[" + formatExact.format(now) + "] " + text);
     }
 
@@ -306,5 +230,38 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
      */
     public static boolean isAboveVersion(int majorVersion, int subVersion) {
         return serverVersion > majorVersion || (majorVersion == serverVersion && subVersion < serverSubVersion);
+    }
+
+    public static void debugMessage(String message, boolean warning) {
+        if (!debug)
+            return;
+        message = "[NotRanksDebug] " + message;
+        NotRanks notRanks = NotRanks.getInstance();
+        if (notRanks.isEnabled()) {
+            String finalMessage = message;
+            new BukkitRunnable() {
+                @Override
+                public void run() {
+                    consoleMessage(finalMessage, warning);
+                }
+            }.runTask(notRanks);
+        } else {
+            consoleMessage(message, warning);
+        }
+    }
+
+    private static void consoleMessage(String message, boolean warning) {
+        if (warning)
+            Bukkit.getLogger().warning(message);
+        else
+            Bukkit.getLogger().info(message);
+    }
+
+    public static void setDebug(boolean debug) {
+        NotRanks.debug = debug;
+    }
+
+    public static boolean isDebug() {
+        return debug;
     }
 }
