@@ -91,7 +91,19 @@ public class GUIOptions {
             customItems = new CustomItem[size];
             for (String key : Objects.requireNonNull(settings.getConfigurationSection("layout")).getKeys(false)) {
                 String item = settings.getString("layout." + key + ".item");
-                int[] slots = getRange(settings.getString("layout." + key + ".slot"));
+                int[] slots = new int[0];
+                if (settings.isList("layout." + key + ".slot")) {
+                    List<String> slotsList = settings.getStringList("layout." + key + ".slot");
+                    for (String slot : slotsList) {
+                        int[] newSlots = getRange(slot);
+                        int[] tempSlots = new int[slots.length + newSlots.length];
+                        System.arraycopy(slots, 0, tempSlots, 0, slots.length);
+                        System.arraycopy(newSlots, 0, tempSlots, slots.length, newSlots.length);
+                        slots = tempSlots;
+                    }
+                } else {
+                    slots = getRange(settings.getString("layout." + key + ".slot"));
+                }
                 if (GUI.customItems.containsKey(item)) {
                     CustomItem customItem = GUI.customItems.get(item);
                     for (int i : slots){
@@ -174,13 +186,13 @@ public class GUIOptions {
             // check if item is a page item
             if (removePageItems){
                 // next
-                if (getPageType(customItems[i].getCommands()) == 1 && page * rankSlots.size() >= ranksSize){
+                if (getPageType(customItems[i].getCommands()) == 1 && page * rankSlots.size() >= ranksSize && pageReplacements.size() > replacementIndex){
                     contents[i] = pageReplacements.get(replacementIndex).getFormattedItem(player);
                     replacementIndex++;
                     continue;
                 }
                 // back
-                if (getPageType(customItems[i].getCommands()) == 2 && page == 1){
+                if (getPageType(customItems[i].getCommands()) == 2 && page == 1 && pageReplacements.size() > replacementIndex){
                     contents[i] = pageReplacements.get(replacementIndex).getFormattedItem(player);
                     replacementIndex++;
                     continue;

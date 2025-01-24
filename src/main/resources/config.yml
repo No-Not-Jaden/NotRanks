@@ -76,9 +76,12 @@ number-formatting:
     1000000: M
     1000000000: B
     1000000000000: T
-# rank name before player name
+# rank name before player name in chat
 prefix:
+  # whether the prefix feature is enabled
   enabled: true
+  # whether chat will be modified to show the prefix
+  modify-chat: false
   # this will overwrite any other plugin that tries to edit the chat message before it
   # disable to work with other chat formatting, and remove {name} from format
   overwrite-previous: true

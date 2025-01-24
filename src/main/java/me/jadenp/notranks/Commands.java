@@ -109,7 +109,7 @@ public class Commands implements CommandExecutor, TabCompleter {
                             sender.sendMessage(parse(prefix + noAccess, (Player) sender));
                     }
                     return true;
-                } else if (args[0].equalsIgnoreCase("prefix") && sender instanceof Player) {
+                } else if (prefixEnabled && args[0].equalsIgnoreCase("prefix") && sender instanceof Player) {
                     // /rank prefix <path/reset> <#/rank>
                     NotRanks.debugMessage("Prefix string for " + sender.getName() + " is \"" + RankManager.getPrefixSelection(((Player) sender).getUniqueId()) + "\"", false);
                     if (args.length == 1) {
@@ -377,7 +377,8 @@ public class Commands implements CommandExecutor, TabCompleter {
                 }
                 if (sender.hasPermission("notranks.default")) {
                     tab.addAll(argumentAliases.get("help"));
-                    tab.addAll(argumentAliases.get("prefix"));
+                    if (prefixEnabled)
+                        tab.addAll(argumentAliases.get("prefix"));
                     tab.addAll(RankManager.getAllRankPaths());
                 }
             } else if (args.length == 2) {

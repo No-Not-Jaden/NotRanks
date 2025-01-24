@@ -188,7 +188,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
     // control chat if enabled
     @EventHandler(priority = EventPriority.HIGH)
     public void onPlayerChat(AsyncPlayerChatEvent event) {
-        if (!addPrefix)
+        if (!prefixEnabled || !prefixModifyChat)
             return;
         String parsedPrefix = prefixFormat;
         Rank rank = RankManager.getPrefixRank(event.getPlayer());

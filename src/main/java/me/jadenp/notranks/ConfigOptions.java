@@ -4,11 +4,13 @@ import me.jadenp.notranks.gui.GUI;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandMap;
 import org.bukkit.command.PluginCommand;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.lang.reflect.Field;
 import java.util.*;
 
@@ -18,7 +20,8 @@ public class ConfigOptions {
     public static final Map<String, List<String>> argumentAliases = new HashMap<>();
     public static boolean HDBEnabled;
     public static int decimals;
-    public static boolean addPrefix;
+    public static boolean prefixEnabled;
+    public static boolean prefixModifyChat;
     public static boolean overwritePrefix;
     public static String prefixFormat;
     public static String noRank;
@@ -30,6 +33,7 @@ public class ConfigOptions {
     public static boolean confirmation;
     public static boolean papiEnabled;
     private static boolean firstStart = true;
+    private static final String[] modifiableSections = new String[]{"number-formatting.divisions"};
 
     public static void loadConfig(Plugin plugin) throws IOException {
         // close everyone out of gui
@@ -95,21 +99,27 @@ public class ConfigOptions {
             plugin.getConfig().set("currency.decimals", null);
         }
 
+        if (!plugin.getConfig().isSet("prefix.modify-chat") && plugin.getConfig().isSet("prefix.enabled")) {
+            plugin.getConfig().set("prefix.modify-chat", plugin.getConfig().getBoolean("prefix.enabled"));
+        }
 
 
 
 
-
-        // fill in any missing default settings
-        for (String key : Objects.requireNonNull(plugin.getConfig().getDefaults()).getKeys(true)) {
-            if (!plugin.getConfig().isSet(key)) {
-                plugin.getConfig().set(key, plugin.getConfig().getDefaults().get(key));
+        // fill in any default options that aren't present
+        if (NotRanks.getInstance().getResource("config.yml") != null) {
+            plugin.getConfig().setDefaults(YamlConfiguration.loadConfiguration(new InputStreamReader(Objects.requireNonNull(NotRanks.getInstance().getResource("config.yml")))));
+            for (String key : Objects.requireNonNull(plugin.getConfig().getDefaults()).getKeys(true)) {
+                if (Arrays.stream(modifiableSections).anyMatch(key::startsWith))
+                    continue;
+                if (!plugin.getConfig().isSet(key))
+                    plugin.getConfig().set(key, plugin.getConfig().getDefaults().get(key));
             }
         }
 
         // read config
         decimals = plugin.getConfig().getInt("currency.decimals");
-        addPrefix = plugin.getConfig().getBoolean("prefix.enabled");
+        prefixEnabled = plugin.getConfig().getBoolean("prefix.enabled");
         overwritePrefix = plugin.getConfig().getBoolean("prefix.overwrite-previous");
         prefixFormat = plugin.getConfig().getString("prefix.format");
         noRank = plugin.getConfig().getString("prefix.no-rank");
@@ -119,6 +129,7 @@ public class ConfigOptions {
         completionSuffix = plugin.getConfig().getString("requirement-completion.suffix");
         confirmation = plugin.getConfig().getBoolean("confirmation");
         usingHeads = plugin.getConfig().getBoolean("head.enabled");
+        prefixModifyChat = plugin.getConfig().getBoolean("prefix.modify-chat");
 
         NumberFormatting.setCurrencyOptions(Objects.requireNonNull(plugin.getConfig().getConfigurationSection("currency")), plugin.getConfig().getConfigurationSection("number-formatting"));
 
