@@ -406,7 +406,7 @@ public class RankManager {
             return false;
         Map<String, List<Integer>> rankCompletion = rankData.get(uuid);
         List<Integer> rankIndices = rankCompletion.get(path);
-        rankIndices.remove(rankNum);
+        rankIndices.removeAll(Collections.singletonList(rankNum));
         Rank rank = getRank(rankNum, path);
         if (rank != null)
             rank.clearRankData(uuid);
