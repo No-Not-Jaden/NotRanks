@@ -120,7 +120,6 @@ public class LanguageOptions {
         StringBuffer buffer = new StringBuffer(message.length() + 4 * 8);
         while (matcher.find())
         {
-            String group = matcher.group(1);
             matcher.appendReplacement(buffer, org.bukkit.ChatColor.RESET + ""
             );
         }

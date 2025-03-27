@@ -1,6 +1,5 @@
 package me.jadenp.notranks;
 
-import io.lumine.mythic.bukkit.utils.lib.jooq.impl.QOM;
 import me.jadenp.notranks.gui.GUI;
 import me.jadenp.notranks.gui.GUIOptions;
 import net.md_5.bungee.api.ChatColor;
@@ -16,7 +15,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.regex.Matcher;
 
 import static me.jadenp.notranks.ConfigOptions.*;
 import static me.jadenp.notranks.LanguageOptions.*;

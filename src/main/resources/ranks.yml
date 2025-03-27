@@ -58,7 +58,7 @@ default:
       # playtime
       - '%statistic_hours_played% >= 1'
       # kill 3 MythicMobs SkeletalKnights
-      #- 'mythic:SkeletalKnight >= 3'
+      #- '%notregionkills_mob_SkeletalKnight% >= 3'
     # auto checks and takes away with options defined in currency
     cost: 3
     commands:
