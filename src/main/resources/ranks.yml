@@ -1,6 +1,9 @@
 # gui that opens with no path specified
 default:
+  # automatically rankup the player when they complete the requirements
   auto-rankup: false
+  # Allow these prefixes to show up in the prefix GUI
+  prefix-enabled: true
   # The name of the configuration section is what players can use in commands
   Starter:
     # This is used in the GUI
@@ -76,6 +79,7 @@ default:
         - 'minecraft:give {player} stone 500'
 example-path:
   auto-rankup: false
+  prefix-enabled: true
   Wanderer:
     name: '&8&lWanderer'
     head: 193

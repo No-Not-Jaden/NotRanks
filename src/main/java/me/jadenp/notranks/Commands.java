@@ -122,7 +122,7 @@ public class Commands implements CommandExecutor, TabCompleter {
                         return true;
                     }
                     String path = args[1].toLowerCase();
-                    if (!RankManager.isRankPath(path)) {
+                    if (!RankManager.isRankPath(path) || !RankManager.isPrefixEnabled(path)) {
                         // no path found
                         sender.sendMessage(parse(prefix + unknownRankPath, (Player) sender));
                         return true;

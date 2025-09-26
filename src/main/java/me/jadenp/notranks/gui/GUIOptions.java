@@ -168,7 +168,7 @@ public class GUIOptions {
         for (int i = 0; i < formattedRanks.length; i++) {
             displayRanks[i] = RankManager.getRank(formattedRanks[i], player);
         }
-        List<Rank> guiRanks = type.equalsIgnoreCase("choose-prefix") ? RankManager.getAllCompletedRanks(player) : getRanks();
+        List<Rank> guiRanks = type.equalsIgnoreCase("choose-prefix") ? RankManager.getAllCompletedPrefixRanks(player) : getRanks();
         int ranksSize = guiRanks.size();
         while ((page-1) * rankSlots.size() >= ranksSize && page != 1){
             page--;

@@ -25,7 +25,8 @@ public class RankManager {
     // nothing - prefix changes with last rankup
     private static final Map<UUID, String> prefixSelections = new HashMap<>();
     private static final Map<String, Boolean> autoRankup = new HashMap<>();
-    private static final Map<UUID, String> lastRankPathUsed = new HashMap<>();
+    private static final Map<String, Boolean> prefixEnabled = new HashMap<>();
+    private static final Map<UUID, String> lastRankPrefixPathUsed = new HashMap<>(); // the last path used that has prefixes enabled
     private static final Map<String, String> rankPathNames = new HashMap<>();
 
     public static Map<String, List<Rank>> getRanks() {
@@ -43,6 +44,10 @@ public class RankManager {
         return autoRankup.containsKey(path) && autoRankup.get(path);
     }
 
+    public static boolean isPrefixEnabled(String path) {
+        return !prefixEnabled.containsKey(path) || prefixEnabled.get(path);
+    }
+
     public static Collection<String> getAllRankPaths() {
         return rankPathNames.values();
     }
@@ -57,6 +62,7 @@ public class RankManager {
         // loading rank info from the config
         ranks.clear();
         autoRankup.clear();
+        prefixEnabled.clear();
         rankPathNames.clear();
         String completedHead = plugin.getConfig().getString("head.completed");
         for (String path : ranksConfig.getKeys(false)){
@@ -69,6 +75,8 @@ public class RankManager {
                 }
             }
             autoRankup.put(path.toLowerCase(), ranksConfig.getBoolean(path + ".auto-rankup"));
+            if (ranksConfig.isBoolean(path + ".prefix-enabled"))
+                prefixEnabled.put(path.toLowerCase(), ranksConfig.getBoolean(path + ".prefix-enabled"));
             ranks.put(path.toLowerCase(), rankPath);
             rankPathNames.put(path.toLowerCase(), path);
         }
@@ -89,7 +97,7 @@ public class RankManager {
                         continue;
                     }
                     if (rankType.equalsIgnoreCase("last-path")){
-                        lastRankPathUsed.put(UUID.fromString(uuid), completedRanks);
+                        lastRankPrefixPathUsed.put(UUID.fromString(uuid), completedRanks);
                         continue;
                     }
                     String[] separatedRanks = completedRanks.split(",");
@@ -157,8 +165,8 @@ public class RankManager {
             }
             if (prefixSelections.containsKey(UUID.fromString(uuid)))
                 configuration.set("data." + uuid + ".prefix", prefixSelections.get(UUID.fromString(uuid)));
-            if (lastRankPathUsed.containsKey(UUID.fromString(uuid)))
-                configuration.set("data." + uuid + ".last-path", lastRankPathUsed.get(UUID.fromString(uuid)));
+            if (lastRankPrefixPathUsed.containsKey(UUID.fromString(uuid)))
+                configuration.set("data." + uuid + ".last-path", lastRankPrefixPathUsed.get(UUID.fromString(uuid)));
         }
         File playerData = new File(plugin.getDataFolder() + File.separator + "playerdata.yml");
         if (playerData.createNewFile())
@@ -243,12 +251,16 @@ public class RankManager {
     public static @Nullable Rank getPrefixRank(OfflinePlayer player){
         if (prefixSelections.containsKey(player.getUniqueId()))
             return getRank(prefixSelections.get(player.getUniqueId()), player);
-        return getRank(player, getLastRankPath(player)); // get last rank
+
+        String lastRankPath = getLastRankPath(player);
+        if (isPrefixEnabled(lastRankPath))
+            return getRank(player, lastRankPath); // get last rank
+        return getRank(player, "default");
     }
 
     public static String getLastRankPath(OfflinePlayer player) {
-        if (lastRankPathUsed.containsKey(player.getUniqueId()))
-            return lastRankPathUsed.get(player.getUniqueId());
+        if (lastRankPrefixPathUsed.containsKey(player.getUniqueId()))
+            return lastRankPrefixPathUsed.get(player.getUniqueId());
         return "default";
     }
 
@@ -322,6 +334,18 @@ public class RankManager {
         for (Map.Entry<String, List<Rank>> entry : ranks.entrySet()){
             for (int i = 0; i < entry.getValue().size(); i++) {
                 if (isRankUnlocked(player, entry.getKey(), i) == Rank.CompletionStatus.COMPLETE){
+                    completed.add(entry.getValue().get(i));
+                }
+            }
+        }
+        return completed;
+    }
+
+    public static List<Rank> getAllCompletedPrefixRanks(OfflinePlayer player){
+        List<Rank> completed = new ArrayList<>();
+        for (Map.Entry<String, List<Rank>> entry : ranks.entrySet()){
+            for (int i = 0; i < entry.getValue().size(); i++) {
+                if (isRankUnlocked(player, entry.getKey(), i) == Rank.CompletionStatus.COMPLETE && isPrefixEnabled(entry.getKey())){
                     completed.add(entry.getValue().get(i));
                 }
             }
@@ -433,6 +457,7 @@ public class RankManager {
     }
 
     public static void setLastRankPathUsed(UUID uuid, String path) {
-        lastRankPathUsed.put(uuid, path);
+        if (isPrefixEnabled(path))
+            lastRankPrefixPathUsed.put(uuid, path);
     }
 }

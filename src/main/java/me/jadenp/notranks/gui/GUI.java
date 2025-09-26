@@ -307,7 +307,7 @@ public class GUI implements Listener {
         if (gui.getRankSlots().contains(event.getSlot()) && !gui.getType().equalsIgnoreCase("confirmation")){
             int rankNum = gui.getRankSlots().indexOf(event.getSlot()) + (info.getPage() - 1) * gui.getRankSlots().size();
             if (gui.getType().equalsIgnoreCase("choose-prefix")){
-                List<Rank> completedRanks = RankManager.getAllCompletedRanks((OfflinePlayer) event.getWhoClicked());
+                List<Rank> completedRanks = RankManager.getAllCompletedPrefixRanks((OfflinePlayer) event.getWhoClicked());
                 if (completedRanks.size() <= rankNum) {
                     event.getWhoClicked().sendMessage(parse(prefix + unknownRank, (Player) event.getWhoClicked()));
                     NotRanks.debugMessage("Completed ranks is smaller than rank number! " + completedRanks + "<=" + rankNum, false);

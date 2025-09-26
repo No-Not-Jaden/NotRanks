@@ -133,10 +133,18 @@ public class RankPlaceholder extends PlaceholderExpansion {
                 return "";
             }
         } else if (identifier.startsWith("prefix")) {
-            Rank rank = RankManager.getPrefixRank(player);
-            String prefix = rank == null ? noRank : rank.getPrefix();
-            if (identifier.equalsIgnoreCase("prefix_raw")) {
-                return prefix;
+            String prefix;
+            if (identifier.contains("_")) {
+                String path = identifier.substring(identifier.indexOf("_") + 1);
+                Rank rankPath = RankManager.getRank(player, path);
+                prefix = rankPath == null ? noRank : rankPath.getPrefix();
+            } else {
+                Rank rank = RankManager.getPrefixRank(player);
+                prefix = rank == null ? noRank : rank.getPrefix();
+            }
+            if (identifier.endsWith("_raw")) {
+                Rank rank = RankManager.getPrefixRank(player);
+                return rank == null ? noRank : rank.getPrefix();
             } else {
                 return LanguageOptions.parse(prefix, player);
             }
