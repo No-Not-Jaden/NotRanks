@@ -55,13 +55,11 @@ default:
     requirements:
       #                        vv operator - can be "<=" ">=" "!=" "=" ">" "<" ||| true/false & text can only use "!=" & "="
       # papi placeholder vv    vv  vv required amount - Make sure you download the placeholder before you use it
-      - '%statistic_mob_kills% >= 100'
+      - '%statistic_mob_kills% >= 100' # killed 100 mobs
       #- '%mcmmo_power_level% >= 5'
-      - '%statistic_mine_block:STONE% >= 500'
-      # playtime
-      - '%statistic_hours_played% >= 1'
-      # kill 3 MythicMobs SkeletalKnights
-      #- '%notregionkills_mob_SkeletalKnight% >= 3'
+      - '%statistic_mine_block:STONE% >= 500' # mined 500 stone
+      - '%statistic_hours_played% >= 1' # playtime
+      #- '%notregionkills_mob_SkeletalKnight% >= 3' # kill 3 MythicMobs SkeletalKnights
     # auto checks and takes away with options defined in currency
     cost: 3
     commands:
