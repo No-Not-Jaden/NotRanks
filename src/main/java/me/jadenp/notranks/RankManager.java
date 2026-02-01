@@ -137,8 +137,11 @@ public class RankManager {
                         int rankNum = getRankNum(p, rankPaths.getKey());
                         if (rankNum < rankPaths.getValue().size() - 1) { // make sure they aren't on the max rank
                             Rank rank = getRank(rankNum + 1, rankPaths.getKey());
-                            if (rank != null)
-                                rank.checkRankCompletion(p, rankPaths.getKey(), false); // check completion on next rank
+                            if (rank != null) {
+                                GUIOptions guiOptions = GUI.getGUI(rankPaths.getKey());
+                                if (guiOptions == null || !guiOptions.isPermissionRequired() || p.hasPermission("notranks." + rankPaths.getKey()))
+                                    rank.checkRankCompletion(p, rankPaths.getKey(), false); // check completion on next rank
+                            }
                         }
                     }
                 }

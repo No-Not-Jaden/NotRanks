@@ -3,6 +3,8 @@ package me.jadenp.notranks;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import me.arcaniax.hdb.api.HeadDatabaseAPI;
+import me.jadenp.notranks.gui.GUI;
+import me.jadenp.notranks.gui.GUIOptions;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -696,6 +698,9 @@ public class Rank {
      */
     public boolean checkUncompleted(Player p, String path) {
         NotRanks.debugMessage("Checking rank completion for " + p.getName() + " in path " + path + ".", false);
+        GUIOptions guiOptions = GUI.getGUI(path);
+        if (guiOptions != null && guiOptions.isPermissionRequired() && !p.hasPermission("notranks." + path))
+            return true;
         checkRankCompletion(p, path, NotRanks.isDebug());
         if (completed.containsKey(p.getUniqueId())) {
             return completed.get(p.getUniqueId()).contains(false);
