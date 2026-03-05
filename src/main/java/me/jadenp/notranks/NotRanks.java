@@ -1,6 +1,8 @@
 package me.jadenp.notranks;
 
 
+import com.cjcrafter.foliascheduler.FoliaCompatibility;
+import com.cjcrafter.foliascheduler.ServerImplementation;
 import me.jadenp.notranks.gui.GUI;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Bukkit;
@@ -15,13 +17,13 @@ import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.scheduler.BukkitRunnable;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.logging.Level;
 
 import static me.jadenp.notranks.ConfigOptions.*;
 import static me.jadenp.notranks.LanguageOptions.*;
@@ -38,6 +40,7 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
     private static final SimpleDateFormat formatExact = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
     private static File today;
     private static final List<String> logs = new ArrayList<>();
+    private static ServerImplementation serverImplementation;
 
     public static int serverVersion = 20;
     public static int serverSubVersion = 0;
@@ -54,10 +57,19 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
         NotRanks.instance = instance;
     }
 
+    public static ServerImplementation getServerImplementation() {
+        return serverImplementation;
+    }
+
+    private static void setServerImplementation(ServerImplementation serverImplementation) {
+        NotRanks.serverImplementation = serverImplementation;
+    }
+
     @Override
     public void onEnable() {
         // Plugin startup logic
         setInstance(this);
+        setServerImplementation(new FoliaCompatibility(this).getServerImplementation());
         // try to get the server version
         try {
             // get the text version - ex: 1.20.3
@@ -97,26 +109,24 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
 
             }
         } catch (IOException e) {
-            Bukkit.getLogger().warning(e.toString());
+            getLogger().warning("Could not create log file.");
+            Arrays.stream(e.getStackTrace()).forEach(stackTraceElement -> getLogger().warning(stackTraceElement.toString()));
         }
 
         try {
             ConfigOptions.loadConfig(this);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            getLogger().warning("Could not load config. Fix these errors before enabling the plugin: ");
+            Arrays.stream(e.getStackTrace()).forEach(stackTraceElement -> getLogger().warning(stackTraceElement.toString()));
+            Bukkit.getPluginManager().disablePlugin(this);
+            return;
         }
 
         RankManager.readPlayerData(this);
 
         if (papiEnabled)
             new RankPlaceholder(this).register();
-
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                log();
-            }
-        }.runTaskTimerAsynchronously(this, 5000, 5000);
+        getServerImplementation().async().runAtFixedRate(NotRanks::log, 5000, 5000);
         logs.add("[" + formatExact.format(now) + "] Plugin Loaded!");
 
     }
@@ -128,19 +138,17 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
         try {
             RankManager.saveRanks(this);
         } catch (IOException e) {
-            Bukkit.getLogger().warning(e.toString());
+            getLogger().warning(e.toString());
         }
         log();
     }
 
 
     public void rankup(Player p, String rankType, int newRankIndex) {
-        if (debug) {
-            Bukkit.getLogger().info("[NotRanks] Ranking player up...");
-        }
+        debugMessage("Ranking player up...", false);
         Rank newRank = RankManager.getRank(newRankIndex, rankType);
         if (newRank == null){
-            Bukkit.getLogger().warning("[NotRanks] " + p.getName() + " is trying to rankup to a rank that doesn't exist! " + rankType + ":" + newRankIndex + "\nThis is a bug. Please contact the developer Not_Jaden.");
+            getLogger().log(Level.WARNING, "{0} is trying to rankup to a rank that doesn't exist! {1} : {2}", new Object[]{p.getName(), rankType, newRankIndex});
             return;
         }
         RankupEvent event = new RankupEvent(p, newRank, RankManager.getRank(p, rankType), newRankIndex);
@@ -171,12 +179,9 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
                 int rankNum = RankManager.getRankNum(event.getPlayer(), path);
                 Rank rank = RankManager.getRank(rankNum + 1, path);
                 if (rank != null && !rank.checkUncompleted(event.getPlayer(), path)) {
-                    new BukkitRunnable() {
-                        @Override
-                        public void run() {
-                            NotRanks.getInstance().rankup(event.getPlayer(), path, RankManager.getRankNum(rank));
-                        }
-                    }.runTaskLater(NotRanks.getInstance(), 5);
+                    getServerImplementation().global().runDelayed(() -> {
+                        NotRanks.getInstance().rankup(event.getPlayer(), path, RankManager.getRankNum(rank));
+                    }, 5);
                 }
             }
         }
@@ -237,14 +242,11 @@ public final class NotRanks extends JavaPlugin implements CommandExecutor, Liste
             return;
         message = "[NotRanksDebug] " + message;
         NotRanks notRanks = NotRanks.getInstance();
-        if (notRanks.isEnabled()) {
+        if (notRanks.isEnabled() && !Bukkit.isPrimaryThread()) {
             String finalMessage = message;
-            new BukkitRunnable() {
-                @Override
-                public void run() {
-                    consoleMessage(finalMessage, warning);
-                }
-            }.runTask(notRanks);
+            getServerImplementation().global().run(() -> {
+                consoleMessage(finalMessage, warning);
+            });
         } else {
             consoleMessage(message, warning);
         }

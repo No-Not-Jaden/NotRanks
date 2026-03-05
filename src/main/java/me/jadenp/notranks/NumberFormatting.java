@@ -1,10 +1,9 @@
 package me.jadenp.notranks;
 
 import com.google.common.primitives.Floats;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.Location;
-import org.bukkit.Material;
+import me.jadenp.notranks.tasks.MultipleItemGive;
+import me.jadenp.notranks.tasks.SingleItemGive;
+import org.bukkit.*;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -694,31 +693,43 @@ public class NumberFormatting {
         return bal >= amount;
     }
 
-    // use this instead?
     public static void givePlayer(Player p, ItemStack itemStack, long amount) {
-        new BukkitRunnable() {
-            long toGive = amount;
-            @Override
-            public void run() {
-                if (toGive <= 0) {
-                    this.cancel();
-                    return;
-                }
-                if (toGive > itemStack.getMaxStackSize()) {
-                    itemStack.setAmount(itemStack.getMaxStackSize());
-                    toGive -= itemStack.getMaxStackSize();
-                } else {
-                    itemStack.setAmount((int) toGive);
-                    toGive = 0;
-                }
-                HashMap<Integer, ItemStack> leftOver = new HashMap<>((p.getInventory().addItem(itemStack)));
-                if (!leftOver.isEmpty()) {
-                    Location loc = p.getLocation();
-                    p.getWorld().dropItem(loc, leftOver.get(0));
-                }
+        SingleItemGive delayedGive = new SingleItemGive(p, itemStack, amount);
+        delayedGive.setTaskImplementation(NotRanks.getServerImplementation().entity(p).runAtFixedRate(delayedGive,1, 5));
+    }
 
+    public static void givePlayerInstantly(Player p, ItemStack itemStack, long amount) {
+        while (amount > 0) {
+            if (amount > itemStack.getMaxStackSize()) {
+                itemStack.setAmount(itemStack.getMaxStackSize());
+                amount -= itemStack.getMaxStackSize();
+            } else {
+                itemStack.setAmount((int) amount);
+                amount = 0;
             }
-        }.runTaskTimer(NotRanks.getInstance(), 0, 5);
+            HashMap<Integer, ItemStack> leftOver = new HashMap<>((p.getInventory().addItem(itemStack)));
+            if (!leftOver.isEmpty()) {
+                Location loc = p.getLocation();
+                p.getWorld().dropItem(loc, leftOver.get(0));
+            }
+        }
+    }
+
+    public static void givePlayer(Player p, List<ItemStack> itemStacks, boolean instant) {
+        itemStacks = new ArrayList<>(itemStacks);
+        itemStacks.removeIf(Objects::isNull);
+        if (itemStacks.isEmpty())
+            return;
+        if (instant) {
+            p.playSound(p.getEyeLocation(), Sound.ENTITY_ITEM_PICKUP, 1, 1);
+            for (ItemStack itemStack : itemStacks) {
+                if (itemStack != null)
+                    givePlayerInstantly(p, itemStack, itemStack.getAmount());
+            }
+            return;
+        }
+        MultipleItemGive multipleItemGive = new MultipleItemGive(p, itemStacks);
+        multipleItemGive.setTaskImplementation(NotRanks.getServerImplementation().entity(p).runAtFixedRate(multipleItemGive, 1, 5));
     }
 
     /**
