@@ -7,7 +7,6 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
@@ -116,37 +115,31 @@ public class RankManager {
 
     private static void scheduleTasks(Plugin plugin) {
         // auto save every 5 minutes
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                try {
-                    saveRanks(plugin);
-                } catch (IOException e) {
-                    Bukkit.getLogger().warning(e.toString());
-                }
-                // clean out notifyThroughGUIDelay
-                GUI.notifyThroughGUIDelay.entrySet().removeIf(entries -> entries.getValue() < System.currentTimeMillis());
+        NotRanks.getServerImplementation().global().runAtFixedRate(() -> {
+            try {
+                saveRanks(plugin);
+            } catch (IOException e) {
+                Bukkit.getLogger().warning(e.toString());
             }
-        }.runTaskTimer(plugin, 6000L, 6000L);
+            // clean out notifyThroughGUIDelay
+            GUI.notifyThroughGUIDelay.entrySet().removeIf(entries -> entries.getValue() < System.currentTimeMillis());
+        }, 6000L, 6000L);
         // check if they completed a rank requirement
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                for (Player p : Bukkit.getOnlinePlayers()) {
-                    for (Map.Entry<String, List<Rank>> rankPaths : ranks.entrySet()) {
-                        int rankNum = getRankNum(p, rankPaths.getKey());
-                        if (rankNum < rankPaths.getValue().size() - 1) { // make sure they aren't on the max rank
-                            Rank rank = getRank(rankNum + 1, rankPaths.getKey());
-                            if (rank != null) {
-                                GUIOptions guiOptions = GUI.getGUI(rankPaths.getKey());
-                                if (guiOptions == null || !guiOptions.isPermissionRequired() || p.hasPermission("notranks." + rankPaths.getKey()))
-                                    rank.checkRankCompletion(p, rankPaths.getKey(), false); // check completion on next rank
-                            }
+        NotRanks.getServerImplementation().global().runAtFixedRate(() -> {
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                for (Map.Entry<String, List<Rank>> rankPaths : ranks.entrySet()) {
+                    int rankNum = getRankNum(p, rankPaths.getKey());
+                    if (rankNum < rankPaths.getValue().size() - 1) { // make sure they aren't on the max rank
+                        Rank rank = getRank(rankNum + 1, rankPaths.getKey());
+                        if (rank != null) {
+                            GUIOptions guiOptions = GUI.getGUI(rankPaths.getKey());
+                            if (guiOptions == null || !guiOptions.isPermissionRequired() || p.hasPermission("notranks." + rankPaths.getKey()))
+                                rank.checkRankCompletion(p, rankPaths.getKey(), false); // check completion on next rank
                         }
                     }
                 }
             }
-        }.runTaskTimer(plugin, 500L, 60);
+        }, 500L, 60);
 
     }
 

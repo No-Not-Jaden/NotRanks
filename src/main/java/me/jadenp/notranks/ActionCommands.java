@@ -4,20 +4,16 @@ import me.jadenp.notranks.gui.GUI;
 import me.jadenp.notranks.gui.GUIOptions;
 import me.jadenp.notranks.gui.PlayerInfo;
 import org.bukkit.Bukkit;
-import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.List;
-import java.util.regex.Matcher;
 
 import static me.jadenp.notranks.ConfigOptions.*;
 import static me.jadenp.notranks.LanguageOptions.prefix;
-import static me.jadenp.notranks.NumberFormatting.checkAmount;
 import static me.jadenp.notranks.NumberFormatting.tryParse;
 
 public class ActionCommands {

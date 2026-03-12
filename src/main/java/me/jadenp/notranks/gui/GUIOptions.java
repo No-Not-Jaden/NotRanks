@@ -11,14 +11,12 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-import static me.jadenp.notranks.ConfigOptions.*;
 import static me.jadenp.notranks.LanguageOptions.*;
 import static me.jadenp.notranks.gui.GUI.*;
 
@@ -311,14 +309,11 @@ public class GUIOptions {
             item.setItemMeta(meta);
             contents[event.getSlot()] = item;
             event.getInventory().setContents(contents);
-            new BukkitRunnable(){
-                @Override
-                public void run() {
-                    if (playerInfo.containsKey(event.getWhoClicked().getUniqueId())){
-                        openGUI((Player) event.getWhoClicked(), type, playerInfo.get(event.getWhoClicked().getUniqueId()).getPage());
-                    }
+            NotRanks.getServerImplementation().global().runDelayed(() -> {
+                if (playerInfo.containsKey(event.getWhoClicked().getUniqueId())){
+                    openGUI((Player) event.getWhoClicked(), type, playerInfo.get(event.getWhoClicked().getUniqueId()).getPage());
                 }
-            }.runTaskLater(NotRanks.getInstance(), 20);
+            }, 20);
         } else {
             ItemStack[] contents = event.getInventory().getContents();
             ItemStack item = new ItemStack(Material.valueOf(notifyItem));
@@ -327,14 +322,12 @@ public class GUIOptions {
             meta.setDisplayName(message);
             item.setItemMeta(meta);
             contents[event.getSlot()] = item;
-            event.getInventory().setContents(contents);new BukkitRunnable(){
-                @Override
-                public void run() {
-                    if (playerInfo.containsKey(event.getWhoClicked().getUniqueId())){
-                        openGUI((Player) event.getWhoClicked(), type, playerInfo.get(event.getWhoClicked().getUniqueId()).getPage());
-                    }
+            event.getInventory().setContents(contents);
+            NotRanks.getServerImplementation().global().runDelayed(() -> {
+                if (playerInfo.containsKey(event.getWhoClicked().getUniqueId())){
+                    openGUI((Player) event.getWhoClicked(), type, playerInfo.get(event.getWhoClicked().getUniqueId()).getPage());
                 }
-            }.runTaskLater(NotRanks.getInstance(), 20);
+            }, 20);
         }
     }
 }

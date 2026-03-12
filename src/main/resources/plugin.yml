@@ -7,6 +7,7 @@ softdepend:
   - HeadDataBase
   - Vault
 authors: [ Not_Jaden ]
+folia-supported: true
 description: Simpler way to organize ranks
 commands:
   notranks:

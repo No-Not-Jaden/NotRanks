@@ -20,7 +20,6 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.profile.PlayerProfile;
 import org.bukkit.profile.PlayerTextures;
-import org.bukkit.scheduler.BukkitRunnable;
 
 import java.net.MalformedURLException;
 import java.net.URL;
