@@ -20,6 +20,7 @@ public class VaultClass {
             return;
         }
         economy = rsp.getProvider();
+        working = true;
     }
 
     /**
@@ -28,8 +29,10 @@ public class VaultClass {
      */
     private boolean tryRegister(){
         RegisteredServiceProvider<Economy> rsp = getServer().getServicesManager().getRegistration(Economy.class);
-        //Bukkit.getLogger().warning("Could not get registered service provider from Vault");
-        working = rsp != null;
+        if (rsp != null) {
+            economy = rsp.getProvider();
+        }
+        working = economy != null;
         return !working;
     }
 
